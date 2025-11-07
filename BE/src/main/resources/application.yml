@@ -1,0 +1,69 @@
+server:
+  port: 8081
+  forward-headers-strategy: framework
+
+spring:
+  application:
+    name: Backend
+  datasource:
+    url: jdbc:mysql://localhost:3306/perfumeshop?createDatabaseIfNotExist=true
+    username: root
+    password: 123456@Ab
+  jpa:
+    hibernate:
+      ddl-auto: update 
+    show-sql: true
+  security:
+    oauth2:
+      client:
+        registration:
+          google:
+            client-id: 54799742951-7r9es90p26e2mb3d2luf61id2u74rgvr.apps.googleusercontent.com
+            client-secret: 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
+            scope: profile,email
+            redirect-uri: "{baseUrl}/login/oauth2/code/google"
+            authorization-grant-type: authorization_code
+            client-name: Google
+          facebook:
+            client-id: 1780112402864354
+            client-secret: 7a351469a938f7759328b1a6fb2e196e
+            scope: email,public_profile
+            redirect-uri: "{baseUrl}/login/oauth2/code/facebook"
+            authorization-grant-type: authorization_code
+            client-name: Facebook
+        provider:
+          google:
+            authorization-uri: https://accounts.google.com/o/oauth2/auth
+            token-uri: https://oauth2.googleapis.com/token
+            user-info-uri: https://www.googleapis.com/oauth2/v3/userinfo
+            jwk-set-uri: https://www.googleapis.com/oauth2/v3/certs
+            user-name-attribute: email
+          facebook:
+            authorization-uri: https://www.facebook.com/v17.0/dialog/oauth
+            token-uri: https://graph.facebook.com/v17.0/oauth/access_token
+            user-info-uri: https://graph.facebook.com/v17.0/me?fields=id,first_name,last_name,name,email
+            user-name-attribute: email
+    rabbitmq:
+      host: localhost
+      port: 5672
+      username: guest
+      password: guest
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
+
+logging:
+  level:
+    '[org.springframework.security]': DEBUG
+
+jwt:
+  secret: 3fD9kLz8vB1qWzYxJmN7tQpRrUuXyZ0aBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890ABCD
+  expiration: 3600000  # 1 hour in milliseconds
+
+app:
+  rabbitmq:
+    exchange: user.exchange
+    routingkey: user.created
+    queue: user.created.queue

@@ -1,0 +1,57 @@
+{"properties": [
+  {
+    "name": "jwt.secret",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.secret'"
+  },
+  {
+    "name": "jwt.expiration",
+    "type": "java.lang.String",
+    "description": "A description for 'jwt.expiration'"
+  },
+  {
+    "name": "spring.security.rabbitmq.host",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.security.rabbitmq.host'"
+  },
+  {
+    "name": "spring.security.rabbitmq.port",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.security.rabbitmq.port'"
+  },
+  {
+    "name": "spring.security.rabbitmq.username",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.security.rabbitmq.username'"
+  },
+  {
+    "name": "spring.security.rabbitmq.password",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.security.rabbitmq.password'"
+  },
+  {
+    "name": "app.rabbitmq.exchange",
+    "type": "java.lang.String",
+    "description": "A description for 'app.rabbitmq.exchange'"
+  },
+  {
+    "name": "app.rabbitmq.routingkey",
+    "type": "java.lang.String",
+    "description": "A description for 'app.rabbitmq.routingkey'"
+  },
+  {
+    "name": "app.rabbitmq.queue",
+    "type": "java.lang.String",
+    "description": "A description for 'app.rabbitmq.queue'"
+  },
+  {
+    "name": "spring.security.rabbitmq.listener.simple.default-requeue-rejected",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.security.rabbitmq.listener.simple.default-requeue-rejected'"
+  },
+  {
+    "name": "spring.security.rabbitmq.deserialization.trust.packages",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.security.rabbitmq.deserialization.trust.packages'"
+  }
+]}
