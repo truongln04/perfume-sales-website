@@ -7,15 +7,15 @@ import lombok.*;
 @Builder
 public class SupplierRequest {
 
-    private String name;
+    private String tenNcc;
 
 
-    private String address;
+    private String diaChi;
 
 
-    private String phone;
+    private String sdt;
 
     private String email;
 
-    private String note;
+    private String ghiChu;
 }

@@ -27,12 +27,12 @@ export default function Suppliers() {
       }
       const data = await res.json();
       const mapped = data.map((s) => ({
-        id: s.id,
-        name: s.name,
-        address: s.address,
-        phone: s.phone,
+        idNcc: s.idNcc,
+        tenNcc: s.tenNcc,
+        diaChi: s.diaChi,
+        sdt: s.sdt,
         email: s.email,
-        note: s.note,
+        ghiChu: s.ghiChu,
       }));
       setSuppliers(mapped);
     } catch (err) {
@@ -75,10 +75,10 @@ export default function Suppliers() {
   };
 
   // ✅ Xóa nhà cung cấp (có thông báo backend)
-  const onDelete = async (id) => {
+  const onDelete = async (idNcc) => {
     if (window.confirm("Xóa nhà cung cấp này?")) {
       try {
-        const res = await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: {
+        const res = await fetch(`${API_URL}/${idNcc}`, { method: "DELETE", headers: {
           "Authorization": `Bearer ${token}`, // ✅ Gửi token
         }, });
 
@@ -100,15 +100,15 @@ export default function Suppliers() {
   // ✅ Lưu (thêm/sửa)
   const onSave = async () => {
     const payload = {
-      name: form.name.trim(),
-      address: form.address.trim(),
-      phone: form.phone.trim(),
-      email: form.email,
-      note: form.note.trim(),
+      tenNcc: form.tenNcc.trim(),
+      diaChi: form.diaChi?.trim(),
+      sdt: form.sdt?.trim(),
+      email: form.email?.trim(),
+      ghiChu: form.ghiChu?.trim(),
     };
 
     try {
-      const res = await fetch(editing ? `${API_URL}/${form.id}` : API_URL, {
+      const res = await fetch(editing ? `${API_URL}/${form.idNcc}` : API_URL, {
         method: editing ? "PUT" : "POST",
         headers: { "Content-Type": "application/json",  "Authorization": `Bearer ${token}`, },
         body: JSON.stringify(payload),
@@ -189,13 +189,13 @@ export default function Suppliers() {
               </tr>
             ) : (
               filtered.map((s) => (
-                <tr key={s.id}>
-                  <td>{s.id}</td>
-                  <td>{s.name}</td>
-                  <td>{s.address}</td>
-                  <td>{s.phone}</td>
+                <tr key={s.idNcc}>
+                  <td>{s.idNcc}</td>
+                  <td>{s.tenNcc}</td>
+                  <td>{s.diaChi}</td>
+                  <td>{s.sdt}</td>
                   <td>{s.email}</td>
-                  <td>{s.note}</td>
+                  <td>{s.ghiChu}</td>
                   <td className="d-flex gap-2">
                     <button
                       className="btn btn-sm btn-outline-primary"
@@ -205,7 +205,7 @@ export default function Suppliers() {
                     </button>
                     <button
                       className="btn btn-sm btn-outline-danger"
-                      onClick={() => onDelete(s.id)}
+                      onClick={() => onDelete(s.idNcc)}
                     >
                       Xóa
                     </button>
@@ -246,8 +246,8 @@ export default function Suppliers() {
                     <label className="form-label">Tên nhà cung cấp</label>
                     <input
                       className="form-control"
-                      name="name"
-                      value={form.name}
+                      name="tenNcc"
+                      value={form.tenNcc}
                       onChange={handleChange}
                     />
                   </div>
@@ -255,8 +255,8 @@ export default function Suppliers() {
                     <label className="form-label">Số điện thoại</label>
                     <input
                       className="form-control"
-                      name="phone"
-                      value={form.phone}
+                      name="sdt"
+                      value={form.sdt}
                       onChange={handleChange}
                     />
                   </div>
@@ -273,8 +273,8 @@ export default function Suppliers() {
                     <label className="form-label">Địa chỉ</label>
                     <input
                       className="form-control"
-                      name="address"
-                      value={form.address}
+                      name="diaChi"
+                      value={form.diaChi}
                       onChange={handleChange}
                     />
                   </div>
@@ -282,9 +282,9 @@ export default function Suppliers() {
                     <label className="form-label">Ghi chú</label>
                     <textarea
                       className="form-control"
-                      name="note"
+                      name="ghiChu"
                       rows={3}
-                      value={form.note}
+                      value={form.ghiChu}
                       onChange={handleChange}
                     />
                   </div>
@@ -311,11 +311,11 @@ export default function Suppliers() {
 
 function emptySupplier() {
   return {
-    id: "",
-    name: "",
-    address: "",
-    phone: "",
-    email: "",
-    note: "",
+      idNcc: "",
+      tenNcc: "",
+      diaChi: "",
+      sdt: "",
+      email: "",
+      ghiChu: "",
   };
 }

@@ -14,20 +14,20 @@ public class Supplier {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_ncc")
-    private Integer id;
+    private Integer idNcc;
 
     @Column(name = "ten_ncc", nullable = false, length = 150)
-    private String name;
+    private String tenNcc;
 
     @Column(name = "dia_chi", length = 255)
-    private String address;
+    private String diaChi;
 
     @Column(name = "sdt", length = 15)
-    private String phone;
+    private String sdt;
 
     @Column(name = "email", length = 100)
     private String email;
 
     @Column(name = "ghi_chu", columnDefinition = "TEXT")
-    private String note;
+    private String ghiChu;
 }

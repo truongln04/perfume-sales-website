@@ -9,14 +9,14 @@ import java.util.List;
 public interface SupplierRepository extends JpaRepository<Supplier, Integer> {
      @Query("""
         SELECT s FROM Supplier s
-        WHERE LOWER(s.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
-           OR LOWER(s.phone) LIKE LOWER(CONCAT('%', :keyword, '%'))
+        WHERE LOWER(s.tenNcc) LIKE LOWER(CONCAT('%', :keyword, '%'))
+           OR LOWER(s.sdt) LIKE LOWER(CONCAT('%', :keyword, '%'))
            OR LOWER(s.email) LIKE LOWER(CONCAT('%', :keyword, '%'))
     """)
     List<Supplier> searchByNameOrPhoneOrEmail(@Param("keyword") String keyword);
-    boolean existsByNameIgnoreCase(String name);
+    boolean existsByTenNccIgnoreCase(String tenNcc);
 
-    boolean existsByPhone(String phone);
+    boolean existsBySdt(String sdt);
 
     boolean existsByEmailIgnoreCase(String email);
 }

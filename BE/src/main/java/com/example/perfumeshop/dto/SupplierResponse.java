@@ -8,10 +8,10 @@ import lombok.*;
 @Builder
 public class SupplierResponse {
 
-    private Integer id;
-    private String name;
-    private String address;
-    private String phone;
+    private Integer idNcc;
+    private String tenNcc;
+    private String diaChi;
+    private String sdt;
     private String email;
-    private String note;
+    private String ghiChu;
 }

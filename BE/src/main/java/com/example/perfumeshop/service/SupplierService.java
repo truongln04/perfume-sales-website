@@ -6,6 +6,7 @@ import com.example.perfumeshop.entity.Supplier;
 import com.example.perfumeshop.repository.SupplierRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+
 import java.util.List;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
@@ -20,11 +21,11 @@ public class SupplierService {
     public SupplierResponse createSupplier(SupplierRequest request) {
         validate(request, null);
         Supplier supplier = Supplier.builder()
-                .name(request.getName())
-                .address(request.getAddress())
-                .phone(request.getPhone())
+                .tenNcc(request.getTenNcc())
+                .diaChi(request.getDiaChi())
+                .sdt(request.getSdt())
                 .email(request.getEmail())
-                .note(request.getNote())
+                .ghiChu(request.getGhiChu())
                 .build();
         return toResponse(repository.save(supplier));
     }
@@ -36,11 +37,11 @@ public class SupplierService {
 
         validate(request, id);
 
-        supplier.setName(request.getName());
-        supplier.setAddress(request.getAddress());
-        supplier.setPhone(request.getPhone());
+        supplier.setTenNcc(request.getTenNcc());
+        supplier.setDiaChi(request.getDiaChi());
+        supplier.setSdt(request.getSdt());
         supplier.setEmail(request.getEmail());
-        supplier.setNote(request.getNote());
+        supplier.setGhiChu(request.getGhiChu());
 
         return toResponse(repository.save(supplier));
     }
@@ -69,107 +70,98 @@ public class SupplierService {
 
     private SupplierResponse toResponse(Supplier supplier) {
         return SupplierResponse.builder()
-                .id(supplier.getId())
-                .name(supplier.getName())
-                .address(supplier.getAddress())
-                .phone(supplier.getPhone())
+                .idNcc(supplier.getIdNcc())
+                .tenNcc(supplier.getTenNcc())
+                .diaChi(supplier.getDiaChi())
+                .sdt(supplier.getSdt())
                 .email(supplier.getEmail())
-                .note(supplier.getNote())
+                .ghiChu(supplier.getGhiChu())
                 .build();
     }
 
     // ✅ Validate dữ liệu
     private void validate(SupplierRequest request, Integer idUpdate) {
-    // 🔹 Nếu tất cả đều trống
-    boolean allEmpty = Stream.of(
-            request.getName(),
-            request.getAddress(),
-            request.getPhone(),
-            request.getEmail(),
-            request.getNote()
-    ).allMatch(value -> value == null || value.trim().isEmpty());
+        boolean allEmpty = Stream.of(
+                request.getTenNcc(),
+                request.getDiaChi(),
+                request.getSdt(),
+                request.getEmail(),
+                request.getGhiChu()
+        ).allMatch(value -> value == null || value.trim().isEmpty());
 
-    if (allEmpty) {
-        throw new RuntimeException("Vui lòng nhập đầy đủ thông tin nhà cung cấp");
-    }
-    
-    // 🔹 Kiểm tra Tên
-    if (request.getName() == null || request.getName().trim().isEmpty()) {
-        throw new RuntimeException("Vui lòng nhập tên nhà cung cấp");
-    }
-    if (!request.getName().matches("^[a-zA-ZÀ-ỹ0-9 ]{3,255}$")) {
-        throw new RuntimeException("Tên nhà cung cấp phải từ 3-255 ký tự và không chứa ký tự đặc biệt");
-    }
-
-    // 🔹 Trùng tên
-    if (idUpdate == null) { // thêm mới
-        if (repository.existsByNameIgnoreCase(request.getName())) {
-            throw new RuntimeException("Tên nhà cung cấp đã tồn tại");
+        if (allEmpty) {
+            throw new RuntimeException("Vui lòng nhập đầy đủ thông tin nhà cung cấp");
         }
-    } else { // sửa
-        Supplier old = repository.findById(idUpdate).orElse(null);
-        if (repository.existsByNameIgnoreCase(request.getName()) &&
-                (old == null || !old.getName().equalsIgnoreCase(request.getName()))) {
-            throw new RuntimeException("Tên nhà cung cấp đã tồn tại");
-        }
-    }
 
-    // 🔹 Kiểm tra SĐT
-    if (request.getPhone() == null || request.getPhone().trim().isEmpty()) {
-        throw new RuntimeException("Vui lòng nhập số điện thoại");
-    }
-    if (!request.getPhone().matches("^0[0-9]{9}$")) {
-        throw new RuntimeException("Số điện thoại không hợp lệ (Phải đúng 10 số và bắt đầu bằng số 0)");
-    }
-
-    // 🔹 Trùng SĐT
-    if (idUpdate == null) {
-        if (repository.existsByPhone(request.getPhone())) {
-            throw new RuntimeException("Số điện thoại đã tồn tại");
+        if (request.getTenNcc() == null || request.getTenNcc().trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập tên nhà cung cấp");
         }
-    } else {
-        Supplier old = repository.findById(idUpdate).orElse(null);
-        if (repository.existsByPhone(request.getPhone()) &&
-                (old == null || !old.getPhone().equals(request.getPhone()))) {
-            throw new RuntimeException("Số điện thoại đã tồn tại");
+        if (!request.getTenNcc().matches("^[a-zA-ZÀ-ỹ0-9 ]{3,255}$")) {
+            throw new RuntimeException("Tên nhà cung cấp phải từ 3-255 ký tự và không chứa ký tự đặc biệt");
         }
-    }
 
-    // 🔹 Kiểm tra Email
-    if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
-        throw new RuntimeException("Vui lòng nhập email");
-    }
-    if (!request.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
-        throw new RuntimeException("Email không hợp lệ");
-    }
-
-    // 🔹 Trùng Email
-    if (idUpdate == null) {
-        if (repository.existsByEmailIgnoreCase(request.getEmail())) {
-            throw new RuntimeException("Email đã tồn tại");
+        if (idUpdate == null) {
+            if (repository.existsByTenNccIgnoreCase(request.getTenNcc())) {
+                throw new RuntimeException("Tên nhà cung cấp đã tồn tại");
+            }
+        } else {
+            Supplier old = repository.findById(idUpdate).orElse(null);
+            if (repository.existsByTenNccIgnoreCase(request.getTenNcc()) &&
+                    (old == null || !old.getTenNcc().equalsIgnoreCase(request.getTenNcc()))) {
+                throw new RuntimeException("Tên nhà cung cấp đã tồn tại");
+            }
         }
-    } else {
-        Supplier old = repository.findById(idUpdate).orElse(null);
-        if (repository.existsByEmailIgnoreCase(request.getEmail()) &&
-                (old == null || !old.getEmail().equalsIgnoreCase(request.getEmail()))) {
-            throw new RuntimeException("Email đã tồn tại");
-        }
-    }
 
-    // 🔹 Kiểm tra Địa chỉ
-    if (request.getAddress() == null || request.getAddress().trim().isEmpty()) {
-        throw new RuntimeException("Vui lòng nhập địa chỉ");
-    }
-    if (!request.getAddress().matches("^[a-zA-ZÀ-ỹ0-9 ,.?!-]{3,255}$")) {
+        if (request.getSdt() == null || request.getSdt().trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập số điện thoại");
+        }
+        if (!request.getSdt().matches("^0[0-9]{9}$")) {
+            throw new RuntimeException("Số điện thoại không hợp lệ (Phải đúng 10 số và bắt đầu bằng số 0)");
+        }
+
+        if (idUpdate == null) {
+            if (repository.existsBySdt(request.getSdt())) {
+                throw new RuntimeException("Số điện thoại đã tồn tại");
+            }
+        } else {
+            Supplier old = repository.findById(idUpdate).orElse(null);
+            if (repository.existsBySdt(request.getSdt()) &&
+                    (old == null || !old.getSdt().equals(request.getSdt()))) {
+                throw new RuntimeException("Số điện thoại đã tồn tại");
+            }
+        }
+
+        if (request.getEmail() == null || request.getEmail().trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập email");
+        }
+        if (!request.getEmail().matches("^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\\.[A-Za-z]{2,}$")) {
+            throw new RuntimeException("Email không hợp lệ");
+        }
+
+        if (idUpdate == null) {
+            if (repository.existsByEmailIgnoreCase(request.getEmail())) {
+                throw new RuntimeException("Email đã tồn tại");
+            }
+        } else {
+            Supplier old = repository.findById(idUpdate).orElse(null);
+            if (repository.existsByEmailIgnoreCase(request.getEmail()) &&
+                    (old == null || !old.getEmail().equalsIgnoreCase(request.getEmail()))) {
+                throw new RuntimeException("Email đã tồn tại");
+            }
+        }
+
+        if (request.getDiaChi() == null || request.getDiaChi().trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập địa chỉ");
+        }
+        if (!request.getDiaChi().matches("^[a-zA-ZÀ-ỹ0-9 ,.?!-]{3,255}$")) {
             throw new RuntimeException("Địa chỉ phải từ 3-255 ký tự và không chứa ký tự đặc biệt không hợp lệ");
-    }
+        }
 
-    // 🔹 Kiểm tra Ghi chú 
-    if (request.getNote() == null || request.getNote().trim().isEmpty()) {
-         throw new RuntimeException("Vui lòng nhập ghi chú");
-    }
-    if (!request.getNote().matches("^[a-zA-ZÀ-ỹ0-9 ,.?!-]{3,255}$")) {
+        if (request.getGhiChu() == null || request.getGhiChu().trim().isEmpty()) {
+            throw new RuntimeException("Vui lòng nhập ghi chú");
+        }
+        if (!request.getGhiChu().matches("^[a-zA-ZÀ-ỹ0-9 ,.?!-]{3,255}$")) {
             throw new RuntimeException("Ghi chú phải từ 3-255 ký tự và không chứa ký tự đặc biệt không hợp lệ");
-    }
+        }
     }
 }
