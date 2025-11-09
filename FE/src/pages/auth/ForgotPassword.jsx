@@ -6,14 +6,33 @@ export default function ForgotPassword() {
   const [matKhauMoi, setMatKhauMoi] = useState("");
   const navigate = useNavigate();
 
-  const handleReset = () => {
-    if (!email || !matKhauMoi) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
+  const handleReset = async () => {
+    if (!email.trim() || !matKhauMoi.trim()) {
+      alert("Vui lòng nhập đầy đủ email và mật khẩu mới!");
       return;
     }
-    // TODO: Gọi API cập nhật mật khẩu
-    alert("✅ Mật khẩu đã được cập nhật!");
-    navigate("/login");
+
+    try {
+      // Gửi email + mật khẩu mới lên backend
+      const res = await fetch(
+        `http://localhost:8081/auth/forgotpassword?email=${encodeURIComponent(email)}&newPassword=${encodeURIComponent(matKhauMoi)}`,
+        {
+          method: "POST",
+        }
+      );
+
+      if (!res.ok) {
+        const errData = await res.text().catch(() => "Lỗi không xác định");
+        alert("❌ " + errData);
+        return;
+      }
+
+      const msg = await res.text();
+      alert("✅ " + msg);
+      navigate("/login");
+    } catch (err) {
+      alert("⚠️ Lỗi kết nối máy chủ: " + err.message);
+    }
   };
 
   return (

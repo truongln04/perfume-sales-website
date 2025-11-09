@@ -38,11 +38,6 @@ public class AccountController {
         return service.searchAccounts(keyword);
     }
 
-    @PostMapping("/login")
-    public AccountResponse login(@RequestParam String email, @RequestParam String password) {
-        return service.login(email, password);
-    }
-
     @GetMapping("/{id}")
     public AccountResponse getById(@PathVariable Integer id) {
         return service.getAccountById(id);

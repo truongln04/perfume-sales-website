@@ -2,20 +2,52 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 
 export default function Register() {
-  const [ten, setTen] = useState("");
+  const [tenHienThi, setTenHienThi] = useState("");
   const [email, setEmail] = useState("");
   const [matKhau, setMatKhau] = useState("");
+  const [sdt, setSdt] = useState("");
+  const [anhDaiDien, setAnhDaiDien] = useState("");
   const [nhapLai, setNhapLai] = useState("");
   const navigate = useNavigate();
 
-  const handleRegister = () => {
+  const handleRegister = async () => {
+    if (!tenHienThi.trim() || !email.trim() || !matKhau.trim()) {
+      alert("⚠️ Vui lòng nhập đầy đủ thông tin!");
+      return;
+    }
+
     if (matKhau !== nhapLai) {
       alert("❌ Mật khẩu không khớp!");
       return;
     }
-    // TODO: Gọi API đăng ký
-    alert("✅ Đăng ký thành công!");
-    navigate("/login");
+
+    const newUser = {
+  tenHienThi: tenHienThi,   
+  email: email,
+  matKhau: matKhau,
+  sdt: sdt,                 
+  anhDaiDien: anhDaiDien,   
+  vaiTro: "KHACHHANG",
+};
+
+    try {
+      const res = await fetch("http://localhost:8081/auth/register", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || "❌ Đăng ký thất bại!");
+        return;
+      }
+
+      alert("✅ Đăng ký thành công!");
+      navigate("/login");
+    } catch (err) {
+      alert("⚠️ Lỗi kết nối máy chủ: " + err.message);
+    }
   };
 
   return (
@@ -31,8 +63,8 @@ export default function Register() {
             <label className="form-label">👤 Họ và tên</label>
             <input
               className="form-control"
-              value={ten}
-              onChange={e => setTen(e.target.value)}
+              value={tenHienThi}
+              onChange={e => setTenHienThi(e.target.value)}
               placeholder="Nhập họ tên"
             />
           </div>
@@ -46,6 +78,27 @@ export default function Register() {
               placeholder="Nhập email"
             />
           </div>
+          <div className="mb-3">
+      <label className="form-label">📱 Số điện thoại</label>
+      <input
+        type="text"
+        className="form-control"
+        value={sdt}
+        onChange={e => setSdt(e.target.value)}
+        placeholder="Nhập số điện thoại"
+      />
+    </div>
+
+    <div className="mb-3">
+      <label className="form-label">🖼️ Ảnh đại diện (URL)</label>
+      <input
+        type="text"
+        className="form-control"
+        value={anhDaiDien}
+        onChange={e => setAnhDaiDien(e.target.value)}
+        placeholder="Nhập đường dẫn ảnh"
+      />
+    </div>
           <div className="mb-3">
             <label className="form-label">🔒 Mật khẩu</label>
             <input

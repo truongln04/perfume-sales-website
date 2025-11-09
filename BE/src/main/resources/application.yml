@@ -43,27 +43,13 @@ spring:
             token-uri: https://graph.facebook.com/v17.0/oauth/access_token
             user-info-uri: https://graph.facebook.com/v17.0/me?fields=id,first_name,last_name,name,email
             user-name-attribute: email
-    rabbitmq:
-      host: localhost
-      port: 5672
-      username: guest
-      password: guest
+    
 
-eureka:
-  client:
-    service-url:
-      defaultZone: http://localhost:8761/eureka/
 
 logging:
   level:
     '[org.springframework.security]': DEBUG
 
 jwt:
-  secret: 3fD9kLz8vB1qWzYxJmN7tQpRrUuXyZ0aBcDeFgHiJkLmNoPqRsTuVwXyZ1234567890ABCD
-  expiration: 3600000  # 1 hour in milliseconds
-
-app:
-  rabbitmq:
-    exchange: user.exchange
-    routingkey: user.created
-    queue: user.created.queue
+  secret: VGhpcyBpcyBhIHZlcnkgc2VjdXJlIHNlY3JldCBrZXkgZm9yIEpXVFQ=
+ # 1 hour in milliseconds

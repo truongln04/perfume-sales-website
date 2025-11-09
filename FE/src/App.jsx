@@ -1,6 +1,6 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import {BrowserRouter as Router,Routes, Route, Navigate } from "react-router-dom";
+import { useState } from "react";
 import AdminLayout from "./layouts/AdminLayout";
-
 import Dashboard from "./pages/admin/Dashboard";
 import Accounts from "./pages/admin/Accounts";
 import Categories from "./pages/admin/Categories";
@@ -11,38 +11,43 @@ import Receipts from "./pages/admin/Receipts";
 import Warehouse from "./pages/admin/Warehouse";
 import Orders from "./pages/admin/Orders";
 import Reports from "./pages/admin/Reports";
-
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 
 export default function App() {
-  const user = JSON.parse(localStorage.getItem("user"));
-  const isAdmin = user?.role === "admin";
+  // ✅ State user, khởi tạo từ localStorage
+  const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user")));
+  const isAdmin = user?.vaiTro === "ADMIN";
+  const isStaff = user?.vaiTro === "NHANVIEN";
 
   return (
     <Router>
       <Routes>
         {/* Auth routes */}
-        <Route path="/login" element={<Login />} />
+        <Route path="/login" element={<Login onLogin={setUser} />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
 
         {/* Protected admin layout */}
         <Route
           path="/"
-          element={user ? <AdminLayout /> : <Navigate to="/login" replace />}
+          element={
+            user && (isAdmin || isStaff) ? (
+              <AdminLayout />
+            ) : (
+              <Navigate to="/login" replace />
+            )
+          }
         >
           <Route index element={<Dashboard />} />
-          <Route path="categories" element={<Categories />} />
-          <Route path="brands" element={<Brands />} />
-          <Route path="products" element={<Products />} />
-          <Route path="suppliers" element={<Suppliers />} />
-          <Route path="receipts" element={<Receipts />} />
-          <Route path="warehouse" element={<Warehouse />} />
-          <Route path="orders" element={<Orders />} />
-
-          {/* Admin-only routes */}
+          {isAdmin && <Route path="categories" element={<Categories />} />}
+          {isAdmin && <Route path="brands" element={<Brands />} />}
+          {(isAdmin || isStaff) && <Route path="products" element={<Products />} />}
+          {(isAdmin || isStaff) && <Route path="suppliers" element={<Suppliers />} />}
+          {(isAdmin || isStaff) && <Route path="receipts" element={<Receipts />} />}
+          {(isAdmin || isStaff) && <Route path="warehouse" element={<Warehouse />} />}
+          {(isAdmin || isStaff) && <Route path="orders" element={<Orders />} />}
           {isAdmin && <Route path="accounts" element={<Accounts />} />}
           {isAdmin && <Route path="reports" element={<Reports />} />}
         </Route>
@@ -50,49 +55,6 @@ export default function App() {
         {/* Catch-all */}
         <Route path="*" element={<Navigate to={user ? "/" : "/login"} replace />} />
       </Routes>
-    </Router>
+      </Router>
   );
 }
-
-
-// import { BrowserRouter as Router, Routes, Route } from "react-router-dom";
-// import Sidebar from "./components/Sidebar";
-// import Header from "./components/Header";
-
-// import Dashboard from "./pages/admin/Dashboard";
-// import Accounts from "./pages/admin/Accounts";
-// import Categories from "./pages/admin/Categories";
-// import Brands from "./pages/admin/Brands";
-// import Products from "./pages/admin/Products";
-// import Suppliers from "./pages/admin/Suppliers";
-// import Receipts from "./pages/admin/Receipts";
-// import Warehouse from "./pages/admin/Warehouse";
-// import Orders from "./pages/admin/Orders";
-// import Reports from "./pages/admin/Reports";
-
-// export default function App() {
-//   return (
-//     <Router>
-//       <div className="d-flex">
-//         <Sidebar />
-//         <div className="flex-grow-1">
-//           <Header />
-//           <div className="container-fluid py-3">
-//             <Routes>
-//               <Route path="/" element={<Dashboard />} />
-//               <Route path="/accounts" element={<Accounts />} />
-//               <Route path="/categories" element={<Categories />} />
-//               <Route path="/brands" element={<Brands />} />
-//               <Route path="/products" element={<Products />} />
-//               <Route path="/suppliers" element={<Suppliers />} />
-//               <Route path="/receipts" element={<Receipts />} />
-//               <Route path="/warehouse" element={<Warehouse />} />
-//               <Route path="/orders" element={<Orders />} />
-//               <Route path="/reports" element={<Reports />} />
-//             </Routes>
-//           </div>
-//         </div>
-//       </div>
-//     </Router>
-//   );
-// }

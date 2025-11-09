@@ -1,31 +1,102 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { GoogleLogin } from "@react-oauth/google";
+import {jwtDecode} from "jwt-decode";
 
-export default function Login() {
+export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");
   const [matKhau, setMatKhau] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = () => {
-    let role = "staff";
-    if (email === "admin@example.com" && matKhau === "admin123") {
-      role = "admin";
-    } else if (email === "staff@example.com" && matKhau === "staff123") {
-      role = "staff";
-    } else {
-      alert("Sai tài khoản hoặc mật khẩu!");
-      return;
-    }
+  // 🔸 Đăng nhập bằng tài khoản thông thường
+  const handleLogin = async () => {
+    try {
+      const res = await fetch("http://localhost:8081/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password: matKhau }),
+      });
 
-    localStorage.setItem("user", JSON.stringify({ email, role }));
-    alert("Đăng nhập thành công!");
-    navigate("/Dashboard");
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        alert(err.message || "Sai tài khoản hoặc mật khẩu!");
+        return;
+      }
+
+      const user = await res.json();
+      const role = user.vaiTro?.toUpperCase();
+
+      // ✅ Lưu user
+      localStorage.setItem("user", JSON.stringify(user));
+      localStorage.setItem("token", user.token); // ✅ lưu token để dùng cho các API sau
+
+      // ✅ Cập nhật state user ở App.jsx để component render lại ngay
+      if (onLogin) onLogin(user);
+
+      // ✅ Điều hướng theo vai trò
+      if (role === "ADMIN" || role === "NHANVIEN") {
+        alert("Đăng nhập quản trị thành công!");
+        navigate("/Dashboard");
+      } else if (role === "KHACHHANG") {
+        alert("Đăng nhập khách hàng thành công!");
+        navigate("/Login");
+      } else {
+        alert("Không xác định quyền truy cập!");
+      }
+    } catch (err) {
+      alert("Lỗi kết nối máy chủ: " + err.message);
+    }
   };
 
-  const handleGoogleLogin = () => {
-    alert("Đăng nhập bằng Google (giả lập)");
-    navigate("/Dashboard");
+  // 🔸 Đăng nhập Google thật
+  const handleGoogleLogin = async (credentialResponse) => {
+    try {
+      // Giải mã thông tin người dùng từ token Google
+      const decoded = jwtDecode(credentialResponse.credential);
+      console.log("Thông tin từ Google:", decoded);
+      console.log("Credential từ Google:", credentialResponse.credential);
+
+      const newUser = {
+        tenHienThi: decoded.name,
+        email: decoded.email,
+        anhDaiDien: decoded.picture,
+        googleId: decoded.sub,
+        sdt: "",
+        matKhau: "",
+        vaiTro: "KHACHHANG",
+      };
+
+      // ✅ Gửi lên backend để tạo/cập nhật tài khoản Google
+      const res = await fetch("http://localhost:8081/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(newUser),
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Không thể lưu tài khoản Google");
+      }
+
+      const savedUser = await res.json();
+
+      // ✅ Lưu user vào localStorage
+      localStorage.setItem("user", JSON.stringify(savedUser));
+      localStorage.setItem("token", savedUser.token);
+      // ✅ Cập nhật state user
+      if (onLogin) onLogin(savedUser);
+
+      // ✅ Thông báo và điều hướng
+      alert("Đăng nhập Google thành công!");
+      navigate("/Login");
+
+      // ✅ Kích hoạt sự kiện để Accounts.jsx reload
+      window.dispatchEvent(new Event("account-updated"));
+    } catch (err) {
+      alert("Lỗi khi đăng nhập Google: " + err.message);
+      console.error(err);
+    }
   };
 
   return (
@@ -76,9 +147,14 @@ export default function Login() {
             <button className="btn btn-primary" onClick={handleLogin}>
               🔑 Đăng nhập
             </button>
-            <button className="btn btn-danger" onClick={handleGoogleLogin}>
-              <i className="bi bi-google me-2"></i>Đăng nhập bằng Google
-            </button>
+            <GoogleLogin
+            onSuccess={handleGoogleLogin}
+            onError={() => alert("Đăng nhập Google thất bại")} 
+            shape="pill"
+             style={{ width: "100%" }}
+            text="signin_with"
+            locale="vi"
+          />
           </div>
         </div>
 

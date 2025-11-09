@@ -7,6 +7,10 @@ export default function Header() {
   const [editMode, setEditMode] = useState(false);
   const [formData, setFormData] = useState({});
   const navigate = useNavigate();
+  const getAuthHeader = () => {
+    const token = localStorage.getItem("token");
+    return { Authorization: `Bearer ${token}` };
+  };
 
   useEffect(() => {
     const storedUser = JSON.parse(localStorage.getItem("user"));
@@ -20,11 +24,29 @@ export default function Header() {
     navigate("/login");
   };
 
-  const handleSave = () => {
-    localStorage.setItem("user", JSON.stringify(formData));
-    alert("Cập nhật thành công!");
+  const handleSave = async () => {
+     try {
+    const res = await fetch(`http://localhost:8081/accounts/${formData.idTaiKhoan}`, {
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...getAuthHeader() },
+      body: JSON.stringify(formData),
+    });
+
+    if (!res.ok) throw new Error("Không thể cập nhật tài khoản");
+    const updatedUser = await res.json();
+
+    // ✅ Cập nhật localStorage
+    localStorage.setItem("user", JSON.stringify(updatedUser));
+
+    // ✅ Gửi sự kiện thông báo toàn hệ thống (kể cả trong cùng tab)
+    window.dispatchEvent(new Event("account-updated"));
+
+    alert("Cập nhật thông tin thành công!");
     setEditMode(false);
-  };
+  } catch (err) {
+    alert("Lỗi khi lưu tài khoản: " + err.message);
+  }
+};
 
   return (
     <header
@@ -42,7 +64,7 @@ export default function Header() {
         <h5 className="m-0"> </h5>
         <div style={{ cursor: "pointer" }} onClick={() => setShowProfile(true)}>
           <img
-            src={formData.anh_dai_dien || "https://i.pravatar.cc/100?u=default"}
+            src={formData.anhDaiDien}
             alt="avatar"
             className="rounded-circle"
             width={57}
@@ -61,7 +83,7 @@ export default function Header() {
               </div>
               <div className="modal-body text-center">
                 <img
-                  src={formData.anh_dai_dien || "https://i.pravatar.cc/100?u=default"}
+                  src={formData.anhDaiDien}
                   alt="avatar"
                   className="rounded-circle mb-3"
                   width={100}
@@ -87,7 +109,7 @@ export default function Header() {
           type="text"
           className="form-control"
           readOnly
-          value={formData.role || ""}
+          value={formData.vaiTro || ""}
         />
       </td>
     </tr>
@@ -97,15 +119,15 @@ export default function Header() {
         {editMode ? (
           <input
             className="form-control"
-            value={formData.ten_hien_thi || ""}
-            onChange={e => setFormData({ ...formData, ten_hien_thi: e.target.value })}
+            value={formData.tenHienThi || ""}
+            onChange={e => setFormData({ ...formData, tenHienThi: e.target.value })}
           />
         ) : (
           <input
             type="text"
             className="form-control"
             readOnly
-            value={formData.ten_hien_thi || "Chưa có"}
+            value={formData.tenHienThi || "Chưa có"}
           />
         )}
       </td>
@@ -137,8 +159,8 @@ export default function Header() {
             <input
               className="form-control mb-2"
               placeholder="Dán URL ảnh..."
-              value={formData.anh_dai_dien || ""}
-              onChange={e => setFormData({ ...formData, anh_dai_dien: e.target.value })}
+              value={formData.anhDaiDien || ""}
+              onChange={e => setFormData({ ...formData, anhDaiDien: e.target.value })}
             />
             <input
               type="file"
@@ -149,7 +171,7 @@ export default function Header() {
                 if (file) {
                   const reader = new FileReader();
                   reader.onload = () => {
-                    setFormData({ ...formData, anh_dai_dien: reader.result });
+                    setFormData({ ...formData, anhDaiDien: reader.result });
                   };
                   reader.readAsDataURL(file);
                 }
@@ -166,7 +188,7 @@ export default function Header() {
               whiteSpace: "nowrap",
               wordBreak: "break-all",
             }}
-            value={formData.anh_dai_dien || ""}
+            value={formData.anhDaiDien || ""}
           />
         )}
       </td>

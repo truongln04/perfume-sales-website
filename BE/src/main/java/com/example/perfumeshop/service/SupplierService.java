@@ -56,7 +56,7 @@ public class SupplierService {
     }
 
     public List<SupplierResponse> searchSuppliers(String keyword) {
-        return repository.findByNameContainingIgnoreCase(keyword).stream()
+        return repository.searchByNameOrPhoneOrEmail(keyword).stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }

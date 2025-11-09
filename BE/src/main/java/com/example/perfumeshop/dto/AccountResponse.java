@@ -15,5 +15,7 @@ public class AccountResponse {
     private String sdt;
     private String googleId;
     private String anhDaiDien;
+    private String matKhau;
     private VaiTro vaiTro;
+    private String token;
 }
