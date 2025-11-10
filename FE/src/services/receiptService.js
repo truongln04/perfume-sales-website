@@ -1,9 +1,15 @@
 const API_URL = "http://localhost:8081/receipts";
 const PRODUCT_URL = "http://localhost:8081/products";
-const SUPPLIER_URL = "http://localhost:8081/suppliers"; // ✅ thêm đường dẫn nhà cung cấp
+const SUPPLIER_URL = "http://localhost:8081/suppliers";
+
+// ✅ Lấy token từ localStorage
+const getAuthHeader = () => {
+  const token = localStorage.getItem("token");
+  return token ? { Authorization: `Bearer ${token}` } : {};
+};
 
 export async function fetchReceipts() {
-  const res = await fetch(API_URL);
+  const res = await fetch(API_URL, { headers: getAuthHeader() });
   if (!res.ok) throw new Error("Không thể tải danh sách phiếu nhập");
   return res.json();
 }
@@ -14,7 +20,7 @@ export async function createReceipt(data, id = null) {
 
   const res = await fetch(url, {
     method,
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...getAuthHeader() },
     body: JSON.stringify(data),
   });
 
@@ -23,18 +29,21 @@ export async function createReceipt(data, id = null) {
 }
 
 export async function deleteReceipt(id) {
-  const res = await fetch(`${API_URL}/${id}`, { method: "DELETE" });
+  const res = await fetch(`${API_URL}/${id}`, {
+    method: "DELETE",
+    headers: getAuthHeader(),
+  });
   if (!res.ok) throw new Error("Không thể xóa phiếu nhập");
 }
 
 export async function fetchProducts() {
-  const res = await fetch(PRODUCT_URL);
+  const res = await fetch(PRODUCT_URL, { headers: getAuthHeader() });
   if (!res.ok) throw new Error("Không thể tải danh sách sản phẩm");
   return res.json();
 }
 
 export async function fetchSuppliers() {
-  const res = await fetch(SUPPLIER_URL);
+  const res = await fetch(SUPPLIER_URL, { headers: getAuthHeader() });
   if (!res.ok) throw new Error("Không thể tải danh sách nhà cung cấp");
   return res.json();
 }
