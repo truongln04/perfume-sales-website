@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { GoogleLogin } from "@react-oauth/google";
-import {jwtDecode} from "jwt-decode";
 
 export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");
@@ -51,53 +50,46 @@ export default function Login({ onLogin }) {
 
   // 🔸 Đăng nhập Google thật
   const handleGoogleLogin = async (credentialResponse) => {
-    try {
-      // Giải mã thông tin người dùng từ token Google
-      const decoded = jwtDecode(credentialResponse.credential);
-      console.log("Thông tin từ Google:", decoded);
-      console.log("Credential từ Google:", credentialResponse.credential);
+  try {
+    // ✅ Lấy token Google do SDK trả về
+    const credential = credentialResponse.credential;
 
-      const newUser = {
-        tenHienThi: decoded.name,
-        email: decoded.email,
-        anhDaiDien: decoded.picture,
-        googleId: decoded.sub,
-        sdt: "",
-        matKhau: "",
-        vaiTro: "KHACHHANG",
-      };
+    console.log("Google Credential:", credential);
 
-      // ✅ Gửi lên backend để tạo/cập nhật tài khoản Google
-      const res = await fetch("http://localhost:8081/auth/google", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newUser),
-      });
+    // ✅ Gửi token Google lên backend để xác minh và xử lý user
+    const res = await fetch("http://localhost:8081/auth/google", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ credential }), // Gửi thô credential
+    });
 
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Không thể lưu tài khoản Google");
-      }
-
-      const savedUser = await res.json();
-
-      // ✅ Lưu user vào localStorage
-      localStorage.setItem("user", JSON.stringify(savedUser));
-      localStorage.setItem("token", savedUser.token);
-      // ✅ Cập nhật state user
-      if (onLogin) onLogin(savedUser);
-
-      // ✅ Thông báo và điều hướng
-      alert("Đăng nhập Google thành công!");
-      navigate("/Login");
-
-      // ✅ Kích hoạt sự kiện để Accounts.jsx reload
-      window.dispatchEvent(new Event("account-updated"));
-    } catch (err) {
-      alert("Lỗi khi đăng nhập Google: " + err.message);
-      console.error(err);
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.message || "Không thể đăng nhập với Google");
     }
-  };
+
+    const savedUser = await res.json();
+
+    // ✅ Lưu user và token (nếu backend trả token JWT)
+    localStorage.setItem("user", JSON.stringify(savedUser));
+    if (savedUser.token) {
+      localStorage.setItem("token", savedUser.token);
+    }
+
+    // ✅ Cập nhật state / context
+    if (onLogin) onLogin(savedUser);
+
+    // ✅ Thông báo và điều hướng
+    alert("Đăng nhập Google thành công!");
+    navigate("/");
+
+    // ✅ Kích hoạt sự kiện để component khác reload
+    window.dispatchEvent(new Event("account-updated"));
+  } catch (err) {
+    alert("Lỗi khi đăng nhập Google: " + err.message);
+    console.error("Lỗi đăng nhập Google:", err);
+  }
+};
 
   return (
     <div

@@ -8,7 +8,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/perfumeshop?createDatabaseIfNotExist=true
     username: root
-    password: 123456@Ab
+    password: root
   jpa:
     hibernate:
       ddl-auto: update 
@@ -18,8 +18,8 @@ spring:
       client:
         registration:
           google:
-            client-id: 54799742951-7r9es90p26e2mb3d2luf61id2u74rgvr.apps.googleusercontent.com
-            client-secret: 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
+            client-id: 54799742951-ab0of9ikq6a7408ufluk0r42684841st.apps.googleusercontent.com
+            client-secret: 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
             scope: profile,email
             redirect-uri: "{baseUrl}/login/oauth2/code/google"
             authorization-grant-type: authorization_code

@@ -2,8 +2,11 @@ package com.example.perfumeshop.controller;
 
 import com.example.perfumeshop.dto.AccountRequest;
 import com.example.perfumeshop.dto.AccountResponse;
+import com.example.perfumeshop.dto.GoogleLoginRequest;
 import com.example.perfumeshop.dto.LoginRequest;
 import com.example.perfumeshop.service.AccountService;
+import com.example.perfumeshop.service.GoogleAuthService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -14,6 +17,7 @@ import org.springframework.web.bind.annotation.*;
 @RequiredArgsConstructor
 public class AuthController {
     private final AccountService service;
+    private final GoogleAuthService googleAuthService;
 
     @PostMapping("/login")
     public AccountResponse login(@RequestBody LoginRequest request) {
@@ -21,8 +25,26 @@ public class AuthController {
     }
 
     @PostMapping("/google")
-    public ResponseEntity<AccountResponse> createOrUpdateGoogleAccount(@RequestBody AccountRequest request) {
-        return ResponseEntity.ok(service.createOrUpdateGoogleAccount(request));
+    public ResponseEntity<AccountResponse> createOrUpdateGoogleAccount(@RequestBody GoogleLoginRequest request) {
+    try {
+        // ✅ Xác minh token Google
+        var payload = googleAuthService.verifyGoogleToken(request.getCredential());
+
+        // ✅ Lấy thông tin từ payload
+        AccountRequest accRequest = new AccountRequest();
+        accRequest.setEmail(payload.getEmail());
+        accRequest.setTenHienThi((String) payload.get("name"));
+        accRequest.setAnhDaiDien((String) payload.get("picture"));
+        accRequest.setGoogleId(payload.getSubject());
+        accRequest.setSdt("");
+
+        // ✅ Gọi service để tạo/cập nhật user
+        AccountResponse response = service.createOrUpdateGoogleAccount(accRequest);
+        return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            return ResponseEntity.badRequest().body(null);
+        }
     }
 
     @PostMapping("/register")
