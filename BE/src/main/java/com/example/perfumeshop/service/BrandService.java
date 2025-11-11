@@ -1,14 +1,16 @@
 package com.example.perfumeshop.service;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+
 import com.example.perfumeshop.dto.BrandRequest;
 import com.example.perfumeshop.dto.BrandResponse;
 import com.example.perfumeshop.entity.Brand;
 import com.example.perfumeshop.repository.BrandRepository;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 @Service
 @RequiredArgsConstructor
@@ -17,8 +19,8 @@ public class BrandService  {
 
     public BrandResponse createBrand(BrandRequest request) {
         Brand brand = Brand.builder()
-                .name(request.getName())
-                .country(request.getCountry())
+                .tenthuonghieu(request.getTenthuonghieu())
+                .quocgia(request.getQuocgia())
                 .logo(request.getLogo())
                 .build();
         return toResponse(repository.save(brand));
@@ -27,8 +29,8 @@ public class BrandService  {
     public BrandResponse updateBrand(Integer id, BrandRequest request) {
         Brand brand = repository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy thương hiệu"));
-        brand.setName(request.getName());
-        brand.setCountry(request.getCountry());
+        brand.setTenthuonghieu(request.getTenthuonghieu());
+        brand.setQuocgia(request.getQuocgia());
         brand.setLogo(request.getLogo());
         return toResponse(repository.save(brand));
     }
@@ -57,9 +59,9 @@ public class BrandService  {
 
     private BrandResponse toResponse(Brand brand) {
         return BrandResponse.builder()
-                .id(brand.getId())
-                .name(brand.getName())
-                .country(brand.getCountry())
+                .idthuonghieu(brand.getIdthuonghieu())
+                .tenthuonghieu(brand.getTenthuonghieu())
+                .quocgia(brand.getQuocgia())
                 .logo(brand.getLogo())
                 .build();
     }
