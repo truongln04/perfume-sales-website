@@ -4,7 +4,7 @@ export default function Categories() {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ id: "", name: "", description: "" });
+  const [form, setForm] = useState({ idDanhMuc: "", tenDanhMuc: "", moTa: "" });
   const [editing, setEditing] = useState(null);
 
   const API_URL = "http://localhost:8081/categories";
@@ -40,7 +40,7 @@ export default function Categories() {
       return;
     }
     try {
-     const res = await fetch(`${API_URL}/search?name=${encodeURIComponent(value)}`, {
+     const res = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(value)}`, {
         headers: {
           "Authorization": `Bearer ${token}`, // ✅ gửi token
         },
@@ -54,12 +54,12 @@ export default function Categories() {
   };
 
   const filtered = useMemo(() => {
-    return [...categories].sort((a, b) => a.id - b.id);
+    return [...categories].sort((a, b) => a.idDanhMuc - b.idDanhMuc);
   }, [categories]);
 
   const onAdd = () => {
     setEditing(null);
-    setForm({ id: "", name: "", description: "" });
+    setForm({  idDanhMuc: "", tenDanhMuc: "", moTa: ""});
     setShowModal(true);
   };
 
@@ -69,10 +69,10 @@ export default function Categories() {
     setShowModal(true);
   };
 
-  const onDelete = async (id) => {
+  const onDelete = async (idDanhMuc) => {
     if (window.confirm("Xóa danh mục này?")) {
       try {
-        await fetch(`${API_URL}/${id}`, {
+        await fetch(`${API_URL}/${idDanhMuc}`, {
           method: "DELETE",
           headers: {
             "Authorization": `Bearer ${token}`, // ✅ gửi token
@@ -86,19 +86,19 @@ export default function Categories() {
   };
 
   const onSave = async () => {
-    if (!form.name.trim()) {
+    if (!form.tenDanhMuc.trim()) {
       alert("Vui lòng nhập tên danh mục");
       return;
     }
 
     const payload = {
-      name: form.name.trim(),
-      description: form.description.trim() || "Chưa có mô tả",
+      tenDanhMuc: form.tenDanhMuc.trim(),
+      moTa: form.moTa.trim() || "Chưa có mô tả",
     };
 
     try {
       if (editing) {
-        await fetch(`${API_URL}/${editing.id}`, {
+        await fetch(`${API_URL}/${editing.idDanhMuc}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json",
             "Authorization": `Bearer ${token}`, // ✅ gửi token
@@ -162,13 +162,13 @@ export default function Categories() {
               </tr>
             ) : (
               filtered.map(c => (
-                <tr key={c.id}>
-                  <td>{c.id}</td>
-                  <td>{c.name}</td>
-                  <td>{c.description}</td>
+                <tr key={c.idDanhMuc}>
+                  <td>{c.idDanhMuc}</td>
+                  <td>{c.tenDanhMuc}</td>
+                  <td>{c.moTa}</td>
                   <td className="d-flex gap-2">
                     <button className="btn btn-sm btn-outline-primary" onClick={() => onEdit(c)}>Sửa</button>
-                    <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(c.id)}>Xóa</button>
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(c.idDanhMuc)}>Xóa</button>
                   </td>
                 </tr>
               ))
@@ -191,8 +191,8 @@ export default function Categories() {
                   <label className="form-label">Tên danh mục</label>
                   <input
                     className="form-control"
-                    name="name"
-                    value={form.name}
+                    name="tenDanhMuc"
+                    value={form.tenDanhMuc}
                     onChange={handleChange}
                   />
                 </div>
@@ -200,8 +200,8 @@ export default function Categories() {
                   <label className="form-label">Mô tả</label>
                   <input
                     className="form-control"
-                    name="description"
-                    value={form.description}
+                    name="moTa"
+                    value={form.moTa}
                     onChange={handleChange}
                   />
                 </div>

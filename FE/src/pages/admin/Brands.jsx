@@ -5,7 +5,7 @@ export default function Brands() {
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ id: "", name: "", country: "", logo: "" });
+  const [form, setForm] = useState({ idthuonghieu: "", tenthuonghieu: "", quocgia: "", logo: "" });
 
   const API_URL = "http://localhost:8081/brands";
   const token = localStorage.getItem("token");
@@ -50,7 +50,7 @@ export default function Brands() {
 
   const onAdd = () => {
     setEditing(null);
-    setForm({ id: "", name: "", country: "", logo: "" });
+    setForm({ idthuonghieu: "", tenthuonghieu: "", quocgia: "", logo: "" });
     setShowModal(true);
   };
 
@@ -72,14 +72,14 @@ export default function Brands() {
   };
 
   const onSave = async () => {
-    if (!form.name.trim()) {
+    if (!form.tenthuonghieu.trim()) {
       alert("Vui lòng nhập tên thương hiệu");
       return;
     }
 
     const payload = {
-      name: form.name.trim(),
-      country: form.country.trim(),
+      tenthuonghieu: form.tenthuonghieu.trim(),
+      quocgia: form.quocgia.trim(),
       logo: form.logo.trim(),
     };
 
@@ -106,8 +106,8 @@ export default function Brands() {
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    const { tenthuonghieu, value } = e.target;
+    setForm(prev => ({ ...prev, [tenthuonghieu]: value }));
   };
 
   return (
@@ -144,13 +144,13 @@ export default function Brands() {
               </tr>
             ) : (
               filtered.map(b => (
-                <tr key={b.id}>
-                  <td>{b.id}</td>
-                  <td>{b.name}</td>
-                  <td>{b.country}</td>
+                <tr key={b.idthuonghieu}>
+                  <td>{b.idthuonghieu}</td>
+                  <td>{b.tenthuonghieu}</td>
+                  <td>{b.quocgia}</td>
                   <td>
                     {b.logo ? (
-                      <img src={b.logo} alt={b.name} width={60} height={40} style={{ objectFit: "contain" }} />
+                      <img src={b.logo} alt={b.tenthuonghieu} width={60} height={40} style={{ objectFit: "contain" }} />
                     ) : (
                       <span className="text-muted">Không có</span>
                     )}
@@ -178,11 +178,11 @@ export default function Brands() {
               <div className="modal-body">
                 <div className="mb-3">
                   <label className="form-label">Tên thương hiệu</label>
-                  <input className="form-control" name="name" value={form.name} onChange={handleChange} />
+                  <input className="form-control" name="tenthuonghieu" value={form.tenthuonghieu} onChange={handleChange} />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Quốc gia</label>
-                  <input className="form-control" name="country" value={form.country} onChange={handleChange} />
+                  <input className="form-control" name="quocgia" value={form.quocgia} onChange={handleChange} />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Logo (URL)</label>
