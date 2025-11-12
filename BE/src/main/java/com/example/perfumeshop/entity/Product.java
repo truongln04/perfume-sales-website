@@ -28,11 +28,13 @@ public class Product {
     @Column(name = "hinh_anh", columnDefinition = "TEXT")
     private String hinhAnh;
 
-    @Column(name = "id_danh_muc")
-    private Integer idDanhMuc;
+    @ManyToOne
+    @JoinColumn(name = "id_danh_muc")
+    private Category danhMuc;
 
-    @Column(name = "id_thuong_hieu")
-    private Integer idThuongHieu;
+    @ManyToOne
+    @JoinColumn(name = "id_thuong_hieu")
+    private Brand thuonghieu;
 
     @Column(name = "gia_nhap", precision = 12, scale = 0)
     private BigDecimal giaNhap;
@@ -55,5 +57,12 @@ public class Product {
     @Column(name = "ngay_tao")
     private LocalDateTime ngayTao;
 
+    @OneToOne(mappedBy = "sanPham", cascade = CascadeType.ALL)
+    private Warehouse kho;
+
+    @PrePersist
+protected void onCreate() {
+    this.ngayTao = LocalDateTime.now();
+}
 
 }

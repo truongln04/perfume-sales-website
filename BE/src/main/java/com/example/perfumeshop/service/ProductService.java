@@ -3,7 +3,11 @@ package com.example.perfumeshop.service;
 import com.example.perfumeshop.dto.ProductRequest;
 import com.example.perfumeshop.dto.ProductResponse;
 import com.example.perfumeshop.entity.Product;
+import com.example.perfumeshop.entity.Warehouse;
 import com.example.perfumeshop.repository.ProductRepository;
+import com.example.perfumeshop.repository.WarehouseRepository;
+import com.example.perfumeshop.repository.CategoryRepository;
+import com.example.perfumeshop.repository.BrandRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
@@ -15,42 +19,95 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductService {
 
-    private final ProductRepository repo;
+    private final ProductRepository productRepository;
+    private final WarehouseRepository warehouseRepository;
+    private final CategoryRepository categoryRepository;
+    private final BrandRepository brandRepository;
 
     public List<ProductResponse> getAll() {
-        return repo.findAll().stream().map(this::toResponse).collect(Collectors.toList());
+        return productRepository.findAll().stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
     }
 
-    public ProductResponse create(ProductRequest req) {
-        Product entity = toEntity(req);
-        return toResponse(repo.save(entity));
+    public ProductResponse create(ProductRequest request) {
+        Product product = toEntity(request);
+
+        // ✅ Gán danh mục và thương hiệu trước khi lưu
+        if (request.getIdDanhMuc() != null) {
+            product.setDanhMuc(categoryRepository.findById(request.getIdDanhMuc()).orElse(null));
+        }
+
+        if (request.getIdthuonghieu() != null) {
+            product.setThuonghieu(brandRepository.findById(request.getIdthuonghieu()).orElse(null));
+        }
+
+        Product savedProduct = productRepository.save(product);
+
+        // ✅ Tạo kho hàng ban đầu
+        Warehouse warehouse = new Warehouse();
+        warehouse.setSanPham(savedProduct);
+        warehouse.setSoLuongNhap(0);
+        warehouse.setSoLuongBan(0);
+        warehouseRepository.save(warehouse);
+
+        return toResponse(savedProduct);
     }
 
-    public ProductResponse update(Integer id, ProductRequest req) {
-        Product entity = repo.findById(id).orElseThrow();
-        BeanUtils.copyProperties(req, entity, "idSanPham", "ngayTao");
-        return toResponse(repo.save(entity));
+    public ProductResponse update(Integer id, ProductRequest request) {
+        Product product = productRepository.findById(id).orElseThrow();
+
+        BeanUtils.copyProperties(request, product, "idSanPham", "ngayTao");
+
+        // ✅ Cập nhật danh mục và thương hiệu nếu có
+        if (request.getIdDanhMuc() != null) {
+            product.setDanhMuc(categoryRepository.findById(request.getIdDanhMuc()).orElse(null));
+        }
+
+        if (request.getIdthuonghieu() != null) {
+            product.setThuonghieu(brandRepository.findById(request.getIdthuonghieu()).orElse(null));
+        }
+
+        return toResponse(productRepository.save(product));
     }
 
     public void delete(Integer id) {
-        repo.deleteById(id);
+        productRepository.deleteById(id);
     }
 
     public List<ProductResponse> search(String keyword) {
-        return repo.findByTenSanPhamContainingIgnoreCase(keyword).stream()
-            .map(this::toResponse).collect(Collectors.toList());
+        return productRepository.findByTenSanPhamContainingIgnoreCase(keyword).stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
     }
 
-    private Product toEntity(ProductRequest req) {
-        Product entity = new Product();
-        BeanUtils.copyProperties(req, entity);
-        return entity;
+    private Product toEntity(ProductRequest request) {
+        Product product = new Product();
+        BeanUtils.copyProperties(request, product);
+        return product;
     }
 
-    private ProductResponse toResponse(Product entity) {
-        ProductResponse res = new ProductResponse();
-        BeanUtils.copyProperties(entity, res);
-        res.setGiaSauKm(entity.getGiaSauKm());
-        return res;
+    private ProductResponse toResponse(Product product) {
+        ProductResponse response = new ProductResponse();
+        BeanUtils.copyProperties(product, response);
+
+        // ✅ Gán tên danh mục và thương hiệu
+        if (product.getDanhMuc() != null) {
+            response.setIdDanhMuc(product.getDanhMuc().getIdDanhMuc());
+            response.setTenDanhMuc(product.getDanhMuc().getTenDanhMuc());
+        }
+
+        if (product.getThuonghieu() != null) {
+            response.setIdthuonghieu(product.getThuonghieu().getIdthuonghieu());
+            response.setTenthuonghieu(product.getThuonghieu().getTenthuonghieu());
+        }
+
+        // ✅ Gán số lượng tồn từ kho
+        Warehouse warehouse = warehouseRepository.findBySanPham(product);
+        response.setSoLuongTon(warehouse != null
+            ? warehouse.getSoLuongNhap() - warehouse.getSoLuongBan()
+            : 0);
+
+        return response;
     }
 }

@@ -4,7 +4,9 @@ import {
   getProducts,
   searchProducts,
   deleteProduct,
-  saveProduct
+  saveProduct,
+  fetchDanhMucs,
+  fetchThuongHieus,
 } from "../../services/productService";
 
 export default function Products() {
@@ -13,6 +15,8 @@ export default function Products() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyProduct());
+  const [danhMucs, setDanhMucs] = useState([]);
+  const [thuongHieus, setThuongHieus] = useState([]);
 
   function emptyProduct() {
     return {
@@ -20,11 +24,10 @@ export default function Products() {
       moTa: "",
       hinhAnh: "",
       idDanhMuc: "",
-      idThuongHieu: "",
+      idthuonghieu: "",
       giaNhap: 0,
       giaBan: 0,
       kmPhanTram: 0,
-      soLuongTon: 0,
       trangThai: true,
     };
   }
@@ -38,8 +41,22 @@ export default function Products() {
     }
   };
 
+  const loadMeta = async () => {
+    try {
+      const [dmList, thList] = await Promise.all([
+        fetchDanhMucs(),
+        fetchThuongHieus(),
+      ]);
+      setDanhMucs(dmList);
+      setThuongHieus(thList);
+    } catch (err) {
+      console.error("Failed to fetch metadata", err);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
+    loadMeta();
   }, []);
 
   const handleSearch = async (value) => {
@@ -60,10 +77,10 @@ export default function Products() {
     const q = search.trim().toLowerCase();
     if (!q) return products;
     return products.filter(
-      p =>
+      (p) =>
         p.tenSanPham?.toLowerCase().includes(q) ||
         p.idDanhMuc?.toString().includes(q) ||
-        p.idThuongHieu?.toString().includes(q)
+        p.idthuonghieu?.toString().includes(q)
     );
   }, [products, search]);
 
@@ -91,8 +108,8 @@ export default function Products() {
   };
 
   const onSave = async () => {
-    if (!form.tenSanPham.trim()) {
-      alert("Vui lòng nhập Tên sản phẩm");
+    if (!form.tenSanPham.trim() || !form.idthuonghieu || !form.idDanhMuc ) {
+      alert("Vui lòng nhập Tên sản phẩm và chọn Thương hiệu và Danh mục");
       return;
     }
 
@@ -101,16 +118,16 @@ export default function Products() {
       moTa: form.moTa.trim(),
       hinhAnh: form.hinhAnh.trim(),
       idDanhMuc: Number(form.idDanhMuc),
-      idThuongHieu: Number(form.idThuongHieu),
+      idthuonghieu: Number(form.idthuonghieu),
       giaNhap: Number(form.giaNhap),
       giaBan: Number(form.giaBan),
       kmPhanTram: Number(form.kmPhanTram),
-      soLuongTon: Number(form.soLuongTon),
-      trangThai: form.soLuongTon > 0,
+      trangThai: form.trangThai,
     };
 
     try {
       await saveProduct(payload, editing?.idSanPham);
+      alert(editing ? "✅ Sửa sản phẩm thành công!" : "✅ Thêm sản phẩm thành công!");
       setShowModal(false);
       setEditing(null);
       fetchProducts();
@@ -121,13 +138,19 @@ export default function Products() {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    const numericFields = ["giaBan", "giaNhap", "kmPhanTram", "soLuongTon", "idDanhMuc", "idThuongHieu"];
+    const numericFields = [
+      "giaBan",
+      "giaNhap",
+      "kmPhanTram",
+      "idDanhMuc",
+      "idthuonghieu",
+    ];
     const newValue = numericFields.includes(name) ? Number(value) : value;
 
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       [name]: newValue,
-      trangThai: prev.soLuongTon > 0,
+      trangThai: prev.trangThai,
     }));
   };
 
@@ -146,6 +169,8 @@ export default function Products() {
       onSave={onSave}
       editing={editing}
       handleChange={handleChange}
+      danhMucs={danhMucs}
+      thuongHieus={thuongHieus}
     />
   );
 }

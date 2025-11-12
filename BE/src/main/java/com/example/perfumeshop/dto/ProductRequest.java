@@ -13,10 +13,8 @@ public class ProductRequest {
     private String moTa;
     private String hinhAnh;
     private Integer idDanhMuc;
-    private Integer idThuongHieu;
-    private BigDecimal giaNhap;
+    private Integer idthuonghieu;
     private BigDecimal giaBan;
     private BigDecimal kmPhanTram;
-    private Integer soLuongTon;
     private Boolean trangThai;
 }

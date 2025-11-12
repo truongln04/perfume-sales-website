@@ -15,11 +15,12 @@ public class ProductResponse {
     private String moTa;
     private String hinhAnh;
     private Integer idDanhMuc;
-    private Integer idThuongHieu;
+    private String tenDanhMuc;       
+    private Integer idthuonghieu;
+    private String tenthuonghieu;
     private BigDecimal giaNhap;
     private BigDecimal giaBan;
     private BigDecimal kmPhanTram;
-    private BigDecimal giaSauKm;
     private Integer soLuongTon;
     private Boolean trangThai;
     private LocalDateTime ngayTao;
