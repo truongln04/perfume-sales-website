@@ -357,26 +357,39 @@ export default function Accounts() {
                 />
               </div>
                 <div className="col-md-6">
-                  <label className="form-label">Mật khẩu</label>
-                   {editing ? (
-                  <input
-                    type="text"
-                    name="matKhau"
-                    className="form-control"
-                    value={form.matKhau}
-                    readOnly
-                  />
-                  ) : (
-        <input
-          type="password"
-          name="matKhau"
-          className="form-control"
-          value={form.matKhau}
-          onChange={handleChange}
-          placeholder="Nhập mật khẩu"
-        />
-      )}
-                </div>
+  <label className="form-label">Mật khẩu</label>
+  {editing ? (
+    // Khi đang sửa
+    (form.vaiTro === 'ADMIN' || form.vaiTro === 'NHANVIEN') ? (
+      <input
+        type="password"
+        name="matKhau"
+        className="form-control"
+        value={form.matKhau}
+        onChange={handleChange}
+        placeholder="Nhập mật khẩu mới"
+      />
+    ) : (
+      <input
+        type="text"
+        name="matKhau"
+        className="form-control"
+        value={form.matKhau}
+        readOnly
+      />
+    )
+  ) : (
+    // Khi thêm mới
+    <input
+      type="password"
+      name="matKhau"
+      className="form-control"
+      value={form.matKhau}
+      onChange={handleChange}
+      placeholder="Nhập mật khẩu"
+    />
+  )}
+</div>
             </div>
           </div>
 

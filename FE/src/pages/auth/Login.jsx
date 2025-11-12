@@ -81,7 +81,7 @@ export default function Login({ onLogin }) {
 
     // ✅ Thông báo và điều hướng
     alert("Đăng nhập Google thành công!");
-    navigate("/");
+    navigate("/Login");
 
     // ✅ Kích hoạt sự kiện để component khác reload
     window.dispatchEvent(new Event("account-updated"));

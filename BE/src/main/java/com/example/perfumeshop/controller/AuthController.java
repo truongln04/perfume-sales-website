@@ -6,7 +6,6 @@ import com.example.perfumeshop.dto.GoogleLoginRequest;
 import com.example.perfumeshop.dto.LoginRequest;
 import com.example.perfumeshop.service.AccountService;
 import com.example.perfumeshop.service.GoogleAuthService;
-
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -52,12 +51,12 @@ public class AuthController {
         return service.createAccount(request);
     } 
 
-    @PostMapping("/forgotpassword")
-    public ResponseEntity<String> forgotPassword(@RequestParam String email, @RequestParam String newPassword) {
-        // Gợi ý: bạn có thể thêm logic gửi email hoặc reset mật khẩu tại đây
-        boolean success = service.sendPasswordReset(email, newPassword);
-        return success
-            ? ResponseEntity.ok("Mật khẩu đã được cập nhật.")
-            : ResponseEntity.badRequest().body("Email không tồn tại.");
-    }
+    @PostMapping("/reset-password")
+public ResponseEntity<String> resetPassword(@RequestParam String email) {
+    boolean sent = service.resetPasswordByEmail(email);
+    return sent
+            ? ResponseEntity.ok("✅ Mật khẩu mới đã được gửi đến email của bạn.")
+            : ResponseEntity.badRequest().body("❌ Không tìm thấy tài khoản với email này.");
+}
+
 }

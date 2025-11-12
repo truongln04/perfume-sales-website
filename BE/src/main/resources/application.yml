@@ -5,14 +5,17 @@ server:
 spring:
   application:
     name: Backend
+
   datasource:
     url: jdbc:mysql://localhost:3306/perfumeshop?createDatabaseIfNotExist=true
     username: root
     password: root
+
   jpa:
     hibernate:
-      ddl-auto: update 
+      ddl-auto: update
     show-sql: true
+
   security:
     oauth2:
       client:
@@ -43,8 +46,18 @@ spring:
             token-uri: https://graph.facebook.com/v17.0/oauth/access_token
             user-info-uri: https://graph.facebook.com/v17.0/me?fields=id,first_name,last_name,name,email
             user-name-attribute: email
-    
 
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: trandohai2004@gmail.com
+    password: ugoejvuu epnqmzvn  
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
 
 logging:
   level:
@@ -52,4 +65,3 @@ logging:
 
 jwt:
   secret: VGhpcyBpcyBhIHZlcnkgc2VjdXJlIHNlY3JldCBrZXkgZm9yIEpXVFQ=
- # 1 hour in milliseconds

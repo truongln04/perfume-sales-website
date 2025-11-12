@@ -6,20 +6,21 @@ import com.example.perfumeshop.dto.AccountResponse;
 import com.example.perfumeshop.entity.Account;
 import com.example.perfumeshop.repository.AccountRepository;
 import lombok.RequiredArgsConstructor;
-
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Service
 @RequiredArgsConstructor
 public class AccountService {
-     private final AccountRepository repository;
-     private final JwtUtil jwtUtil;
-     private final PasswordEncoder passwordEncoder;
+
+    private final AccountRepository repository;
+    private final JwtUtil jwtUtil;
+    private final PasswordEncoder passwordEncoder;
+    private final MailService mailService;
+
 
     public AccountResponse createAccount(AccountRequest request) {
         Account account = Account.builder()
@@ -39,8 +40,10 @@ public class AccountService {
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
         account.setTenHienThi(request.getTenHienThi());
         account.setSdt(request.getSdt());
+        account.setEmail(request.getEmail());
         account.setGoogleId(request.getGoogleId());
         account.setAnhDaiDien(request.getAnhDaiDien());
+        account.setMatKhau(passwordEncoder.encode(request.getMatKhau()));
         account.setVaiTro(request.getVaiTro());
         return toResponse(repository.save(account));
     }
@@ -73,28 +76,22 @@ public class AccountService {
         if (!passwordEncoder.matches(password, account.getMatKhau())) {
             throw new RuntimeException("Sai mật khẩu");
         }
-    // ✅ Sinh JWT token
-    String token = jwtUtil.generateToken(account);
-    System.out.println("🔐 JWT Token: " + token);
-
-    // ✅ Trả về thông tin người dùng kèm token
-    AccountResponse response = toResponse(account);
-    response.setToken(token);
-    return response;
+        String token = jwtUtil.generateToken(account);
+        System.out.println("JWT Token: " + token); // ✅ Trả về thông tin người dùng kèm token
+        AccountResponse response = toResponse(account);
+        response.setToken(token);
+        return response;
     }
 
     public AccountResponse createOrUpdateGoogleAccount(AccountRequest request) {
         Optional<Account> existingOpt = repository.findByEmail(request.getEmail());
         Account account;
-
         if (existingOpt.isPresent()) {
-            // Nếu đã tồn tại → cập nhật thông tin
             account = existingOpt.get();
             account.setAnhDaiDien(request.getAnhDaiDien());
             account.setGoogleId(request.getGoogleId());
             account.setTenHienThi(request.getTenHienThi());
         } else {
-            // Nếu chưa có → tạo mới tài khoản khách hàng
             account = Account.builder()
                     .email(request.getEmail())
                     .tenHienThi(request.getTenHienThi())
@@ -104,23 +101,91 @@ public class AccountService {
                     .vaiTro(Account.VaiTro.KHACHHANG)
                     .build();
         }
-
         Account saved = repository.save(account);
         return toResponse(saved);
     }
 
-    public boolean sendPasswordReset(String email, String newPassword) {
+    // ================= Reset Password =================
+    public boolean resetPasswordByEmail(String email) {
     Optional<Account> accountOpt = repository.findByEmail(email);
-    if (accountOpt.isPresent()) {
-        Account account = accountOpt.get();
-        // Mã hóa mật khẩu mới trước khi lưu
-        account.setMatKhau(passwordEncoder.encode(newPassword));
-        repository.save(account);
-        return true;
-    }
-    return false;
+    if (accountOpt.isEmpty()) {
+        System.err.println("⚠️ Không tìm thấy tài khoản với email: " + email);
+        return false;
     }
 
+    Account account = accountOpt.get();
+
+    try {
+        // ✅ Tạo mật khẩu mạnh ngẫu nhiên (10 ký tự)
+        String newPassword = generateRandomPassword(10);
+
+        // ✅ Mã hóa và lưu vào DB
+        account.setMatKhau(passwordEncoder.encode(newPassword));
+        repository.save(account);
+
+        // ✅ Soạn nội dung email
+        String subject = "🔐 Mật khẩu mới của bạn - PerfumeShop";
+        String body = String.format(
+                "Xin chào %s,\n\n" +
+                "Hệ thống đã đặt lại mật khẩu cho bạn.\n\n" +
+                "🔑 Mật khẩu mới của bạn là: %s\n\n" +
+                "👉 Vui lòng đăng nhập và đổi lại mật khẩu ngay sau khi vào hệ thống.\n\n" +
+                "Trân trọng,\nĐội ngũ hỗ trợ PerfumeShop",
+                account.getTenHienThi(), newPassword
+        );
+
+        // ✅ Gửi email thông báo
+        mailService.sendSimpleEmail(email, subject, body);
+        System.out.println("✅ Đã gửi mật khẩu mới tới email: " + email);
+        return true;
+
+    } catch (Exception e) {
+        System.err.println("❌ Lỗi khi gửi mật khẩu mới tới email " + email + ": " + e.getMessage());
+        e.printStackTrace();
+        return false;
+    }
+}
+
+// ================= Utility =================
+private String generateRandomPassword(int length) {
+    if (length < 8) {
+        throw new IllegalArgumentException("Mật khẩu phải có ít nhất 8 ký tự");
+    }
+
+    String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+    String lower = "abcdefghijklmnopqrstuvwxyz";
+    String digits = "0123456789";
+    String special = "!@#$%^&*()-_=+[]{}|;:,.<>?";
+    String allChars = upper + lower + digits + special;
+
+    StringBuilder password = new StringBuilder();
+    Random random = new Random();
+
+    // Đảm bảo có ít nhất 1 ký tự của mỗi loại
+    password.append(upper.charAt(random.nextInt(upper.length())));
+    password.append(lower.charAt(random.nextInt(lower.length())));
+    password.append(digits.charAt(random.nextInt(digits.length())));
+    password.append(special.charAt(random.nextInt(special.length())));
+
+    // Thêm các ký tự ngẫu nhiên còn lại
+    for (int i = 4; i < length; i++) {
+        password.append(allChars.charAt(random.nextInt(allChars.length())));
+    }
+
+    // Trộn ngẫu nhiên thứ tự ký tự trong mật khẩu
+    List<Character> passwordChars = password.chars()
+            .mapToObj(c -> (char) c)
+            .collect(Collectors.toList());
+    Collections.shuffle(passwordChars);
+
+    StringBuilder finalPassword = new StringBuilder();
+    for (char c : passwordChars) {
+        finalPassword.append(c);
+    }
+
+    return finalPassword.toString();
+}
+    
 
     private AccountResponse toResponse(Account account) {
         return AccountResponse.builder()
@@ -132,7 +197,7 @@ public class AccountService {
                 .anhDaiDien(account.getAnhDaiDien())
                 .matKhau(account.getMatKhau())
                 .vaiTro(account.getVaiTro())
+                .token(null) // Token chỉ sinh khi login
                 .build();
     }
-    
 }
