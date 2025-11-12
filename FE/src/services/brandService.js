@@ -1,27 +1,15 @@
+// src/services/brandService.js
+import { apiGet, apiPost, apiPut, apiDelete } from "./apiClient";
 
-const API_URL = "http://localhost:8081/brands";
+export const getBrands = () => apiGet("/brands");
 
-export const getBrands = async () => {
-  const res = await fetch(API_URL);
-  return res.json();
-};
+export const searchBrands = (name) =>
+  apiGet(`/brands/search/name?name=${encodeURIComponent(name)}`);
 
-export const searchBrands = async (name) => {
-  const res = await fetch(`${API_URL}/search/name?name=${encodeURIComponent(name)}`);
-  return res.json();
-};
+export const deleteBrand = (id) => apiDelete(`/brands/${id}`);
 
-export const deleteBrand = async (id) => {
-  return fetch(`${API_URL}/${id}`, { method: "DELETE" });
-};
-
-export const saveBrand = async (brand, editingId) => {
-  const url = editingId ? `${API_URL}/${editingId}` : API_URL;
-  const method = editingId ? "PUT" : "POST";
-
-  return fetch(url, {
-    method,
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(brand),
-  });
+export const saveBrand = (brand, editingId) => {
+  return editingId
+    ? apiPut(`/brands/${editingId}`, brand)
+    : apiPost("/brands", brand);
 };

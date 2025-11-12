@@ -25,6 +25,4 @@ public class Warehouse {
     @Column(name = "so_luong_ban")
     private Integer soLuongBan;
 
-    @Column(name = "ton_hien_tai")
-    private Integer tonHienTai;
 }
