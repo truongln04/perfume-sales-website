@@ -8,6 +8,9 @@ import com.example.perfumeshop.service.AccountService;
 import com.example.perfumeshop.service.GoogleAuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+
+import java.util.Map;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -51,12 +54,25 @@ public class AuthController {
         return service.createAccount(request);
     } 
 
-    @PostMapping("/reset-password")
-public ResponseEntity<String> resetPassword(@RequestParam String email) {
-    boolean sent = service.resetPasswordByEmail(email);
-    return sent
-            ? ResponseEntity.ok("✅ Mật khẩu mới đã được gửi đến email của bạn.")
-            : ResponseEntity.badRequest().body("❌ Không tìm thấy tài khoản với email này.");
-}
+    // Gửi mã reset
+    @PostMapping("/send-reset-code")
+    public ResponseEntity<String> sendResetCode(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        boolean sent = service.sendVerificationCode(email);
+        return sent ? ResponseEntity.ok("Mã xác thực đã được gửi đến email.")
+                    : ResponseEntity.badRequest().body("Email không tồn tại.");
+    }
+
+    // Reset password
+    @PostMapping("/confirm-reset")
+    public ResponseEntity<String> confirmResetPassword(@RequestBody Map<String, String> payload) {
+        String email = payload.get("email");
+        String code = payload.get("code");
+        String newPassword = payload.get("newPassword");
+
+        boolean success = service.verifyCodeAndResetPassword(email, code, newPassword);
+        return success ? ResponseEntity.ok("Mật khẩu đã được đặt lại thành công.")
+                       : ResponseEntity.badRequest().body("Mã xác thực không hợp lệ hoặc đã hết hạn.");
+    }
 
 }

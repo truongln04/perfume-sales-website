@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 @Service
@@ -20,7 +21,7 @@ public class AccountService {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
-
+    private final Map<String, String> resetCodes = new ConcurrentHashMap<>();
 
     public AccountResponse createAccount(AccountRequest request) {
         Account account = Account.builder()
@@ -106,85 +107,48 @@ public class AccountService {
     }
 
     // ================= Reset Password =================
-    public boolean resetPasswordByEmail(String email) {
-    Optional<Account> accountOpt = repository.findByEmail(email);
-    if (accountOpt.isEmpty()) {
-        System.err.println("⚠️ Không tìm thấy tài khoản với email: " + email);
+    public boolean sendVerificationCode(String email) {
+        Optional<Account> accountOpt = repository.findByEmail(email);
+        if (accountOpt.isEmpty()) return false;
+
+        String code = generateCode();
+        resetCodes.put(email, code);
+
+        try {
+            mailService.sendSimpleEmail(
+                email,
+                "Mã xác thực đặt lại mật khẩu",
+                "Xin chào " + accountOpt.get().getTenHienThi() + ",\n\n" +
+                "Mã xác thực của bạn là: " + code + "\n\n" +
+                "Vui lòng không chia sẻ mã này với người khác."
+            );
+            return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    // Xác thực code và reset password
+    public boolean verifyCodeAndResetPassword(String email, String code, String newPassword) {
+        String validCode = resetCodes.get(email);
+        if (validCode != null && validCode.equals(code)) {
+            Account account = repository.findByEmail(email)
+                    .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
+            account.setMatKhau(passwordEncoder.encode(newPassword));
+            repository.save(account);
+            resetCodes.remove(email);
+            return true;
+        }
         return false;
     }
 
-    Account account = accountOpt.get();
-
-    try {
-        // ✅ Tạo mật khẩu mạnh ngẫu nhiên (10 ký tự)
-        String newPassword = generateRandomPassword(10);
-
-        // ✅ Mã hóa và lưu vào DB
-        account.setMatKhau(passwordEncoder.encode(newPassword));
-        repository.save(account);
-
-        // ✅ Soạn nội dung email
-        String subject = "🔐 Mật khẩu mới của bạn - PerfumeShop";
-        String body = String.format(
-                "Xin chào %s,\n\n" +
-                "Hệ thống đã đặt lại mật khẩu cho bạn.\n\n" +
-                "🔑 Mật khẩu mới của bạn là: %s\n\n" +
-                "👉 Vui lòng đăng nhập và đổi lại mật khẩu ngay sau khi vào hệ thống.\n\n" +
-                "Trân trọng,\nĐội ngũ hỗ trợ PerfumeShop",
-                account.getTenHienThi(), newPassword
-        );
-
-        // ✅ Gửi email thông báo
-        mailService.sendSimpleEmail(email, subject, body);
-        System.out.println("✅ Đã gửi mật khẩu mới tới email: " + email);
-        return true;
-
-    } catch (Exception e) {
-        System.err.println("❌ Lỗi khi gửi mật khẩu mới tới email " + email + ": " + e.getMessage());
-        e.printStackTrace();
-        return false;
+    // ================= Utility =================
+    private String generateCode() {
+        Random random = new Random();
+        int code = 100000 + random.nextInt(900000); // Tạo mã 6 chữ số
+        return String.valueOf(code);
     }
-}
-
-// ================= Utility =================
-private String generateRandomPassword(int length) {
-    if (length < 8) {
-        throw new IllegalArgumentException("Mật khẩu phải có ít nhất 8 ký tự");
-    }
-
-    String upper = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
-    String lower = "abcdefghijklmnopqrstuvwxyz";
-    String digits = "0123456789";
-    String special = "!@#$%^&*()-_=+[]{}|;:,.<>?";
-    String allChars = upper + lower + digits + special;
-
-    StringBuilder password = new StringBuilder();
-    Random random = new Random();
-
-    // Đảm bảo có ít nhất 1 ký tự của mỗi loại
-    password.append(upper.charAt(random.nextInt(upper.length())));
-    password.append(lower.charAt(random.nextInt(lower.length())));
-    password.append(digits.charAt(random.nextInt(digits.length())));
-    password.append(special.charAt(random.nextInt(special.length())));
-
-    // Thêm các ký tự ngẫu nhiên còn lại
-    for (int i = 4; i < length; i++) {
-        password.append(allChars.charAt(random.nextInt(allChars.length())));
-    }
-
-    // Trộn ngẫu nhiên thứ tự ký tự trong mật khẩu
-    List<Character> passwordChars = password.chars()
-            .mapToObj(c -> (char) c)
-            .collect(Collectors.toList());
-    Collections.shuffle(passwordChars);
-
-    StringBuilder finalPassword = new StringBuilder();
-    for (char c : passwordChars) {
-        finalPassword.append(c);
-    }
-
-    return finalPassword.toString();
-}
     
 
     private AccountResponse toResponse(Account account) {
