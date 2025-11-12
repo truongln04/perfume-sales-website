@@ -1,51 +1,105 @@
-import { useState } from "react";
+import { useEffect, useState, useMemo } from "react";
+
+function emptyOrder() {
+  return {
+    id: "",
+    customer: "",
+    date: "",
+    total: 0,
+    trangThai: "Chờ xác nhận",
+    details: [],
+  };
+}
 
 export default function Orders() {
-  const [orders, setOrders] = useState([
-    {
-      id: "DH001",
-      customer: "Nguyễn Văn A",
-      date: "2025-11-01",
-      total: 1200000,
-      status: "Chờ xác nhận",
-      details: [
-        {
-          product: "Nước hoa A",
-          quantity: 2,
-          price: 600000,
-          image: "https://via.placeholder.com/60x60?text=A",
-        },
-      ],
-    },
-    {
-      id: "DH002",
-      customer: "Trần Thị B",
-      date: "2025-11-02",
-      total: 2200000,
-      status: "Hoàn thành",
-      details: [
-        {
-          product: "Nước hoa B",
-          quantity: 1,
-          price: 2200000,
-          image: "https://via.placeholder.com/60x60?text=B",
-        },
-      ],
-    },
-  ]);
-
+  const [orders, setOrders] = useState([]);
+  const [search, setSearch] = useState("");
   const [selectedOrder, setSelectedOrder] = useState(null);
   const [showDetail, setShowDetail] = useState(false);
+  const [message, setMessage] = useState({ text: "", type: "" });
 
-  const handleStatusChange = (id, newStatus) => {
-    setOrders(prev =>
-      prev.map(o => (o.id === id ? { ...o, status: newStatus } : o))
-    );
+  const API_URL = "http://localhost:8081/orders";
+  const token = localStorage.getItem("token");
+
+  useEffect(() => {
+    fetchOrders();
+  }, []);
+
+  // 📋 Lấy danh sách đơn hàng
+  const fetchOrders = async () => {
+    try {
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      const data = await res.json();
+      setOrders(data);
+    } catch (err) {
+      console.error("Failed to fetch orders", err);
+      setMessage({ text: "❌ Không thể tải danh sách đơn hàng", type: "error" });
+    }
   };
 
-  const handleViewDetail = (order) => {
-    setSelectedOrder(order);
-    setShowDetail(true);
+  // 🔍 Search theo tên khách hàng hoặc số điện thoại
+  const handleSearch = async (value) => {
+    setSearch(value);
+    if (!value.trim()) {
+      fetchOrders();
+      return;
+    }
+    try {
+      const res = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(value)}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setOrders(data);
+      if (data.length === 0) {
+        setMessage({ text: "❌ Không tìm thấy đơn hàng", type: "error" });
+        setTimeout(() => setMessage({ text: "", type: "" }), 2000);
+      }
+    } catch (err) {
+      console.error("Search failed", err);
+      setMessage({ text: "❌ Lỗi khi tìm kiếm", type: "error" });
+      setTimeout(() => setMessage({ text: "", type: "" }), 2000);
+    }
+  };
+
+  const filtered = useMemo(() => {
+    return [...orders].sort((a, b) => a.id - b.id);
+  }, [orders]);
+
+  // ✏️ Cập nhật trạng thái
+  const handleStatusChange = async (id, newStatus) => {
+    try {
+      const res = await fetch(`${API_URL}/${id}/status?trangThai=${encodeURIComponent(newStatus)}`, {
+        method: "PUT",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      setOrders((prev) => prev.map((o) => (o.id === id ? { ...o, trangThai: newStatus } : o)));
+      setMessage({ text: "✅ Cập nhật trạng thái thành công!", type: "success" });
+      setTimeout(() => setMessage({ text: "", type: "" }), 2000);
+    } catch (err) {
+      console.error(err);
+      setMessage({ text: "❌ " + err.message, type: "error" });
+    }
+  };
+
+  // 🔍 Xem chi tiết
+  const handleViewDetail = async (id) => {
+    try {
+      const res = await fetch(`${API_URL}/${id}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      setSelectedOrder(data);
+      setShowDetail(true);
+    } catch (err) {
+      console.error(err);
+      setMessage({ text: "❌ Không thể tải chi tiết đơn hàng", type: "error" });
+    }
   };
 
   const handleCloseDetail = () => {
@@ -57,8 +111,20 @@ export default function Orders() {
     <div className="card">
       <div className="card-header d-flex justify-content-between align-items-center">
         <h5 className="m-0">Quản lý Đơn hàng</h5>
-       
+        <input
+          type="text"
+          className="form-control form-control-sm w-25"
+          placeholder="Tìm theo khách hàng hoặc SDT..."
+          value={search}
+          onChange={(e) => handleSearch(e.target.value)}
+        />
       </div>
+
+      {message.text && (
+        <div className={`alert ${message.type === "error" ? "alert-danger" : "alert-success"} m-2`}>
+          {message.text}
+        </div>
+      )}
 
       <div className="card-body p-0">
         <table className="table table-hover table-striped m-0">
@@ -73,7 +139,7 @@ export default function Orders() {
             </tr>
           </thead>
           <tbody>
-            {orders.map(o => (
+            {filtered.map((o) => (
               <tr key={o.id}>
                 <td>{o.id}</td>
                 <td>{o.customer}</td>
@@ -81,16 +147,15 @@ export default function Orders() {
                 <td>{o.total.toLocaleString("vi-VN")} đ</td>
                 <td>
                   <select
-                    className={
-                      "form-select form-select-sm " +
-                      (o.status === "Hoàn thành"
+                    className={`form-select form-select-sm ${
+                      o.trangThai === "Hoàn thành"
                         ? "border-success text-success"
-                        : o.status === "Hủy"
+                        : o.trangThai === "Hủy"
                         ? "border-danger text-danger"
-                        : "")
-                    }
-                    value={o.status}
-                    onChange={e => handleStatusChange(o.id, e.target.value)}
+                        : ""
+                    }`}
+                    value={o.trangThai}
+                    onChange={(e) => handleStatusChange(o.id, e.target.value)}
                   >
                     <option>Chờ xác nhận</option>
                     <option>Đã xác nhận</option>
@@ -102,16 +167,10 @@ export default function Orders() {
                   </select>
                 </td>
                 <td className="d-flex gap-2">
-                  <button
-                    className="btn btn-sm btn-outline-primary"
-                    onClick={() => handleViewDetail(o)}
-                  >
+                  <button className="btn btn-sm btn-outline-primary" onClick={() => handleViewDetail(o.id)}>
                     Chi tiết
                   </button>
-                  <button
-                    className="btn btn-sm btn-outline-danger"
-                    onClick={() => handleStatusChange(o.id, "Hủy")}
-                  >
+                  <button className="btn btn-sm btn-outline-danger" onClick={() => handleStatusChange(o.id, "Hủy")}>
                     Hủy
                   </button>
                 </td>
@@ -121,7 +180,6 @@ export default function Orders() {
         </table>
       </div>
 
-      {/* Modal chi tiết đơn hàng */}
       {showDetail && selectedOrder && (
         <div className="modal d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,.5)" }}>
           <div className="modal-dialog modal-lg">
@@ -134,7 +192,7 @@ export default function Orders() {
                 <p><strong>Khách hàng:</strong> {selectedOrder.customer}</p>
                 <p><strong>Ngày đặt:</strong> {selectedOrder.date}</p>
                 <p><strong>Tổng tiền:</strong> {selectedOrder.total.toLocaleString("vi-VN")} đ</p>
-                <p><strong>Trạng thái:</strong> {selectedOrder.status}</p>
+                <p><strong>Trạng thái:</strong> {selectedOrder.trangThai}</p>
                 <hr />
                 <h6>Sản phẩm:</h6>
                 <table className="table table-bordered">
@@ -150,12 +208,12 @@ export default function Orders() {
                   <tbody>
                     {selectedOrder.details.map((d, i) => (
                       <tr key={i}>
-                        <td>{d.product}</td>
+                        <td>{d.tenSanPham}</td>
                         <td>
                           {d.image ? (
                             <img
                               src={d.image}
-                              alt={d.product}
+                              alt={d.tenSanPham}
                               width={60}
                               height={60}
                               style={{ objectFit: "cover", borderRadius: 4 }}
@@ -164,9 +222,9 @@ export default function Orders() {
                             <span className="text-muted">Không có ảnh</span>
                           )}
                         </td>
-                        <td>{d.quantity}</td>
-                        <td>{d.price.toLocaleString("vi-VN")} đ</td>
-                        <td>{(d.quantity * d.price).toLocaleString("vi-VN")} đ</td>
+                        <td>{d.soLuong}</td>
+                        <td>{d.donGia.toLocaleString("vi-VN")} đ</td>
+                        <td>{d.thanhTien.toLocaleString("vi-VN")} đ</td>
                       </tr>
                     ))}
                   </tbody>

@@ -1,0 +1,95 @@
+package com.example.perfumeshop.entity;
+
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import jakarta.persistence.*;
+import lombok.*;
+
+@Entity
+@Table(name = "don_hang")
+@Data
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class Orders {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "id_don_hang")
+    private Integer id;
+
+    @ManyToOne
+    @JoinColumn(
+        name = "id_tai_khoan", 
+        referencedColumnName = "id_tai_khoan",
+        foreignKey = @ForeignKey(name = "fk_donhang_taikhoan")
+    )
+    private Account taiKhoan;
+
+    @Column(name = "ngay_dat", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
+    private LocalDateTime ngayDat;
+
+    @Column(name = "tong_tien", precision = 14, scale = 0)
+    private BigDecimal tongTien;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "phuong_thuc_tt", length = 10)
+    private PaymentMethod phuongThucTT = PaymentMethod.COD;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trang_thai_tt", length = 20)
+    private PaymentStatus trangThaiTT = PaymentStatus.CHUA_THANH_TOAN;
+
+    @Builder.Default
+    @Enumerated(EnumType.STRING)
+    @Column(name = "trang_thai", length = 20)
+    private OrderStatus trangThai = OrderStatus.CHO_XAC_NHAN;
+
+    @Column(name = "ho_ten_nhan", length = 100)
+    private String hoTenNhan;
+
+    @Column(name = "sdt_nhan", length = 15)
+    private String sdtNhan;
+
+    @Column(name = "dia_chi_giao", length = 255)
+    private String diaChiGiao;
+
+    @Column(name = "ghi_chu", columnDefinition = "TEXT")
+    private String ghiChu;
+
+    @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<OrdersDetail> chiTietDonHang;
+
+    // 🧾 Enum nội bộ
+    public enum PaymentMethod {
+        COD, ONLINE
+    }
+
+    public enum PaymentStatus {
+        CHUA_THANH_TOAN("Chưa thanh toán"),
+        DA_THANH_TOAN("Đã thanh toán"),
+        HOAN_TIEN("Hoàn tiền");
+
+        private final String value;
+        PaymentStatus(String value) { this.value = value; }
+        public String getValue() { return value; }
+    }
+
+    public enum OrderStatus {
+        CHO_XAC_NHAN("Chờ xác nhận"),
+        DA_XAC_NHAN("Đã xác nhận"),
+        DANG_GIAO("Đang giao"),
+        GIAO_THAT_BAI("Giao thất bại"),
+        HOAN_THANH("Hoàn thành"),
+        TRA_HANG("Trả hàng"),
+        HUY("Hủy");
+
+        private final String value;
+        OrderStatus(String value) { this.value = value; }
+        public String getValue() { return value; }
+    }
+}

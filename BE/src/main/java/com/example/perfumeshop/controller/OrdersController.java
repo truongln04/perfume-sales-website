@@ -1,0 +1,59 @@
+package com.example.perfumeshop.controller;
+
+import com.example.perfumeshop.dto.*;
+import com.example.perfumeshop.entity.Orders;
+import com.example.perfumeshop.service.OrdersService;
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/orders")
+@RequiredArgsConstructor
+public class OrdersController {
+
+    private final OrdersService service;
+
+    // 🧾 Tạo đơn hàng mới (bao gồm chi tiết đơn hàng)
+    @PostMapping
+    public OrdersResponse createOrder(
+            @Valid @RequestBody OrdersRequest request,
+            @RequestParam(required = false) List<OrdersDetailRequest> chiTietDonHang
+    ) {
+        return service.create(request, chiTietDonHang);
+    }
+
+    // 📋 Xem danh sách đơn hàng
+    @GetMapping
+    public List<OrdersResponse> getAllOrders() {
+        return service.getAll();
+    }
+
+    // 🔍 Xem chi tiết đơn hàng theo ID
+    @GetMapping("/{id}")
+    public OrdersResponse getOrderById(@PathVariable Integer id) {
+        return service.getById(id);
+    }
+
+    // 🔍 Tìm kiếm đơn hàng theo tên người nhận hoặc số điện thoại
+    @GetMapping("/search")
+    public List<OrdersResponse> searchOrders(@RequestParam(required = false) String hoTenNhan,
+                                             @RequestParam(required = false) String sdtNhan) {
+        return service.searchOrders(hoTenNhan, sdtNhan);
+    }
+
+    // ✏️ Cập nhật trạng thái đơn hàng
+    @PutMapping("/{id}/status")
+    public OrdersResponse updateOrderStatus(@PathVariable Integer id,
+                                            @RequestParam Orders.OrderStatus trangThai) {
+        return service.updateStatus(id, trangThai);
+    }
+
+    // 🗑️ Xóa đơn hàng
+    @DeleteMapping("/{id}")
+    public void deleteOrder(@PathVariable Integer id) {
+        service.deleteOrder(id);
+    }
+}
