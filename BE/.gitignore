@@ -31,3 +31,8 @@ build/
 
 ### VS Code ###
 .vscode/
+
+# Ignore environment files (để bảo mật thông tin nhạy cảm)
+.env
+.env.local
+.env.*
