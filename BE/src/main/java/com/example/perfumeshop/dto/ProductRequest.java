@@ -17,4 +17,11 @@ public class ProductRequest {
     private BigDecimal giaBan;
     private BigDecimal kmPhanTram;
     private Boolean trangThai;
+   
+    @Builder.Default
+    private BigDecimal giaNhap = BigDecimal.ZERO;
+
+    @Builder.Default
+    private Integer soLuongTon = 0;
+
 }

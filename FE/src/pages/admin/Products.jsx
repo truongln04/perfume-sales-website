@@ -18,26 +18,28 @@ export default function Products() {
   const [danhMucs, setDanhMucs] = useState([]);
   const [thuongHieus, setThuongHieus] = useState([]);
 
-  function emptyProduct() {
-    return {
-      tenSanPham: "",
-      moTa: "",
-      hinhAnh: "",
-      idDanhMuc: "",
-      idthuonghieu: "",
-      giaNhap: 0,
-      giaBan: 0,
-      kmPhanTram: 0,
-      trangThai: true,
-    };
-  }
+function emptyProduct() {
+  return {
+    tenSanPham: "",
+    moTa: "",
+    hinhAnh: "",
+    idDanhMuc: "",
+    idthuonghieu: "",
+    giaBan: "",
+    kmPhanTram: "",
+    trangThai: false,
+    giaNhap: 0,         // 👈 Thêm dòng này
+    soLuongTon: 0       // 👈 Và dòng này
+  };
+}
+
 
   const fetchProducts = async () => {
     try {
       const data = await getProducts();
       setProducts(data);
     } catch (err) {
-      console.error("Failed to fetch products", err);
+      console.error("❌ Failed to fetch products", err);
     }
   };
 
@@ -50,7 +52,7 @@ export default function Products() {
       setDanhMucs(dmList);
       setThuongHieus(thList);
     } catch (err) {
-      console.error("Failed to fetch metadata", err);
+      console.error("❌ Failed to fetch metadata", err);
     }
   };
 
@@ -69,7 +71,7 @@ export default function Products() {
       const data = await searchProducts(value);
       setProducts(data);
     } catch (err) {
-      console.error("Search failed", err);
+      console.error("❌ Search failed", err);
     }
   };
 
@@ -79,8 +81,8 @@ export default function Products() {
     return products.filter(
       (p) =>
         p.tenSanPham?.toLowerCase().includes(q) ||
-        p.idDanhMuc?.toString().includes(q) ||
-        p.idthuonghieu?.toString().includes(q)
+        p.tenDanhMuc?.toLowerCase().includes(q) ||
+        p.tenthuonghieu?.toLowerCase().includes(q)
     );
   }, [products, search]);
 
@@ -97,33 +99,47 @@ export default function Products() {
   };
 
   const onDelete = async (id) => {
-    if (window.confirm("Xóa sản phẩm này?")) {
+    if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
       try {
         await deleteProduct(id);
         fetchProducts();
       } catch (err) {
-        console.error("Delete failed", err);
+        console.error("❌ Delete failed", err);
       }
     }
   };
 
   const onSave = async () => {
-    if (!form.tenSanPham.trim() || !form.idthuonghieu || !form.idDanhMuc ) {
-      alert("Vui lòng nhập Tên sản phẩm và chọn Thương hiệu và Danh mục");
+    if (
+      !form.tenSanPham.trim() ||
+      form.idDanhMuc === "" ||
+      form.idthuonghieu === "" ||
+      !form.hinhAnh.trim()
+    ) {
+      alert("Vui lòng nhập đầy đủ Tên sản phẩm, Danh mục, Thương hiệu và Hình ảnh");
       return;
     }
 
     const payload = {
-      tenSanPham: form.tenSanPham.trim(),
-      moTa: form.moTa.trim(),
-      hinhAnh: form.hinhAnh.trim(),
-      idDanhMuc: Number(form.idDanhMuc),
-      idthuonghieu: Number(form.idthuonghieu),
-      giaNhap: Number(form.giaNhap),
-      giaBan: Number(form.giaBan),
-      kmPhanTram: Number(form.kmPhanTram),
-      trangThai: form.trangThai,
-    };
+  tenSanPham: form.tenSanPham.trim(),
+  moTa: form.moTa.trim(),
+  hinhAnh: form.hinhAnh.trim(),
+  idDanhMuc: Number(form.idDanhMuc),
+  idthuonghieu: Number(form.idthuonghieu),
+  giaBan: form.giaBan !== "" && form.giaBan != null ? Number(form.giaBan) : 0,
+  kmPhanTram: form.kmPhanTram !== "" && form.kmPhanTram != null ? Number(form.kmPhanTram) : 0,
+  trangThai: Boolean(form.trangThai),
+  giaNhap: form.giaNhap ?? 0,         // 👈 Luôn gửi
+  soLuongTon: form.soLuongTon ?? 0    // 👈 Luôn gửi
+};
+
+
+    if (editing) {
+      payload.giaNhap = form.giaNhap;
+      payload.soLuongTon = form.soLuongTon;
+    }
+
+    console.log("📦 Payload gửi lên:", payload);
 
     try {
       await saveProduct(payload, editing?.idSanPham);
@@ -132,25 +148,24 @@ export default function Products() {
       setEditing(null);
       fetchProducts();
     } catch (err) {
-      console.error("Save failed", err);
+      console.error("❌ Save failed", err.response?.data || err.message);
     }
   };
 
   const handleChange = (e) => {
-    const { name, value } = e.target;
-    const numericFields = [
-      "giaBan",
-      "giaNhap",
-      "kmPhanTram",
-      "idDanhMuc",
-      "idthuonghieu",
-    ];
-    const newValue = numericFields.includes(name) ? Number(value) : value;
+    const { name, value, type, checked } = e.target;
+    const numericFields = ["giaBan", "kmPhanTram"];
+
+    const newValue =
+      type === "checkbox"
+        ? checked
+        : numericFields.includes(name)
+        ? value === "" ? "" : Number(value)
+        : value;
 
     setForm((prev) => ({
       ...prev,
       [name]: newValue,
-      trangThai: prev.trangThai,
     }));
   };
 

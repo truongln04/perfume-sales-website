@@ -6,6 +6,8 @@ import lombok.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+
 @Entity
 @Table(name = "san_pham")
 @Data
@@ -58,7 +60,9 @@ public class Product {
     private LocalDateTime ngayTao;
 
     @OneToOne(mappedBy = "sanPham", cascade = CascadeType.ALL)
-    private Warehouse kho;
+@JsonIgnore
+private Warehouse kho;
+
 
     @PrePersist
 protected void onCreate() {

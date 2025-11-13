@@ -4,6 +4,8 @@ import com.example.perfumeshop.dto.ProductRequest;
 import com.example.perfumeshop.dto.ProductResponse;
 import com.example.perfumeshop.service.ProductService;
 import lombok.RequiredArgsConstructor;
+
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,10 +22,12 @@ public class ProductController {
         return service.getAll();
     }
 
-    @PostMapping
-    public ProductResponse create(@RequestBody ProductRequest req) {
-        return service.create(req);
-    }
+@PostMapping
+public ResponseEntity<ProductResponse> create(@RequestBody ProductRequest req) {
+    ProductResponse response = service.create(req);
+    return ResponseEntity.ok(response);
+}
+
 
     @PutMapping("/{id}")
     public ProductResponse update(@PathVariable Integer id, @RequestBody ProductRequest req) {

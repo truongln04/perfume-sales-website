@@ -16,13 +16,14 @@ public class Warehouse {
     private Integer idSanPham;
 
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "id_san_pham", insertable = false, updatable = false)
+    @MapsId
+    @JoinColumn(name = "id_san_pham")
     private Product sanPham;
 
     @Column(name = "so_luong_nhap")
-    private Integer soLuongNhap;
+    private Integer soLuongNhap = 0;
 
     @Column(name = "so_luong_ban")
-    private Integer soLuongBan;
-
+    private Integer soLuongBan = 0;
 }
+

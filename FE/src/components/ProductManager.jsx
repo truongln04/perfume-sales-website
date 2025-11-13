@@ -87,9 +87,14 @@ export default function ProductManager({
                       )}
                     </td>
 
-                    <td>{p.giaBan.toLocaleString("vi-VN")} đ</td>
-                    <td>{p.kmPhanTram}%</td>
-                    <td>{(p.giaBan * (1 - p.kmPhanTram / 100)).toLocaleString("vi-VN")} đ</td>
+                    <td>{p.giaBan != null ? p.giaBan.toLocaleString("vi-VN") + " đ" : "—"}</td>
+                    <td>{p.kmPhanTram != null ? p.kmPhanTram + "%" : "—"}</td>
+                      <td>
+                        {p.giaBan != null && p.kmPhanTram != null
+                          ? (p.giaBan * (1 - p.kmPhanTram / 100)).toLocaleString("vi-VN") + " đ"
+                          : "—"}
+                      </td>
+
                     <td>{p.soLuongTon}</td>
                     <td>
                       <span className={"badge " + (p.trangThai ? "bg-success" : "bg-secondary")}>
@@ -245,7 +250,7 @@ export default function ProductManager({
                       <label className="form-label">Giá sau KM</label>
                       <input
                         className="form-control"
-                        value={(form.giaBan * (1 - form.kmPhanTram / 100)).toLocaleString("vi-VN") + " đ"}
+                        value={(form.giaBan * (1 - form.kmPhanTram / 100)).toLocaleString("vi-VN")}
                         disabled
                       />
                     </div>
