@@ -1,16 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
 
-function emptyOrder() {
-  return {
-    id: "",
-    customer: "",
-    date: "",
-    total: 0,
-    trangThai: "Chờ xác nhận",
-    details: [],
-  };
-}
-
 export default function Orders() {
   const [orders, setOrders] = useState([]);
   const [search, setSearch] = useState("");
@@ -40,7 +29,7 @@ export default function Orders() {
     }
   };
 
-  // 🔍 Search theo tên khách hàng hoặc số điện thoại
+  // 🔍 Search theo tên người nhận hoặc số điện thoại
   const handleSearch = async (value) => {
     setSearch(value);
     if (!value.trim()) {
@@ -48,9 +37,15 @@ export default function Orders() {
       return;
     }
     try {
-      const res = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(value)}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // Nếu người dùng nhập toàn số → tìm theo SDT, ngược lại tìm theo họ tên
+    const isPhone = /^[0-9]+$/.test(value.trim());
+    const queryParam = isPhone
+      ? `sdtNhan=${encodeURIComponent(value)}`
+      : `hoTenNhan=${encodeURIComponent(value)}`;
+
+    const res = await fetch(`${API_URL}/search?${queryParam}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setOrders(data);
@@ -69,7 +64,7 @@ export default function Orders() {
     return [...orders].sort((a, b) => a.id - b.id);
   }, [orders]);
 
-  // ✏️ Cập nhật trạng thái
+  // ✏️ Cập nhật trạng thái đơn hàng
   const handleStatusChange = async (id, newStatus) => {
     try {
       const res = await fetch(`${API_URL}/${id}/status?trangThai=${encodeURIComponent(newStatus)}`, {
@@ -86,7 +81,28 @@ export default function Orders() {
     }
   };
 
-  // 🔍 Xem chi tiết
+  // 🧾 Cập nhật trạng thái thanh toán
+  const handlePaymentStatusChange = async (id, newStatus) => {
+    try {
+      const res = await fetch(
+        `${API_URL}/${id}/payment-status?trangThaiTT=${encodeURIComponent(newStatus)}`,
+        { method: "PUT", headers: { Authorization: `Bearer ${token}` } }
+      );
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+
+      setOrders((prev) => prev.map((o) =>
+        o.id === id ? { ...o, trangThaiTT: newStatus } : o
+      ));
+
+      setMessage({ text: "💰 Cập nhật trạng thái thanh toán thành công!", type: "success" });
+      setTimeout(() => setMessage({ text: "", type: "" }), 2000);
+    } catch (err) {
+      console.error(err);
+      setMessage({ text: "❌ " + err.message, type: "error" });
+    }
+  };
+
+  // 🔍 Xem chi tiết đơn hàng
   const handleViewDetail = async (id) => {
     try {
       const res = await fetch(`${API_URL}/${id}`, {
@@ -114,7 +130,7 @@ export default function Orders() {
         <input
           type="text"
           className="form-control form-control-sm w-25"
-          placeholder="Tìm theo khách hàng hoặc SDT..."
+          placeholder="Tìm theo tên hoặc SDT..."
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
         />
@@ -131,10 +147,14 @@ export default function Orders() {
           <thead className="table-light">
             <tr>
               <th>Mã ĐH</th>
-              <th>Khách hàng</th>
+              <th>Người nhận</th>
+              <th>SĐT</th>
               <th>Ngày đặt</th>
               <th>Tổng tiền</th>
+              <th>Phương thức TT</th>
+              <th>Trạng thái TT</th>
               <th>Trạng thái</th>
+              <th>Ghi chú</th>
               <th>Hành động</th>
             </tr>
           </thead>
@@ -142,35 +162,52 @@ export default function Orders() {
             {filtered.map((o) => (
               <tr key={o.id}>
                 <td>{o.id}</td>
-                <td>{o.customer}</td>
-                <td>{o.date}</td>
-                <td>{o.total.toLocaleString("vi-VN")} đ</td>
+                <td>{o.hoTenNhan}</td>
+                <td>{o.sdtNhan}</td>
+                <td>{new Date(o.ngayDat).toLocaleString("vi-VN")}</td>
+                <td>{o.tongTien?.toLocaleString("vi-VN")} đ</td>
+                <td>{o.phuongThucTT}</td>
                 <td>
                   <select
                     className={`form-select form-select-sm ${
-                      o.trangThai === "Hoàn thành"
+                      o.trangThaiTT === "DA_THANH_TOAN" ? "text-success border-success" :
+                      o.trangThaiTT === "HOAN_TIEN" ? "text-danger border-danger" : ""
+                    }`}
+                    value={o.trangThaiTT}
+                    onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
+                  >
+                    <option value="CHUA_THANH_TOAN">Chưa thanh toán</option>
+                    <option value="DA_THANH_TOAN">Đã thanh toán</option>
+                    <option value="HOAN_TIEN">Hoàn tiền</option>
+                  </select>
+                </td>
+                <td>
+                  <select
+                    className={`form-select form-select-sm ${
+                      o.trangThai === "HOAN_THANH"
                         ? "border-success text-success"
-                        : o.trangThai === "Hủy"
+                        : o.trangThai === "HUY"
                         ? "border-danger text-danger"
                         : ""
                     }`}
                     value={o.trangThai}
                     onChange={(e) => handleStatusChange(o.id, e.target.value)}
                   >
-                    <option>Chờ xác nhận</option>
-                    <option>Đã xác nhận</option>
-                    <option>Đang giao</option>
-                    <option>Giao thất bại</option>
-                    <option>Hoàn thành</option>
-                    <option>Trả hàng</option>
-                    <option>Hủy</option>
+                    <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
+                    <option value="DA_XAC_NHAN">Đã xác nhận</option>
+                    <option value="DANG_GIAO">Đang giao</option>
+                    <option value="GIAO_THAT_BAI">Giao thất bại</option>
+                    <option value="HOAN_THANH">Hoàn thành</option>
+                    <option value="TRA_HANG">Trả hàng</option>
+                    <option value="HUY">Hủy</option>
                   </select>
                 </td>
+                <td>{o.ghiChu || "Không có"}</td>
                 <td className="d-flex gap-2">
                   <button className="btn btn-sm btn-outline-primary" onClick={() => handleViewDetail(o.id)}>
                     Chi tiết
                   </button>
-                  <button className="btn btn-sm btn-outline-danger" onClick={() => handleStatusChange(o.id, "Hủy")}>
+                  <button className="btn btn-sm btn-outline-danger" onClick={() => handleStatusChange(o.id, "HUY")}>
                     Hủy
                   </button>
                 </td>
@@ -180,51 +217,33 @@ export default function Orders() {
         </table>
       </div>
 
+      {/* 🧾 Modal chi tiết đơn hàng */}
       {showDetail && selectedOrder && (
         <div className="modal d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,.5)" }}>
           <div className="modal-dialog modal-lg">
             <div className="modal-content">
               <div className="modal-header">
-                <h5 className="modal-title">Chi tiết đơn hàng {selectedOrder.id}</h5>
+                <h5 className="modal-title">Chi tiết đơn hàng #{selectedOrder.id}</h5>
                 <button type="button" className="btn-close" onClick={handleCloseDetail}></button>
               </div>
               <div className="modal-body">
-                <p><strong>Khách hàng:</strong> {selectedOrder.customer}</p>
-                <p><strong>Ngày đặt:</strong> {selectedOrder.date}</p>
-                <p><strong>Tổng tiền:</strong> {selectedOrder.total.toLocaleString("vi-VN")} đ</p>
-                <p><strong>Trạng thái:</strong> {selectedOrder.trangThai}</p>
-                <hr />
-                <h6>Sản phẩm:</h6>
+                <h6>Danh sách sản phẩm:</h6>
                 <table className="table table-bordered">
                   <thead>
                     <tr>
                       <th>Tên SP</th>
-                      <th>Ảnh</th>
                       <th>Số lượng</th>
                       <th>Đơn giá</th>
                       <th>Thành tiền</th>
                     </tr>
                   </thead>
                   <tbody>
-                    {selectedOrder.details.map((d, i) => (
+                    {selectedOrder.chiTietDonHang?.map((d, i) => (
                       <tr key={i}>
                         <td>{d.tenSanPham}</td>
-                        <td>
-                          {d.image ? (
-                            <img
-                              src={d.image}
-                              alt={d.tenSanPham}
-                              width={60}
-                              height={60}
-                              style={{ objectFit: "cover", borderRadius: 4 }}
-                            />
-                          ) : (
-                            <span className="text-muted">Không có ảnh</span>
-                          )}
-                        </td>
                         <td>{d.soLuong}</td>
-                        <td>{d.donGia.toLocaleString("vi-VN")} đ</td>
-                        <td>{d.thanhTien.toLocaleString("vi-VN")} đ</td>
+                        <td>{d.donGia?.toLocaleString("vi-VN")} đ</td>
+                        <td>{d.thanhTien?.toLocaleString("vi-VN")} đ</td>
                       </tr>
                     ))}
                   </tbody>

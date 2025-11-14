@@ -81,13 +81,20 @@ public class OrdersService {
 
 
     // 🔍 Tìm kiếm đơn hàng theo tên người nhận hoặc số điện thoại
-public List<OrdersResponse> searchOrders(String hoTenNhan, String sdtNhan) {
-    List<Orders> orders = ordersRepo.findAll(); // hoặc viết query riêng
+    public List<OrdersResponse> searchOrders(String hoTenNhan, String sdtNhan) {
+    List<Orders> orders = ordersRepo.searchOrders(hoTenNhan, sdtNhan);
     return orders.stream()
-            .filter(o -> (hoTenNhan == null || o.getHoTenNhan().toLowerCase().contains(hoTenNhan.toLowerCase())) &&
-                         (sdtNhan == null || o.getSdtNhan().equals(sdtNhan)))
             .map(this::toResponse)
             .collect(Collectors.toList());
+    }
+
+// ✏️ Cập nhật trạng thái thanh toán
+    @Transactional
+public OrdersResponse updatePaymentStatus(Integer id, Orders.PaymentStatus trangThaiTT) {
+    Orders order = ordersRepo.findById(id)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+    order.setTrangThaiTT(trangThaiTT);
+    return toResponse(ordersRepo.save(order));
 }
 
 // ✏️ Cập nhật trạng thái đơn hàng
@@ -118,6 +125,8 @@ public OrdersResponse updateStatus(Integer id, Orders.OrderStatus trangThai) {
                 .ngayDat(order.getNgayDat())
                 .tongTien(order.getTongTien())
                 .phuongThucTT(order.getPhuongThucTT())
+                .trangThaiTT(order.getTrangThaiTT())
+                .trangThai(order.getTrangThai())
                 .hoTenNhan(order.getHoTenNhan())
                 .sdtNhan(order.getSdtNhan())
                 .diaChiGiao(order.getDiaChiGiao())

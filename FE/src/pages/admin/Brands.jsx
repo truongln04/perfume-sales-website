@@ -106,8 +106,8 @@ export default function Brands() {
   };
 
   const handleChange = (e) => {
-    const { tenthuonghieu, value } = e.target;
-    setForm(prev => ({ ...prev, [tenthuonghieu]: value }));
+    const { name, value } = e.target;
+    setForm(prev => ({ ...prev, [name]: value }));
   };
 
   return (
@@ -185,7 +185,7 @@ export default function Brands() {
                   <input className="form-control" name="quocgia" value={form.quocgia} onChange={handleChange} />
                 </div>
                 <div className="mb-3">
-                  <label className="form-label">Logo (URL)</label>
+                  <label className="form-label">Logo</label>
                   <input className="form-control" name="logo" value={form.logo} onChange={handleChange} />
                 </div>
               </div>

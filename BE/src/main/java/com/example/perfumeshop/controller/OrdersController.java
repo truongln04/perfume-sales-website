@@ -44,6 +44,13 @@ public class OrdersController {
         return service.searchOrders(hoTenNhan, sdtNhan);
     }
 
+    // ✏️ Cập nhật trạng thái thanh toán
+    @PutMapping("/{id}/payment-status")
+public OrdersResponse updatePaymentStatus(@PathVariable Integer id,
+                                          @RequestParam Orders.PaymentStatus trangThaiTT) {
+    return service.updatePaymentStatus(id, trangThaiTT);
+}
+
     // ✏️ Cập nhật trạng thái đơn hàng
     @PutMapping("/{id}/status")
     public OrdersResponse updateOrderStatus(@PathVariable Integer id,
