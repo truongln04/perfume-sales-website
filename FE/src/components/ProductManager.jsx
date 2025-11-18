@@ -39,8 +39,8 @@ export default function ProductManager({
             <thead className="table-light">
               <tr>
                 <th>Mã SP</th>
-                <th>Danh Mục</th>
-                <th>Thương Hiệu</th>
+                <th>Mã DM</th>
+                <th>Mã TH</th>
                 <th>Tên SP</th>
                 <th>Hình ảnh</th>
                 <th>Mô tả</th>
@@ -64,19 +64,28 @@ export default function ProductManager({
                     <td>{p.idDanhMuc}</td>
                     <td>{p.idthuonghieu}</td>
                     <td>{p.tenSanPham}</td>
-                   <td>
-                    <img
-                      src={p.hinhAnh.startsWith("http") ? p.hinhAnh : `/images/${p.hinhAnh}`}
+                  <td>
+                  <img
+                    src={
+                      p.hinhAnh?.startsWith("data:image") // ảnh từ máy (base64)
+                        ? p.hinhAnh
+                        : p.hinhAnh?.startsWith("http")   // ảnh từ URL
+                        ? p.hinhAnh
+                        : p.hinhAnh                       // ảnh từ thư mục /images/
+                        ? `/images/${p.hinhAnh}`
+                        : "/images/default.jpg"          // ảnh mặc định
+                    }
                       alt={p.tenSanPham}
                       width={60}
                       height={60}
                       className="rounded"
                       onError={e => {
                         e.target.onerror = null;
-                        e.target.src = "/images/default.jpg"; // ảnh mặc định
+                        e.target.src = "/images/default.jpg";
                       }}
                     />
                   </td>
+
                   <td style={{ maxWidth: 200 }}>
                       {p.moTa.length > 60 ? (
                         <span title={p.moTa}>
@@ -194,44 +203,62 @@ export default function ProductManager({
                     </div>
 
                     {/* Hình ảnh */}
-                    <div className="col-md-6">
-                      <label className="form-label">Hình ảnh</label>
-                      <input
-                        type="text"
-                        className="form-control mb-2"
-                        placeholder="Nhập đường dẫn ảnh (nếu có)"
-                        name="hinhAnh"
-                        value={form.hinhAnh}
-                        onChange={handleChange}
-                      />
-                      <input
-                        type="file"
-                        className="form-control mb-2"
-                        accept="image/*"
-                        onChange={e => {
-                          const file = e.target.files[0];
-                          if (file) {
-                            const reader = new FileReader();
-                            reader.onload = () => {
-                              setForm(prev => ({
-                                ...prev,
-                                hinhAnh: file.name,
-                                previewImage: reader.result
-                              }));
-                            };
-                            reader.readAsDataURL(file);
-                          }
-                        }}
-                      />
-                      {(form.previewImage || form.hinhAnh) && (
-                        <img
-                          src={form.previewImage || form.hinhAnh}
-                          alt="Preview"
-                          className="rounded border mt-2"
-                          style={{ width: 120, height: 120, objectFit: "cover" }}
-                        />
-                      )}
-                    </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Hình ảnh</label>
+
+                    {/* Nhập đường dẫn ảnh */}
+                    <input
+                      type="text"
+                      className="form-control mb-2"
+                      placeholder="Nhập đường dẫn ảnh (nếu có)"
+                      name="hinhAnh"
+                      value={form.hinhAnh}
+                      onChange={e => {
+                        handleChange(e);
+                        setForm(prev => ({
+                          ...prev,
+                          previewImage: "" // reset preview nếu người dùng nhập link mới
+                        }));
+                      }}
+                    />
+
+                    {/* Chọn ảnh từ máy */}
+                    <input
+                      type="file"
+                      className="form-control mb-2"
+                      accept="image/*"
+                      onChange={e => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          const reader = new FileReader();
+                          reader.onload = () => {
+                            setForm(prev => ({
+                              ...prev,
+                              hinhAnh: reader.result,       // ✅ gán base64 vào ô input
+                            previewImage: reader.result   // ✅ dùng để hiển thị ảnh
+                            }));
+                          };
+                          reader.readAsDataURL(file);
+                        }
+                      }}
+                    />
+
+                    {/* Hiển thị ảnh */}
+                    <img
+                      src={
+                        form.previewImage ||
+                        (form.hinhAnh?.trim() ? form.hinhAnh : "/images/default.jpg")
+                      }
+                      alt="Preview"
+                      className="rounded border mt-2"
+                      style={{ width: 120, height: 120, objectFit: "cover" }}
+                      onError={e => {
+                        e.target.onerror = null;
+                        e.target.src = "/images/default.jpg";
+                      }}
+                    />
+                  </div>
+
 
                     {/* Giá cả & khuyến mãi */}
                     <div className="col-md-3">

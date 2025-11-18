@@ -3,6 +3,7 @@ import ReceiptManager from "../../components/receiptManager";
 import {
   fetchReceipts,
   createReceipt,
+  updateReceipt,
   deleteReceipt,
   fetchProducts,
   fetchSuppliers,
@@ -16,14 +17,16 @@ export default function Receipt() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyReceipt());
+  const [viewing, setViewing] = useState(null);
 
   function emptyReceipt() {
     return {
       idPhieuNhap: null,
       idNcc: "",
+      tenNcc: "",
       ngayNhap: new Date().toISOString().slice(0, 10),
       ghiChu: "",
-      details: [{ idSanPham: "", soLuong: 1, donGia: 0 }],
+      details: [{ idSanPham: "", tenSanPham: "", soLuong: 1, donGia: 0 }],
       tongTien: 0,
     };
   }
@@ -58,17 +61,16 @@ export default function Receipt() {
     }));
   }, [form.details]);
 
-const filtered = useMemo(() => {
-  const q = search.trim().toLowerCase();
-  if (!q) return receipts;
-  return receipts.filter(
-    r =>
-      r.idPhieuNhap?.toString().includes(q) ||
-      r.tenNhaCungCap?.toLowerCase().includes(q) ||
-      r.nhaCungCap?.tenNhaCungCap?.toLowerCase().includes(q)
-  );
-}, [receipts, search]);
-
+  const filtered = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    if (!q) return receipts;
+    return receipts.filter(
+      r =>
+        r.idPhieuNhap?.toString().includes(q) ||
+        r.tenNhaCungCap?.toLowerCase().includes(q) ||
+        r.nhaCungCap?.tenNhaCungCap?.toLowerCase().includes(q)
+    );
+  }, [receipts, search]);
 
   const onAdd = () => {
     setEditing(null);
@@ -76,19 +78,29 @@ const filtered = useMemo(() => {
     setShowModal(true);
   };
 
-const onEdit = (receipt) => {
+ const onEdit = (receipt) => {
+  const selectedNcc =
+    suppliers.find(s => s.idNcc === receipt.idNcc) ||
+    suppliers.find(s => s.tenNcc === receipt.tenNhaCungCap);
+
   setEditing(receipt);
   setForm({
     idPhieuNhap: receipt.idPhieuNhap,
-    idNcc: receipt.idNcc || receipt.nhaCungCap?.idNcc || "",
+    idNcc: selectedNcc?.idNcc || "",
+    tenNcc: selectedNcc?.tenNcc || receipt.tenNhaCungCap || "",
     ngayNhap: receipt.ngayNhap?.slice(0, 10),
     ghiChu: receipt.ghiChu || "",
-    details: receipt.chiTietPhieuNhap.map(d => ({
-      idSanPham: d.idSanPham || d.sanPham?.idSanPham || "",
-      soLuong: d.soLuong,
-      donGia: d.donGia,
-    })),
-    tongTien: receipt.tongTien,
+    details: receipt.chiTietPhieuNhap.map(d => {
+      const selectedProduct =
+        products.find(p => p.idSanPham === d.idSanPham) ||
+        products.find(p => p.tenSanPham === d.tenSanPham);
+      return {
+        idSanPham: selectedProduct?.idSanPham || d.idSanPham,
+        tenSanPham: selectedProduct?.tenSanPham || d.tenSanPham || "",
+        soLuong: d.soLuong,
+        donGia: d.donGia,
+      };
+    }),
   });
   setShowModal(true);
 };
@@ -111,22 +123,27 @@ const onEdit = (receipt) => {
       return;
     }
 
-    const payload = {
-      idNcc: Number(form.idNcc),
-      ngayNhap: form.ngayNhap,
-      ghiChu: form.ghiChu.trim(),
-      tongTien: calculateTotal(form.details),
-      chiTietPhieuNhap: form.details.map(d => ({
-        idSanPham: Number(d.idSanPham),
-        soLuong: Number(d.soLuong),
-        donGia: Number(d.donGia),
-      })),
-    };
-
+const payload = {
+  idNcc: Number(form.idNcc),
+  ngayNhap: form.ngayNhap,
+  ghiChu: form.ghiChu.trim(),
+  chiTietPhieuNhap: form.details.map(d => ({
+    idSanPham: Number(d.idSanPham),
+    soLuong: Number(d.soLuong),
+    donGia: parseFloat(d.donGia),   // ✅ ép về số thập phân
+  })),
+};
+ // ✅ Thêm log ở đây để kiểm tra payload
+  console.log("📤 Payload gửi lên:", JSON.stringify(payload, null, 2));
     try {
-      await createReceipt(payload, form.idPhieuNhap); // dùng idPhieuNhap để xác định sửa
-      setShowModal(false);
+      if (form.idPhieuNhap) {
+        await updateReceipt(form.idPhieuNhap, payload); // sửa
+      } else {
+        await createReceipt(payload); // thêm mới
+      }
+
       setEditing(null);
+      setShowModal(false);
       loadData();
     } catch (err) {
       console.error("Lưu thất bại:", err);
@@ -141,7 +158,8 @@ const onEdit = (receipt) => {
   const handleDetailChange = (index, field, value) => {
     setForm(prev => {
       const updated = [...prev.details];
-      updated[index][field] = Number(value);
+      updated[index][field] =
+        field === "soLuong" || field === "donGia" ? Number(value) : value;
       return { ...prev, details: updated };
     });
   };
@@ -149,7 +167,7 @@ const onEdit = (receipt) => {
   const handleAddDetail = () => {
     setForm(prev => ({
       ...prev,
-      details: [...prev.details, { idSanPham: "", soLuong: 1, donGia: 0 }],
+      details: [...prev.details, { idSanPham: "", tenSanPham: "", soLuong: 1, donGia: 0 }],
     }));
   };
 
@@ -160,7 +178,7 @@ const onEdit = (receipt) => {
     }));
   };
 
-  return (
+   return (
     <ReceiptManager
       receipts={filtered}
       products={products}
@@ -179,6 +197,21 @@ const onEdit = (receipt) => {
       onRemoveDetail={handleRemoveDetail}
       onSave={onSave}
       onClose={() => setShowModal(false)}
+      selectedReceipt={viewing}
+      onView={(receipt) => {
+        const enriched = {
+          ...receipt,
+          chiTietPhieuNhap: receipt.chiTietPhieuNhap.map((item) => {
+            const product = products.find(p => p.idSanPham === Number(item.idSanPham));
+            return {
+              ...item,
+              tenSanPham: product?.tenSanPham || item.tenSanPham || "Không rõ tên sản phẩm",
+            };
+          }),
+        };
+        setViewing(enriched);
+      }}
+      onCloseView={() => setViewing(null)}
     />
   );
 }

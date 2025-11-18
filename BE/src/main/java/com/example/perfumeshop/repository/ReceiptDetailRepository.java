@@ -6,6 +6,5 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public interface ReceiptDetailRepository extends JpaRepository<ReceiptDetail, Integer> {
-    // Bạn có thể thêm các phương thức tùy chỉnh nếu cần, ví dụ:
-    // List<ReceiptDetail> findByReceipt_ReceiptId(Integer receiptId);
+    
 }

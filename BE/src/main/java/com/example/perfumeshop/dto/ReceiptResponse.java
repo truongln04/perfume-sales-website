@@ -10,10 +10,16 @@ import java.util.List;
 @AllArgsConstructor
 @Builder
 public class ReceiptResponse {
+
     private Integer idPhieuNhap;
+
     private String tenNhaCungCap;
+
     private LocalDateTime ngayNhap;
+
     private BigDecimal tongTien;
+
     private String ghiChu;
+    
     private List<ReceiptDetailResponse> chiTietPhieuNhap;
 }

@@ -8,6 +8,7 @@ export default function ReceiptManager({
   editing,
   search,
   showModal,
+  selectedReceipt,
   onAdd,
   onEdit,
   onDelete,
@@ -18,14 +19,25 @@ export default function ReceiptManager({
   onSave,
   onClose,
   onSearch,
+  onView,
+  onCloseView,
 }) {
   const filtered = receipts.filter(r =>
     r.idPhieuNhap.toString().includes(search.toLowerCase()) ||
     r.tenNhaCungCap.toLowerCase().includes(search.toLowerCase())
   );
 
+  const calculateTotal = form.details.reduce((sum, d) => {
+    const sl = parseInt(d.soLuong) || 0;
+    const dg = parseFloat(d.donGia) || 0;
+    return sum + sl * dg;
+  }, 0);
+
+  const getProductInfo = id => products.find(p => p.idSanPham === parseInt(id));
+
   return (
     <div className="card">
+      {/* Header */}
       <div className="card-header d-flex justify-content-between align-items-center">
         <h5 className="m-0">Quản lý Phiếu nhập</h5>
         <div className="d-flex gap-2">
@@ -40,6 +52,7 @@ export default function ReceiptManager({
         </div>
       </div>
 
+      {/* Table danh sách phiếu nhập */}
       <div className="card-body p-0">
         <table className="table table-striped m-0">
           <thead className="table-light">
@@ -66,6 +79,7 @@ export default function ReceiptManager({
                   <td>{r.tongTien.toLocaleString("vi-VN")} đ</td>
                   <td>{r.ghiChu}</td>
                   <td className="d-flex gap-2">
+                    <button className="btn btn-sm btn-outline-info" onClick={() => onView(r)}>Xem chi tiết</button>
                     <button className="btn btn-sm btn-outline-primary" onClick={() => onEdit(r)}>Sửa</button>
                     <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(r.idPhieuNhap)}>Xóa</button>
                   </td>
@@ -76,6 +90,7 @@ export default function ReceiptManager({
         </table>
       </div>
 
+      {/* Modal thêm/sửa phiếu nhập */}
       {showModal && (
         <div className="modal d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,.5)" }}>
           <div className="modal-dialog modal-lg">
@@ -85,21 +100,32 @@ export default function ReceiptManager({
                 <button type="button" className="btn-close" onClick={onClose}></button>
               </div>
               <div className="modal-body">
+                {/* Form thông tin phiếu nhập */}
                 <div className="mb-3">
                   <label className="form-label">Nhà cung cấp</label>
-                  <select
-                    className="form-select"
-                    name="idNcc"
-                    value={form.idNcc}
-                    onChange={onChange}
-                  >
-                    <option value="">-- Chọn nhà cung cấp --</option>
-                    {suppliers.map(s => (
-                      <option key={s.idNcc} value={s.idNcc}>
-                        {s.tenNhaCungCap}
-                      </option>
-                    ))}
-                  </select>
+                  {editing ? (
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={form.tenNcc || "LỖI TÊN NHÀ CUNG CẤP"}
+                      disabled
+                    />
+                  ) : (
+                    <select
+                      className="form-select"
+                      name="idNcc"
+                      value={form.idNcc}
+                      onChange={onChange}
+                    >
+                      <option value="">-- Chọn nhà cung cấp --</option>
+                      {suppliers.map(s => (
+                        <option key={s.idNcc} value={s.idNcc}>
+                          {s.tenNcc}
+                        </option>
+                      ))}
+                    </select>
+                  )}
+
                 </div>
 
                 <div className="mb-3">
@@ -124,6 +150,7 @@ export default function ReceiptManager({
                   />
                 </div>
 
+                {/* Chi tiết sản phẩm nhập */}
                 <h6>Chi tiết sản phẩm nhập</h6>
                 <table className="table table-bordered">
                   <thead>
@@ -136,57 +163,122 @@ export default function ReceiptManager({
                     </tr>
                   </thead>
                   <tbody>
-                    {form.details.map((d, i) => (
-                      <tr key={i}>
-                        <td>
-                          <select
-                          className="form-select"
-                          value={d.idSanPham}
-                          onChange={e => onDetailChange(i, "idSanPham", e.target.value)}
-                        >
-                          <option value="">-- Chọn sản phẩm --</option>
-                          {products.map(p => (
-                            <option key={p.idSanPham} value={p.idSanPham}>
-                              {p.tenSanPham}
-                            </option>
-                          ))}
-                        </select>
+                    {form.details.map((d, i) => {
+                      const info = getProductInfo(d.idSanPham);
+                      return (
+                        <tr key={i}>
+                          <td>
+                            {editing ? (
+                              <input
+                                type="text"
+                                className="form-control"
+                                value={d.tenSanPham || ""}
+                                disabled
+                              />
+                            ) : (
+                              <select
+                                className="form-select"
+                                value={d.idSanPham}
+                                onChange={e => {
+                                  const id = e.target.value;
+                                  onDetailChange(i, "idSanPham", id);
+                                  const selected = products.find(p => p.idSanPham === id);
+                                  if (selected) {
+                                    onDetailChange(i, "donGia", selected.giaBan);
+                                    onDetailChange(i, "tenSanPham", selected.tenSanPham); // ✅ cập nhật tên
+                                  }
+                                }}
+                              >
+                                <option value="">-- Chọn sản phẩm --</option>
+                                {products.map(p => (
+                                  <option key={p.idSanPham} value={p.idSanPham}>
+                                    {p.tenSanPham}
+                                  </option>
+                                ))}
+                              </select>
+                            )}
 
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={d.soLuong}
-                            onChange={e => onDetailChange(i, "soLuong", e.target.value)}
-                          />
-                        </td>
-                        <td>
-                          <input
-                            type="number"
-                            className="form-control"
-                            value={d.donGia}
-                            onChange={e => onDetailChange(i, "donGia", e.target.value)}
-                          />
-                        </td>
-                        <td>{(d.soLuong * d.donGia).toLocaleString("vi-VN")} đ</td>
-                        <td>
-                          <button className="btn btn-sm btn-outline-danger" onClick={() => onRemoveDetail(i)}>X</button>
-                        </td>
-                      </tr>
-                    ))}
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={d.soLuong}
+                              onChange={e => onDetailChange(i, "soLuong", e.target.value)}
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              className="form-control"
+                              value={d.donGia}
+                              onChange={e => onDetailChange(i, "donGia", e.target.value)}
+                            />
+                          </td>
+                          <td>{(d.soLuong * d.donGia).toLocaleString("vi-VN")} đ</td>
+                          <td>
+                            <button className="btn btn-sm btn-outline-danger" onClick={() => onRemoveDetail(i)}>X</button>
+                          </td>
+                        </tr>
+                      );
+                    })}
                   </tbody>
                 </table>
                 <button className="btn btn-sm btn-outline-success" onClick={onAddDetail}>+ Thêm dòng</button>
 
                 <div className="mt-3 text-end fw-bold">
-                  Tổng tiền: {form.tongTien.toLocaleString("vi-VN")} đ
+                  Tổng tiền: {calculateTotal.toLocaleString("vi-VN")} đ
                 </div>
               </div>
               <div className="modal-footer">
                 <button className="btn btn-secondary" onClick={onClose}>Đóng</button>
                 <button className="btn btn-primary" onClick={onSave}>Lưu phiếu nhập</button>
               </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Modal xem chi tiết phiếu nhập */}
+      {selectedReceipt && (
+        <div className="modal d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,.5)" }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">Chi tiết phiếu nhập #{selectedReceipt.idPhieuNhap}</h5>
+                <button type="button" className="btn-close" onClick={onCloseView}></button>
+              </div>
+              <div className="modal-body">
+              <p><strong>Nhà cung cấp:</strong> {selectedReceipt.tenNhaCungCap || selectedReceipt.nhaCungCap?.tenNhaCungCap}</p>
+              <p><strong>Ngày nhập:</strong> {new Date(selectedReceipt.ngayNhap).toLocaleDateString("vi-VN")}</p>
+              <p><strong>Ghi chú:</strong> {selectedReceipt.ghiChu}</p>
+              <p><strong>Tổng tiền:</strong> {selectedReceipt.tongTien.toLocaleString("vi-VN")} đ</p>
+
+              <h6 className="mt-3">Chi tiết sản phẩm:</h6>
+              <table className="table table-bordered">
+                <thead>
+                  <tr>
+                    <th>Sản phẩm</th>
+                    <th>Số lượng</th>
+                    <th>Đơn giá</th>
+                    <th>Thành tiền</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {selectedReceipt.chiTietPhieuNhap?.map((item, idx) => (
+                    <tr key={idx}>
+                      <td>{item.tenSanPham}</td>
+                      <td>{item.soLuong}</td>
+                      <td>{item.donGia.toLocaleString("vi-VN")} đ</td>
+                      <td>{(item.soLuong * item.donGia).toLocaleString("vi-VN")} đ</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="modal-footer">
+              <button className="btn btn-secondary" onClick={onCloseView}>Đóng</button>
+            </div>
             </div>
           </div>
         </div>

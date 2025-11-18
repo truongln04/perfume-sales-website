@@ -8,6 +8,8 @@ import java.math.BigDecimal;
 @AllArgsConstructor
 public class ReceiptDetailRequest {
     private Integer idSanPham;
+
     private Integer soLuong;
+
     private BigDecimal donGia;
 }

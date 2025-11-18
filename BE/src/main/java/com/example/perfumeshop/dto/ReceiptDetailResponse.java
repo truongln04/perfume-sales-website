@@ -9,8 +9,11 @@ import java.math.BigDecimal;
 @Builder
 public class ReceiptDetailResponse {
     private Integer idCTPN;
+
     private String tenSanPham;
+
     private Integer soLuong;
+
     private BigDecimal donGia;
-    private BigDecimal thanhTien;
+
 }
