@@ -60,10 +60,10 @@ export default function Brands() {
     setShowModal(true);
   };
 
-  const onDelete = async (id) => {
+  const onDelete = async (idthuonghieu) => {
     if (window.confirm("Xóa thương hiệu này?")) {
       try {
-        await fetch(`${API_URL}/${id}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` }, });
+        await fetch(`${API_URL}/${idthuonghieu}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` }, });
         fetchBrands();
       } catch (err) {
         console.error("Delete failed", err);
@@ -157,7 +157,7 @@ export default function Brands() {
                   </td>
                   <td className="d-flex gap-2">
                     <button className="btn btn-sm btn-outline-primary" onClick={() => onEdit(b)}>Sửa</button>
-                    <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(b.id)}>Xóa</button>
+                    <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(b.idthuonghieu)}>Xóa</button>
                   </td>
                 </tr>
               ))
@@ -178,15 +178,15 @@ export default function Brands() {
               <div className="modal-body">
                 <div className="mb-3">
                   <label className="form-label">Tên thương hiệu</label>
-                  <input className="form-control" name="tenthuonghieu" value={form.tenthuonghieu} onChange={handleChange} />
+                  <input className="form-control" name="tenthuonghieu" value={form.tenthuonghieu} placeholder="Nhập tên thương hiệu" onChange={handleChange} />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Quốc gia</label>
-                  <input className="form-control" name="quocgia" value={form.quocgia} onChange={handleChange} />
+                  <input className="form-control" name="quocgia" value={form.quocgia} placeholder="Nhập tên quốc gia" onChange={handleChange} />
                 </div>
                 <div className="mb-3">
                   <label className="form-label">Logo</label>
-                  <input className="form-control" name="logo" value={form.logo} onChange={handleChange} />
+                  <input className="form-control" name="logo" value={form.logo} placeholder="Nhập URL Logo" onChange={handleChange} />
                 </div>
               </div>
               <div className="modal-footer">

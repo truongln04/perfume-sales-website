@@ -77,7 +77,7 @@ export default function Accounts() {
 
   const onEdit = (acc) => {
     setEditing(acc);
-    setForm({ ...acc });
+    setForm({ ...acc, matKhau: "" });
     setShowModal(true);
   };
 
@@ -287,6 +287,8 @@ export default function Accounts() {
               <div className="col-md-6">
                 <label className="form-label">Vai trò</label>
                 {editing ? (
+                // Nếu vai trò hiện tại là ADMIN, KHACHHANG ⇒ KHÔNG được chỉnh sửa
+                form.vaiTro === "ADMIN" || form.vaiTro === "KHACHHANG" ? (  
                 <input
                   type="text"
                   className="form-control"
@@ -298,6 +300,19 @@ export default function Accounts() {
                   readOnly
                 />
                 ) : (
+                  // Nếu role là nhân viên ⇒ ĐƯỢC PHÉP CHỈNH SỬA
+      <select
+        name="vaiTro"
+        className="form-select"
+        value={form.vaiTro}
+        onChange={handleChange}
+      >
+        <option value="ADMIN">Admin</option>
+        <option value="NHANVIEN">Nhân viên</option>
+      </select>
+    )
+      ) : (
+        // Trạng thái thêm mới: luôn cho chọn vai trò
         <select
           name="vaiTro"
           className="form-select"

@@ -154,6 +154,7 @@ export default function Orders() {
               <th>Phương thức TT</th>
               <th>Trạng thái TT</th>
               <th>Trạng thái</th>
+              <th>Địa chỉ giao</th>
               <th>Ghi chú</th>
               <th>Hành động</th>
             </tr>
@@ -202,6 +203,7 @@ export default function Orders() {
                     <option value="HUY">Hủy</option>
                   </select>
                 </td>
+                <td>{o.diaChiGiao}</td>
                 <td>{o.ghiChu || "Không có"}</td>
                 <td className="d-flex gap-2">
                   <button className="btn btn-sm btn-outline-primary" onClick={() => handleViewDetail(o.id)}>

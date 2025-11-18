@@ -44,7 +44,10 @@ public class AccountService {
         account.setEmail(request.getEmail());
         account.setGoogleId(request.getGoogleId());
         account.setAnhDaiDien(request.getAnhDaiDien());
-        account.setMatKhau(passwordEncoder.encode(request.getMatKhau()));
+        // Chỉ cập nhật mật khẩu nếu người dùng nhập mật khẩu mới
+        if (request.getMatKhau() != null && !request.getMatKhau().trim().isEmpty()) {
+            account.setMatKhau(passwordEncoder.encode(request.getMatKhau()));
+        }
         account.setVaiTro(request.getVaiTro());
         return toResponse(repository.save(account));
     }
