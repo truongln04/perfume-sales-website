@@ -9,7 +9,7 @@ spring:
   datasource:
     url: jdbc:mysql://localhost:3306/perfumeshop?createDatabaseIfNotExist=true
     username: root
-    password: root
+    password: 123456@Ab
 
   jpa:
     hibernate:

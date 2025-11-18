@@ -39,7 +39,7 @@ export default function Login({ onLogin }) {
         navigate("/Dashboard");
       } else if (role === "KHACHHANG") {
         alert("Đăng nhập khách hàng thành công!");
-        navigate("/Login");
+        navigate("/Home");
       } else {
         alert("Không xác định quyền truy cập!");
       }
@@ -81,7 +81,7 @@ export default function Login({ onLogin }) {
 
     // ✅ Thông báo và điều hướng
     alert("Đăng nhập Google thành công!");
-    navigate("/Login");
+    navigate("/Home");
 
     // ✅ Kích hoạt sự kiện để component khác reload
     window.dispatchEvent(new Event("account-updated"));
