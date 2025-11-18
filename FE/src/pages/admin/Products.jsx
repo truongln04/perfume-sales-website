@@ -39,7 +39,7 @@ function emptyProduct() {
       const data = await getProducts();
       setProducts(data);
     } catch (err) {
-      console.error("❌ Failed to fetch products", err);
+      console.error("❌ Lỗi không thể tải danh sách", err);
     }
   };
 
@@ -92,11 +92,22 @@ function emptyProduct() {
     setShowModal(true);
   };
 
-  const onEdit = (product) => {
-    setEditing(product);
-    setForm({ ...product });
-    setShowModal(true);
-  };
+ const onEdit = (p) => {
+  setForm({
+    ...p,
+    previewImage: p.hinhAnh?.startsWith("data:image")
+      ? p.hinhAnh
+      : p.hinhAnh?.startsWith("http")
+      ? p.hinhAnh
+      : p.hinhAnh
+        ? `/images/${p.hinhAnh}`
+        : ""
+  });
+  setEditing(p); // ✅ lưu sản phẩm đang sửa
+  setShowModal(true);
+};
+
+
 
   const onDelete = async (id) => {
     if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
@@ -110,47 +121,46 @@ function emptyProduct() {
   };
 
   const onSave = async () => {
-    if (
-      !form.tenSanPham.trim() ||
-      form.idDanhMuc === "" ||
-      form.idthuonghieu === "" ||
-      !form.hinhAnh.trim()
-    ) {
-      alert("Vui lòng nhập đầy đủ Tên sản phẩm, Danh mục, Thương hiệu và Hình ảnh");
-      return;
+  if (
+    !form.tenSanPham.trim() ||
+    form.idDanhMuc === "" ||
+    form.idthuonghieu === "" ||
+    !form.hinhAnh.trim() ||
+    !form.moTa.trim()
+  ) {
+    alert("Vui lòng nhập đầy đủ Tên sản phẩm, Danh mục, Thương hiệu, Mô tả, Hình ảnh");
+    return;
+  }
+
+  const payload = {
+    tenSanPham: form.tenSanPham.trim(),
+    moTa: form.moTa.trim(),
+    hinhAnh: form.hinhAnh.trim(),
+    idDanhMuc: Number(form.idDanhMuc),
+    idthuonghieu: Number(form.idthuonghieu),
+    giaBan: form.giaBan !== "" && form.giaBan != null ? Number(form.giaBan) : 0,
+    kmPhanTram: form.kmPhanTram !== "" && form.kmPhanTram != null ? Number(form.kmPhanTram) : 0,
+    trangThai: Boolean(form.trangThai),
+    giaNhap: form.giaNhap ?? 0,
+    soLuongTon: form.soLuongTon ?? 0
+  };
+
+  try {
+    if (editing) {
+      await saveProduct(payload, editing.idSanPham); // ✅ sửa
+    } else {
+      await saveProduct(payload); // ✅ thêm
     }
 
-    const payload = {
-  tenSanPham: form.tenSanPham.trim(),
-  moTa: form.moTa.trim(),
-  hinhAnh: form.hinhAnh.trim(),
-  idDanhMuc: Number(form.idDanhMuc),
-  idthuonghieu: Number(form.idthuonghieu),
-  giaBan: form.giaBan !== "" && form.giaBan != null ? Number(form.giaBan) : 0,
-  kmPhanTram: form.kmPhanTram !== "" && form.kmPhanTram != null ? Number(form.kmPhanTram) : 0,
-  trangThai: Boolean(form.trangThai),
-  giaNhap: form.giaNhap ?? 0,         // 👈 Luôn gửi
-  soLuongTon: form.soLuongTon ?? 0    // 👈 Luôn gửi
+    alert(editing ? "✅ Sửa sản phẩm thành công!" : "✅ Thêm sản phẩm thành công!");
+    setShowModal(false);
+    setEditing(null); // ✅ reset
+    fetchProducts();
+  } catch (err) {
+    console.error("❌ Save failed", err.response?.data || err.message);
+  }
 };
 
-
-    if (editing) {
-      payload.giaNhap = form.giaNhap;
-      payload.soLuongTon = form.soLuongTon;
-    }
-
-    console.log("📦 Payload gửi lên:", payload);
-
-    try {
-      await saveProduct(payload, editing?.idSanPham);
-      alert(editing ? "✅ Sửa sản phẩm thành công!" : "✅ Thêm sản phẩm thành công!");
-      setShowModal(false);
-      setEditing(null);
-      fetchProducts();
-    } catch (err) {
-      console.error("❌ Save failed", err.response?.data || err.message);
-    }
-  };
 
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
