@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import ProductManager from "../../components/ProductManager";
+import ProductManager from "../../components/admin/ProductManager";
 import {
   getProducts,
   searchProducts,

@@ -1,6 +1,6 @@
 // src/pages/WarehousePage.jsx
 import { useEffect, useState } from "react";
-import WarehouseManager from "../../components/WarehouseManager";
+import WarehouseManager from "../../components/admin/WarehouseManager";
 import {
   getWarehouseItems,
   searchWarehouseByName,

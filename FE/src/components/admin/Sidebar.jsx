@@ -33,18 +33,18 @@ export default function Sidebar() {
 
   // Danh sách menu có phân quyền
   const items = [
-    { to: "/", label: "Trang chủ", roles: ["ADMIN", "NHANVIEN"] },
-    { to: "/accounts", label: "Tài khoản", roles: ["ADMIN"] },
-    { to: "/categories", label: "Danh mục", roles: ["ADMIN"] },
-    { to: "/brands", label: "Thương hiệu", roles: ["ADMIN"] },
+    { to: "/admin", label: "Trang chủ", roles: ["ADMIN", "NHANVIEN"] },
+    { to: "/admin/accounts", label: "Tài khoản", roles: ["ADMIN"] },
+    { to: "/admin/categories", label: "Danh mục", roles: ["ADMIN"] },
+    { to: "/admin/brands", label: "Thương hiệu", roles: ["ADMIN"] },
 
-    { to: "/products", label: "Sản phẩm", roles: ["ADMIN", "NHANVIEN"] },
-    { to: "/suppliers", label: "Nhà cung cấp", roles: ["ADMIN", "NHANVIEN"] },
-    { to: "/receipts", label: "Phiếu nhập", roles: ["ADMIN", "NHANVIEN"] },
-    { to: "/warehouse", label: "Kho", roles: ["ADMIN", "NHANVIEN"] },
-    { to: "/orders", label: "Đơn hàng", roles: ["ADMIN", "NHANVIEN"] },
+    { to: "/admin/products", label: "Sản phẩm", roles: ["ADMIN", "NHANVIEN"] },
+    { to: "/admin/suppliers", label: "Nhà cung cấp", roles: ["ADMIN", "NHANVIEN"] },
+    { to: "/admin/receipts", label: "Phiếu nhập", roles: ["ADMIN", "NHANVIEN"] },
+    { to: "/admin/warehouse", label: "Kho", roles: ["ADMIN", "NHANVIEN"] },
+    { to: "/admin/orders", label: "Đơn hàng", roles: ["ADMIN", "NHANVIEN"] },
 
-    { to: "/reports", label: "Thống kê & báo cáo", roles: ["ADMIN"] },
+    { to: "/admin/reports", label: "Thống kê & báo cáo", roles: ["ADMIN"] },
   ];
 
   return (

@@ -1,8 +1,10 @@
+
 import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
 import { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 
 import AdminLayout from "./layouts/AdminLayout";
+import ClientLayout from "./layouts/ClientLayout";
 import Dashboard from "./pages/admin/Dashboard";
 import Accounts from "./pages/admin/Accounts";
 import Categories from "./pages/admin/Categories";
@@ -13,9 +15,17 @@ import Receipts from "./pages/admin/Receipts";
 import Warehouse from "./pages/admin/Warehouse";
 import Orders from "./pages/admin/Orders";
 import Reports from "./pages/admin/Reports";
+
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
+
+// ⭐ Client pages
+import Home from "./pages/client/Home";
+import ProductList from "./pages/client/ProductList";
+import ProductDetail from "./pages/client/ProductDetail";
+import Cart from "./pages/client/Cart";
+import Checkout from "./pages/client/Checkout";
 
 export default function App() {
   const [role, setRole] = useState(null);
@@ -47,6 +57,7 @@ export default function App() {
 
   const isAdmin = role === "ADMIN";
   const isStaff = role === "NHANVIEN";
+  const isCustomer = role === "KHACHHANG";
 
   return (
     <Router>
@@ -56,12 +67,27 @@ export default function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
 
-        {/* Protected admin layout */}
+        {/* ⭐ Client routes (ai cũng xem được) */}
+        <Route path="/client" element={<ClientLayout />}>
+  <Route index element={<Home />} />
+  <Route path="home" element={<Home />} />
+  <Route path="products" element={<ProductList />} />
+  <Route path="product/:id" element={<ProductDetail />} />
+
+  <Route
+    path="cart"
+    element={isCustomer ? <Cart /> : <Navigate to="/login" replace />}
+  />
+  <Route
+    path="checkout"
+    element={isCustomer ? <Checkout /> : <Navigate to="/login" replace />}
+  />
+</Route>
+
+        {/* ⭐ Protected admin layout */}
         <Route
-          path="/"
-          element={
-            role ? <AdminLayout /> : <Navigate to="/login" replace />
-          }
+          path="/admin"
+          element={role ? <AdminLayout /> : <Navigate to="/login" replace />}
         >
           <Route index element={<Dashboard />} />
 
@@ -77,9 +103,8 @@ export default function App() {
           {isAdmin && <Route path="accounts" element={<Accounts />} />}
           {isAdmin && <Route path="reports" element={<Reports />} />}
         </Route>
-
-        {/* Catch-all */}
-        <Route path="*" element={<Navigate to={role ? "/" : "/login"} replace />} />
+   {/* Catch-all */}
+        <Route path="*" element={<Navigate to="/home" replace />} />
       </Routes>
     </Router>
   );

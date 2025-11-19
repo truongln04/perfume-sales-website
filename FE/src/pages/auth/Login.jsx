@@ -36,10 +36,10 @@ export default function Login({ onLogin }) {
       // ✅ Điều hướng theo vai trò
       if (role === "ADMIN" || role === "NHANVIEN") {
         alert("Đăng nhập quản trị thành công!");
-        navigate("/Dashboard");
+        navigate("/admin");
       } else if (role === "KHACHHANG") {
         alert("Đăng nhập khách hàng thành công!");
-        navigate("/Home");
+        navigate("/client");
       } else {
         alert("Không xác định quyền truy cập!");
       }
@@ -81,7 +81,7 @@ export default function Login({ onLogin }) {
 
     // ✅ Thông báo và điều hướng
     alert("Đăng nhập Google thành công!");
-    navigate("/Home");
+    navigate("/client");
 
     // ✅ Kích hoạt sự kiện để component khác reload
     window.dispatchEvent(new Event("account-updated"));

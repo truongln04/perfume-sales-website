@@ -1,5 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
-import ReceiptManager from "../../components/receiptManager";
+import ReceiptManager from "../../components/admin/receiptManager";
 import {
   fetchReceipts,
   createReceipt,
