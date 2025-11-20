@@ -12,6 +12,7 @@ import lombok.RequiredArgsConstructor;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,12 +28,10 @@ public class AuthController {
     }
 
     @PostMapping("/google")
-    public ResponseEntity<AccountResponse> createOrUpdateGoogleAccount(@RequestBody GoogleLoginRequest request) {
+public ResponseEntity<AccountResponse> loginWithGoogle(@RequestBody GoogleLoginRequest request) {
     try {
-        // ✅ Xác minh token Google
         var payload = googleAuthService.verifyGoogleToken(request.getCredential());
 
-        // ✅ Lấy thông tin từ payload
         AccountRequest accRequest = new AccountRequest();
         accRequest.setEmail(payload.getEmail());
         accRequest.setTenHienThi((String) payload.get("name"));
@@ -40,14 +39,14 @@ public class AuthController {
         accRequest.setGoogleId(payload.getSubject());
         accRequest.setSdt("");
 
-        // ✅ Gọi service để tạo/cập nhật user
+        // ✅ Service đã trả về AccountResponse kèm token
         AccountResponse response = service.createOrUpdateGoogleAccount(accRequest);
         return ResponseEntity.ok(response);
 
-        } catch (Exception e) {
-            return ResponseEntity.badRequest().body(null);
-        }
+    } catch (Exception e) {
+        return ResponseEntity.badRequest().body(null);
     }
+}
 
     @PostMapping("/register")
     public AccountResponse register(@Valid @RequestBody AccountRequest request) {
@@ -74,5 +73,12 @@ public class AuthController {
         return success ? ResponseEntity.ok("Mật khẩu đã được đặt lại thành công.")
                        : ResponseEntity.badRequest().body("Mã xác thực không hợp lệ hoặc đã hết hạn.");
     }
+
+    @GetMapping("/me")
+public ResponseEntity<AccountResponse> getCurrentUser(@AuthenticationPrincipal String email) {
+    AccountResponse account = service.getAccountByEmail(email);
+    return ResponseEntity.ok(account);
+}
+
 
 }

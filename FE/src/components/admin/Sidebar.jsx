@@ -13,11 +13,14 @@ export default function Sidebar() {
     try {
       const decoded = jwtDecode(token);
 
-      // Trường hợp Spring Security đưa quyền trong claim "authorities"
-      if (decoded.authorities && decoded.authorities.length > 0) {
-        // Lấy quyền đầu tiên và bỏ tiền tố ROLE_
-        role = decoded.authorities[0].replace("ROLE_", "");
-      }
+    //  Token Google → luôn coi là KHÁCHHÀNG
+    if (decoded.email && !decoded.authorities) {
+      role = "KHACHHANG";
+    }
+
+    if (!role && decoded.authorities?.length > 0) {
+      role = decoded.authorities[0].replace("ROLE_", "");
+    }
 
       // Nếu bạn custom JWT để gửi "role" hoặc "vaiTro"
       if (!role) {

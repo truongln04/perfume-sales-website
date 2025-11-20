@@ -2,3 +2,39 @@
   background-color: #f8f9fa;
   transition: background-color 0.2s ease;
 }
+/* Hover effects cho thương hiệu và polaroid */
+.hover-lift:hover {
+  transform: translateY(-15px) rotate(0deg) !important;
+  box-shadow: 0 30px 60px rgba(0,0,0,0.3) !important;
+  z-index: 10;
+}
+
+.transition {
+  transition: all 0.3s ease;
+}
+
+.opacity-70 { opacity: 0.7; }
+.hover-opacity-100:hover { opacity: 1 !important; }
+/* 5 sản phẩm đều nhau trên desktop - chuẩn Orchard.vn */
+.col-lg-25 {
+  flex: 0 0 20%;
+  max-width: 20%;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+}
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .col-lg-25 { flex: 0 0 25%; max-width: 25%; }
+}
+@media (max-width: 768px) {
+  .col-lg-25 { flex: 0 0 33.333%; max-width: 33.333%; }
+}
+@media (max-width: 576px) {
+  .col-lg-25 { flex: 0 0 50%; max-width: 50%; }
+}
+
+/* Hover nhẹ cho ảnh */
+img:hover {
+  transform: scale(1.08) !important;
+}

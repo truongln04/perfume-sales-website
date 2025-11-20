@@ -72,9 +72,7 @@ export default function Login({ onLogin }) {
 
     // ✅ Lưu user và token (nếu backend trả token JWT)
     localStorage.setItem("user", JSON.stringify(savedUser));
-    if (savedUser.token) {
-      localStorage.setItem("token", savedUser.token);
-    }
+    localStorage.setItem("token", savedUser.token);
 
     // ✅ Cập nhật state / context
     if (onLogin) onLogin(savedUser);

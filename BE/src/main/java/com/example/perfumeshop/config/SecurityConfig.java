@@ -33,10 +33,10 @@ public class SecurityConfig {
                     .requestMatchers("/auth/**").permitAll() // endpoint public cho login/register
                     .requestMatchers("/error").permitAll()   // tránh lỗi 403 khi preflight /error
                     .requestMatchers("/accounts/**").hasAnyRole("ADMIN")
-                    .requestMatchers("/categories/**").hasAnyRole("ADMIN")
-                    .requestMatchers("/brands/**").hasAnyRole("ADMIN")
+                    .requestMatchers("/categories/**").permitAll() 
+                    .requestMatchers("/brands/**").permitAll() 
                     .requestMatchers("/suppliers/**").hasAnyRole("ADMIN", "NHANVIEN")
-                    .requestMatchers("/products/**").hasAnyRole("ADMIN", "NHANVIEN")
+                    .requestMatchers("/products/**").permitAll() 
                     .requestMatchers("/receipts/**").hasAnyRole("ADMIN", "NHANVIEN")
                     
                     .anyRequest().authenticated()

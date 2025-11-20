@@ -106,7 +106,12 @@ public class AccountService {
                     .build();
         }
         Account saved = repository.save(account);
-        return toResponse(saved);
+        // ✅ Sinh JWT nội bộ
+    String token = jwtUtil.generateToken(saved);
+    System.out.println("JWT Token: " + token);
+    AccountResponse response = toResponse(saved);
+    response.setToken(token);
+        return response;
     }
 
     // ================= Reset Password =================
@@ -153,6 +158,11 @@ public class AccountService {
         return String.valueOf(code);
     }
     
+    public AccountResponse getAccountByEmail(String email) {
+    Account account = repository.findByEmail(email)
+        .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
+    return toResponse(account);
+}
 
     private AccountResponse toResponse(Account account) {
         return AccountResponse.builder()
