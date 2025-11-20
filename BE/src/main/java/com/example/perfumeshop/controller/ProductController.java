@@ -22,12 +22,17 @@ public class ProductController {
         return service.getAll();
     }
 
-@PostMapping
-public ResponseEntity<ProductResponse> create(@RequestBody ProductRequest req) {
-    ProductResponse response = service.create(req);
-    return ResponseEntity.ok(response);
-}
-
+    @PostMapping
+    public ResponseEntity<ProductResponse> create(@RequestBody ProductRequest req) {
+        ProductResponse response = service.create(req);
+        return ResponseEntity.ok(response);
+    }
+    
+    @GetMapping("/{id}")
+    public ResponseEntity<ProductResponse> getById(@PathVariable Integer id) {
+        ProductResponse response = service.getById(id);
+        return ResponseEntity.ok(response);
+    }
 
     @PutMapping("/{id}")
     public ProductResponse update(@PathVariable Integer id, @RequestBody ProductRequest req) {

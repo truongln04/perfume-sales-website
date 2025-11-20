@@ -55,6 +55,11 @@ public class ProductService {
 
         return toResponse(savedProduct);
     }
+    public ProductResponse getById(Integer id) {
+        Product product = productRepository.findById(id)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + id));
+        return toResponse(product);
+    }
 
     public ProductResponse update(Integer id, ProductRequest request) {
         Product product = productRepository.findById(id).orElseThrow();
