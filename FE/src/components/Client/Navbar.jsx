@@ -93,6 +93,29 @@ export default function Navbar() {
     scrollIndex,
     scrollIndex + visibleCount
   );
+  // ------------------- Cập nhật giỏ hàng -------------------
+const [cartCount, setCartCount] = useState(0);
+
+useEffect(() => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    axios.get("http://localhost:8081/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    })
+    .then((res) => axios.get(`http://localhost:8081/cart/${res.data.idTaiKhoan}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    }))
+    .then((res) => setCartCount(res.data.length))
+    .catch(() => setCartCount(0));
+  }
+
+  // ✅ Lắng nghe sự kiện cart-updated
+  const handleCartUpdate = (e) => setCartCount(e.detail);
+  window.addEventListener("cart-updated", handleCartUpdate);
+
+  return () => window.removeEventListener("cart-updated", handleCartUpdate);
+}, []);
+
 
   // ------------------- Render -------------------
   return (
@@ -147,10 +170,13 @@ export default function Navbar() {
         <div className="d-flex align-items-center gap-4">
           <Link to="/client/cart" className="text-dark position-relative">
             <i className="bi bi-cart3 fs-3"></i>
-            <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
-              3
-            </span>
+            {cartCount > 0 && (
+              <span className="position-absolute top-0 start-100 translate-middle badge rounded-pill bg-danger">
+                {cartCount}
+              </span>
+            )}
           </Link>
+
 
           {!user ? (
             <Link
