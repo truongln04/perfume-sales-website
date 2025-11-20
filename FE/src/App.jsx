@@ -1,11 +1,18 @@
-import { BrowserRouter as Router, Routes, Route, Navigate, useLocation } from "react-router-dom";
+// App.jsx - PHIÊN BẢN HOÀN CHỈNH, FIX TRIỆT ĐỂ (2025)
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+  useLocation,
+} from "react-router-dom";
 import { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 
 import AdminLayout from "./layouts/AdminLayout";
 import ClientLayout from "./layouts/ClientLayout";
 
-// Admin pages
+// Pages import (giữ nguyên như cũ)
 import Dashboard from "./pages/admin/Dashboard";
 import Accounts from "./pages/admin/Accounts";
 import Categories from "./pages/admin/Categories";
@@ -17,12 +24,10 @@ import Warehouse from "./pages/admin/Warehouse";
 import Orders from "./pages/admin/Orders";
 import Reports from "./pages/admin/Reports";
 
-// Auth pages
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 
-// Client pages
 import Home from "./pages/client/Home";
 import ProductList from "./pages/client/ProductList";
 import ProductDetail from "./pages/client/ProductDetail";
@@ -30,130 +35,111 @@ import Cart from "./pages/client/Cart";
 import Checkout from "./pages/client/Checkout";
 import Profile from "./pages/client/Profile";
 
-// Component xử lý redirect theo role khi vào root "/"
-function RootRedirect() {
-  const location = useLocation();
+// Custom Hook: Luôn trả về role mới nhất sau mỗi lần login/logout
+function useRole() {
   const [role, setRole] = useState(null);
 
   useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setRole(null);
-      return;
-    }
-
-    try {
-      const decoded = jwtDecode(token);
-
-      // Token Google → luôn là khách hàng
-      if (decoded.email && !decoded.authorities) {
-        setRole("KHACHHANG");
+    const updateRole = () => {
+      const token = localStorage.getItem("token");
+      if (!token) {
+        setRole(null);
         return;
       }
 
-      // Token Spring Security
-      let extractedRole = null;
-      if (decoded.authorities?.length > 0) {
-        extractedRole = decoded.authorities[0].replace("ROLE_", "");
+      try {
+        const decoded = jwtDecode(token);
+
+        // Google login → luôn là KHACHHANG
+        if (decoded.email && !decoded.authorities) {
+          setRole("KHACHHANG");
+          return;
+        }
+
+        // Spring Security token
+        let r = null;
+        if (decoded.authorities?.length > 0) {
+          r = decoded.authorities[0].authority?.replace("ROLE_", "") ||
+              decoded.authorities[0]?.replace("ROLE_", "");
+        }
+        r = r || decoded.role || decoded.vaiTro || decoded.scope || null;
+
+        setRole(r?.toUpperCase() || null);
+      } catch (err) {
+        console.error("Token invalid:", err);
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+        setRole(null);
       }
-      extractedRole = extractedRole || decoded.role || decoded.vaiTro || null;
-      setRole(extractedRole);
-    } catch (err) {
-      console.error("JWT decode error:", err);
-      setRole(null);
-    }
+    };
+
+    // Chạy ngay
+    updateRole();
+
+    // Bắt sự kiện login/logout từ Login.jsx
+    window.addEventListener("storage", updateRole);
+    window.addEventListener("account-updated", updateRole); // bạn đã dispatch rồi → cực tốt!
+
+    // Poll nhẹ để bắt login cùng tab (an toàn nhất)
+    const interval = setInterval(updateRole, 1000);
+
+    return () => {
+      window.removeEventListener("storage", updateRole);
+      window.removeEventListener("account-updated", updateRole);
+      clearInterval(interval);
+    };
   }, []);
 
-  // Nếu đang ở một route khác (ví dụ /login, /admin, …) thì không can thiệp
-  if (location.pathname !== "/" && location.pathname !== "") {
-    return null; // để các route khác xử lý bình thường
-  }
+  return role;
+}
 
-  if (role === "ADMIN" || role === "NHANVIEN") {
-    return <Navigate to="/admin" replace />;
-  }
+// Root redirect khi vào "/"
+function RootRedirect() {
+  const role = useRole();
+  const location = useLocation();
 
-  if (role === "KHACHHANG") {
-    return <Navigate to="/client" replace />;
-  }
+  useLocation();
 
-  // Chưa đăng nhập hoặc token lỗi → đi tới trang client public
+  if (location.pathname !== "/") return null;
+
+  if (role === "ADMIN" || role === "NHANVIEN") return <Navigate to="/admin" replace />;
   return <Navigate to="/client" replace />;
 }
 
 export default function App() {
-  const [role, setRole] = useState(null);
-
-  // Cập nhật role toàn cục (dùng cho các protected route)
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      setRole(null);
-      return;
-    }
-
-    try {
-      const decoded = jwtDecode(token);
-
-      if (decoded.email && !decoded.authorities) {
-        setRole("KHACHHANG");
-        return;
-      }
-
-      let extractedRole = null;
-      if (decoded.authorities?.length > 0) {
-        extractedRole = decoded.authorities[0].replace("ROLE_", "");
-      }
-      extractedRole = extractedRole || decoded.role || decoded.vaiTro || null;
-      setRole(extractedRole);
-    } catch (err) {
-      console.error("JWT decode error:", err);
-      setRole(null);
-      localStorage.removeItem("token"); // token hỏng thì xóa luôn
-    }
-  }, []);
+  const role = useRole(); // ← luôn chính xác, luôn cập nhật realtime
 
   const isAdmin = role === "ADMIN";
   const isStaff = role === "NHANVIEN";
   const isCustomer = role === "KHACHHANG";
 
+  // Optional: truyền onLogin xuống nếu muốn (nhưng không cần nữa là không cần vì useRole tự động cập nhật)
+  // const handleLoginSuccess = () => { /* có thể để trống */ };
+
   return (
     <Router>
       <Routes>
-        {/* Redirect root theo role */}
         <Route path="/" element={<RootRedirect />} />
 
-        {/* Auth routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
         <Route path="/forgotpassword" element={<ForgotPassword />} />
 
-        {/* Client public + private */}
+        {/* CLIENT AREA */}
         <Route path="/client" element={<ClientLayout />}>
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
           <Route path="products" element={<ProductList />} />
           <Route path="product/:id" element={<ProductDetail />} />
-
-          {/* Chỉ khách hàng mới vào được */}
-          <Route
-            path="cart"
-            element={isCustomer ? <Cart /> : <Navigate to="/login" replace />}
-          />
-          <Route
-            path="checkout"
-            element={isCustomer ? <Checkout /> : <Navigate to="/login" replace />}
-          />
-          <Route
-            path="profile"
-            element={!!localStorage.getItem("token") ? <Profile /> : <Navigate to="/login" replace />}
-          />
+          <Route path="cart" element={isCustomer ? <Cart /> : <Navigate to="/login" replace />} />
+          <Route path="checkout" element={isCustomer ? <Checkout /> : <Navigate to="/login" replace />} />
+          <Route path="profile" element={localStorage.getItem("token") ? <Profile /> : <Navigate to="/login" replace />} />
         </Route>
 
-        {/* Admin / Staff protected area */}
+        {/* ADMIN / STAFF AREA */}
         <Route
           path="/admin/*"
-          element={isAdmin || isStaff ? <AdminLayout /> : <Navigate to="/login" replace />}
+          element={(isAdmin || isStaff) ? <AdminLayout /> : <Navigate to="/login" replace />}
         >
           <Route index element={<Dashboard />} />
           {isAdmin && <Route path="categories" element={<Categories />} />}
@@ -167,7 +153,6 @@ export default function App() {
           {isAdmin && <Route path="reports" element={<Reports />} />}
         </Route>
 
-        {/* Catch-all: đưa về trang phù hợp */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </Router>
