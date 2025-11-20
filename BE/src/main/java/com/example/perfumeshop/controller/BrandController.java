@@ -2,6 +2,8 @@ package com.example.perfumeshop.controller;
 import com.example.perfumeshop.dto.BrandRequest;
 import com.example.perfumeshop.dto.BrandResponse;
 import com.example.perfumeshop.service.BrandService;
+import com.example.perfumeshop.service.ProductService;
+import com.example.perfumeshop.dto.ProductResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
@@ -13,6 +15,7 @@ import java.util.List;
 @RequestMapping("/brands")
 public class BrandController {
     private final BrandService service;
+    private final ProductService productService;
 
     @PostMapping
     public BrandResponse create(@Valid @RequestBody BrandRequest request) {
@@ -44,4 +47,8 @@ public class BrandController {
         return service.getBrandById(id);
  
     }    
+    @GetMapping("/{id}/products")
+    public List<ProductResponse> getProductsByBrandId(@PathVariable Integer id) {
+        return productService.getProductsByBrandId(id);
+    }
 }

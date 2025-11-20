@@ -2,9 +2,10 @@ export default function Banner() {
   return (
     <div className="banner-container">
       <img
-        // src="https://img.freepik.com/free-vector/realist-illustration-sale-banner-design_52683-64722.jpg?semt=ais_hybrid&w=740&q=80"
+        src="https://orchard.vn/wp-content/uploads/2025/10/Orchard-20-10-huong-len-ngoi-nang-len-huong-cover.webp"
         className="w-100 img-fluid"
         alt="Hương lên ngôi, Nàng lên hương"
+        style={{ pointerEvents: "none" }}
         loading="lazy"
       />
     </div>

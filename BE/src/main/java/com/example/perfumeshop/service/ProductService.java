@@ -10,8 +10,6 @@ import com.example.perfumeshop.repository.CategoryRepository;
 import com.example.perfumeshop.repository.BrandRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -118,16 +116,16 @@ public class ProductService {
         return response;
     }
 
-        // ================== THÊM MỚI: LẤY SẢN PHẨM THEO DANH MỤC (CHO NAVBAR) ==================
-    public List<ProductResponse> getProductsByCategoryId(Integer categoryId) {
-        return productRepository.findByDanhMuc_IdDanhMuc(categoryId).stream()
-                .map(this::toResponse)
-                .collect(Collectors.toList());
+    public List<ProductResponse> getProductsByBrandId(Integer brandId) {
+        return productRepository.findByThuonghieu_Idthuonghieu(brandId).stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
     }
 
-    // Nếu bạn muốn hỗ trợ phân trang (tốt hơn cho hiệu suất)
-    public Page<ProductResponse> getProductsByCategoryId(Integer categoryId, Pageable pageable) {
-        return productRepository.findByDanhMuc_IdDanhMuc(categoryId, pageable)
-                .map(this::toResponse);
+    // Trong ProductService.java
+    public List<ProductResponse> getProductsByCategoryId(Integer categoryId) {
+        return productRepository.findByDanhMuc_IdDanhMuc(categoryId).stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
     }
 }
