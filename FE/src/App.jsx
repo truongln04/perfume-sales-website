@@ -34,6 +34,8 @@ import ProductDetail from "./pages/client/ProductDetail";
 import Cart from "./pages/client/Cart";
 import Checkout from "./pages/client/Checkout";
 import Profile from "./pages/client/Profile";
+import BrandDetail from "./pages/client/BrandDetail";
+import CategoryDetail from "./pages/client/CategoryDetail";
 
 // Custom Hook: Luôn trả về role mới nhất sau mỗi lần login/logout
 function useRole() {
@@ -131,6 +133,8 @@ export default function App() {
           <Route path="home" element={<Home />} />
           <Route path="products" element={<ProductList />} />
           <Route path="product/:id" element={<ProductDetail />} />
+          <Route path="brand/:id" element={<BrandDetail />} />
+          <Route path="category/:id" element={<CategoryDetail />} />
           <Route path="cart" element={isCustomer ? <Cart /> : <Navigate to="/login" replace />} />
           <Route path="checkout" element={isCustomer ? <Checkout /> : <Navigate to="/login" replace />} />
           <Route path="profile" element={localStorage.getItem("token") ? <Profile /> : <Navigate to="/login" replace />} />
