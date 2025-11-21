@@ -17,12 +17,9 @@ public class OrdersController {
     private final OrdersService service;
 
     // 🧾 Tạo đơn hàng mới (bao gồm chi tiết đơn hàng)
-    @PostMapping
-    public OrdersResponse createOrder(
-            @Valid @RequestBody OrdersRequest request,
-            @RequestParam(required = false) List<OrdersDetailRequest> chiTietDonHang
-    ) {
-        return service.create(request, chiTietDonHang);
+    @PostMapping("/create")
+    public OrdersResponse createOrder(@Valid @RequestBody OrdersCreateWrapper wrapper) {
+        return service.create(wrapper.getRequest(), wrapper.getChiTietDonHang());
     }
 
     // 📋 Xem danh sách đơn hàng

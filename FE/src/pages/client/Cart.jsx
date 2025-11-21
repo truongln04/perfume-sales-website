@@ -1,10 +1,12 @@
 import { useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
 
 export default function Cart() {
   const [cartItems, setCartItems] = useState([]);
   const [selectedItems, setSelectedItems] = useState([]);
   const [selectAll, setSelectAll] = useState(false);
   const token = localStorage.getItem("token");
+  const navigate = useNavigate();
 
   // Lấy giỏ hàng từ API
   useEffect(() => {
@@ -99,12 +101,32 @@ export default function Cart() {
 
   // Đặt hàng
   const handleOrder = () => {
-    if (selectedItems.length === 0) return;
-    alert(
-      `Đặt hàng ${selectedItems.length} sản phẩm với tổng tiền ${totalPrice.toLocaleString()} ₫`
-    );
-    // TODO: Gọi API đặt hàng ở đây
-  };
+  if (selectedItems.length === 0) {
+    alert("Vui lòng chọn ít nhất một sản phẩm!");
+    return;
+  }
+
+  // Lấy danh sách sản phẩm đã chọn (có đầy đủ thông tin để hiển thị ở trang checkout)
+  const itemsToCheckout = cartItems
+    .filter((item) => selectedItems.includes(item.idGh))
+    .map((item) => ({
+      idGh: item.idGh,
+      idSanPham: item.idSanPham,
+      tenSanPham: item.tenSanPham,
+      donGia: item.donGia,
+      soLuong: item.soLuong,
+      hinhAnh: item.hinhAnh,
+    }));
+
+  // Chuyển sang trang checkout và truyền dữ liệu qua state
+  navigate("../checkout", {
+    replace: false,
+    state: {
+      selectedItems: itemsToCheckout,
+      totalPrice: totalPrice,
+    },
+  });
+};
 
   return (
     <div className="container py-4">

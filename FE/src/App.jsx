@@ -36,6 +36,7 @@ import Checkout from "./pages/client/Checkout";
 import Profile from "./pages/client/Profile";
 import BrandDetail from "./pages/client/BrandDetail";
 import CategoryDetail from "./pages/client/CategoryDetail";
+import MomoReturnPage from "./pages/payment/MomoReturnPage";
 
 // Custom Hook: Luôn trả về role mới nhất sau mỗi lần login/logout
 function useRole() {
@@ -138,6 +139,7 @@ export default function App() {
           <Route path="cart" element={isCustomer ? <Cart /> : <Navigate to="/login" replace />} />
           <Route path="checkout" element={isCustomer ? <Checkout /> : <Navigate to="/login" replace />} />
           <Route path="profile" element={localStorage.getItem("token") ? <Profile /> : <Navigate to="/login" replace />} />
+          <Route path="payment/momo-return" element={<MomoReturnPage />} />
         </Route>
 
         {/* ADMIN / STAFF AREA */}

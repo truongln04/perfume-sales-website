@@ -1,5 +1,7 @@
 package com.example.perfumeshop.dto;
 import java.math.BigDecimal;
+import java.util.List;
+
 import com.example.perfumeshop.entity.Orders.PaymentMethod;
 import lombok.*;
 
@@ -16,4 +18,5 @@ public class OrdersRequest {
     private String sdtNhan;
     private String diaChiGiao;
     private String ghiChu;
+    private List<OrdersDetailRequest> chiTietDonHang;
 }
