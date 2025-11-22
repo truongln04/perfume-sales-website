@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useSearchParams, useNavigate } from "react-router-dom";
 import { jwtDecode } from "jwt-decode";
 
@@ -6,8 +6,15 @@ export default function MomoReturnPage() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState("Đang kiểm tra kết quả thanh toán...");
+  const hasProcessed = useRef(false); // ← CHỐNG CHẠY 2 LẦN
+
+  // === HÀM GIẢI MÃ MỚI - BẮT BUỘC PHẢI CÓ ĐỂ TƯƠNG THÍCH VỚI CHECKOUT.JSX ===
+  const safeAtob = (str) =>
+    JSON.parse(new TextDecoder().decode(Uint8Array.from(atob(str), c => c.charCodeAt(0))));
 
   useEffect(() => {
+    if (hasProcessed.current) return;
+    hasProcessed.current = true;
     const handleMomoReturn = async () => {
       const resultCode = searchParams.get("resultCode"); // 0 = thành công
       const orderId = searchParams.get("orderId");       // Mã đơn hàng MoMo tạo
@@ -24,9 +31,11 @@ export default function MomoReturnPage() {
       // Decode extraData đã btoa trước đó
       let orderData;
       try {
-        orderData = JSON.parse(atob(pendingOrderRaw));
+        orderData = safeAtob(pendingOrderRaw);
       } catch (err) {
-        setStatus("Dữ liệu đơn hàng bị lỗi!");
+        console.error("Lỗi decode pendingMomoOrder:", err);
+        setStatus("Dữ liệu đơn hàng bị lỗi hoặc không hợp lệ!");
+        localStorage.removeItem("pendingMomoOrder");
         return;
       }
 
@@ -57,7 +66,7 @@ export default function MomoReturnPage() {
               sdtNhan: orderData.sdtNhan,
               diaChiGiao: orderData.diaChiGiao,
               ghiChu: orderData.ghiChu || null,
-              phuongThucTT: "MOMO",
+              phuongThucTT: "ONLINE",
               momoOrderId: orderId // lưu lại để đối soát sau nếu cần
             },
             chiTietDonHang: orderData.selectedItems.map(item => ({
@@ -130,7 +139,7 @@ export default function MomoReturnPage() {
     };
 
     handleMomoReturn();
-  }, [searchParams, navigate]);
+  }, [searchParams]);
 
   return (
     <div className="container py-5">
@@ -140,7 +149,7 @@ export default function MomoReturnPage() {
             <div className="card-body text-center p-5">
               <div className="mb-4">
                 <img 
-                  src="https://img.momo.vn/_next/image?url=%2Fimages%2Fmomo-logo.png&w=256&q=75" 
+                  src="https://developers.momo.vn/v3/vi/img/logo.svg" 
                   alt="MoMo" 
                   style={{ width: 80 }}
                 />
@@ -154,7 +163,7 @@ export default function MomoReturnPage() {
               </div>
 
               <div className="mt-4">
-                <div className="spinner-border text-warning" role="status" style={{ display: status.includes("Đang") ? "inline-block" : "none" }}>
+                <div className="spinner-border text-warning" role="status" style={{ display: (status.includes && status.includes("Đang")) ? "inline-block" : "none" }}>
                   <span className="visually-hidden">Loading...</span>
                 </div>
               </div>

@@ -14,8 +14,12 @@ export default function Checkout() {
     sdtNhan: "",
     diaChiGiao: "",
     ghiChu: "",
-    phuongThucTT: "COD", // COD hoặc MOMO
+    phuongThucTT: "COD", // COD hoặc ONLINE (MoMo)
   });
+
+  // Hàm mã hóa Base64 an toàn với tiếng Việt - PHIÊN BẢN MỚI NHẤT 2025 (không deprecated)
+  const safeBtoa = (obj) =>
+    btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(obj))));
 
   useEffect(() => {
     if (!state || selectedItems.length === 0) {
@@ -62,6 +66,7 @@ export default function Checkout() {
     let idTaiKhoan = null;
     try {
       const decoded = jwtDecode(token);
+      
       idTaiKhoan = decoded.idTaiKhoan || decoded.id || decoded.userId || null;
     } catch (err) {
       console.error("Token lỗi:", err);
@@ -82,6 +87,8 @@ export default function Checkout() {
         donGia: item.donGia
       }))
     };
+    console.log("Payload gửi lên backend (COD):", payload);
+    console.log("idTaiKhoan đang gửi:", idTaiKhoan);
 
     try {
       const res = await fetch("http://localhost:8081/orders/create", {
@@ -124,19 +131,20 @@ export default function Checkout() {
     setLoading(true);
     const token = localStorage.getItem("token");
 
-    // Chuẩn bị dữ liệu gửi sang backend để tạo link MoMo
+    const orderDataForMomo = {
+      selectedItems,
+      totalPrice,
+      hoTenNhan: form.hoTenNhan.trim(),
+      sdtNhan: form.sdtNhan.trim(),
+      diaChiGiao: form.diaChiGiao.trim(),
+      ghiChu: form.ghiChu.trim() || "",
+      phuongThucTT: "ONLINE"
+    };
+
     const momoRequest = {
       amount: totalPrice,
       orderInfo: `Thanh toán đơn hàng PerfumeShop - ${new Date().toLocaleString("vi-VN")}`,
-      extraData: btoa(JSON.stringify({ // mã hóa thông tin đơn hàng để sau này decode khi return
-        selectedItems,
-        totalPrice,
-        hoTenNhan: form.hoTenNhan.trim(),
-        sdtNhan: form.sdtNhan.trim(),
-        diaChiGiao: form.diaChiGiao.trim(),
-        ghiChu: form.ghiChu.trim() || "",
-        phuongThucTT: "MOMO"
-      }))
+      extraData: safeBtoa(orderDataForMomo) // ĐÃ DÙNG HÀM MỚI - AN TOÀN 100%
     };
 
     try {
@@ -152,9 +160,8 @@ export default function Checkout() {
       const data = await res.json();
 
       if (data.payUrl) {
-        // Lưu tạm thông tin đơn hàng vào localStorage để xử lý khi return
-        localStorage.setItem("pendingMomoOrder", JSON.stringify(momoRequest.extraData));
-        // Redirect sang MoMo
+        // Lưu tạm để xử lý khi quay lại từ MoMo
+        localStorage.setItem("pendingMomoOrder", momoRequest.extraData);
         window.location.href = data.payUrl;
       } else {
         alert("Lỗi tạo thanh toán MoMo: " + (data.message || "Không nhận được payUrl"));
@@ -170,7 +177,7 @@ export default function Checkout() {
   const handleConfirmOrder = () => {
     if (form.phuongThucTT === "COD") {
       handleCODOrder();
-    } else if (form.phuongThucTT === "MOMO") {
+    } else if (form.phuongThucTT === "ONLINE") {
       handleMomoPayment();
     }
   };
@@ -202,7 +209,7 @@ export default function Checkout() {
                   onChange={handleInputChange}
                   required
                 />
-                </div>
+              </div>
               <div className="mb-3">
                 <label className="form-label">Ghi chú (tùy chọn)</label>
                 <textarea name="ghiChu" className="form-control" rows="3" value={form.ghiChu} onChange={handleInputChange} />
@@ -231,13 +238,13 @@ export default function Checkout() {
                     className="form-check-input"
                     type="radio"
                     name="phuongThucTT"
-                    id="momo"
-                    value="MOMO"
-                    checked={form.phuongThucTT === "MOMO"}
+                    id="online"
+                    value="ONLINE"
+                    checked={form.phuongThucTT === "ONLINE"}
                     onChange={handleInputChange}
                   />
-                  <label className="form-check-label d-flex align-items-center" htmlFor="momo">
-                    <img src="https://img.momo.vn/_next/image?url=%2Fimages%2Fmomo-logo.png&w=128&q=75" alt="MoMo" style={{ width: 40, marginRight: 10 }} />
+                  <label className="form-check-label d-flex align-items-center" htmlFor="online">
+                    <img src="https://developers.momo.vn/v3/vi/img/logo.svg" alt="MoMo" style={{ width: 40, marginRight: 10 }} />
                     <span>Thanh toán qua ví MoMo</span>
                   </label>
                 </div>
@@ -285,7 +292,12 @@ export default function Checkout() {
                 onClick={handleConfirmOrder}
                 disabled={loading}
               >
-                {loading ? "Đang xử lý..." : form.phuongThucTT === "MOMO" ? "THANH TOÁN VỚI MOMO" : "XÁC NHẬN ĐẶT HÀNG"}
+                {loading 
+                  ? "Đang xử lý..." 
+                  : form.phuongThucTT === "ONLINE" 
+                    ? "THANH TOÁN VỚI MOMO" 
+                    : "XÁC NHẬN ĐẶT HÀNG"
+                }
               </button>
             </div>
           </div>

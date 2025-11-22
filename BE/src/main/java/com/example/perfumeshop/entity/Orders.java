@@ -2,17 +2,24 @@ package com.example.perfumeshop.entity;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
+
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
 
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
 @Table(name = "don_hang")
-@Data
+@Getter  // ← Thay @Data bằng các cái riêng
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"chiTietDonHang", "taiKhoan"})  // ← LOẠI TRỪ 2 FIELD NÀY KHỎI toString()
+@EqualsAndHashCode(exclude = {"chiTietDonHang", "taiKhoan"})  // ← LOẠI TRỪ KHỎI equals()/hashCode()
 public class Orders {
 
     @Id
@@ -26,6 +33,7 @@ public class Orders {
         referencedColumnName = "id_tai_khoan",
         foreignKey = @ForeignKey(name = "fk_donhang_taikhoan")
     )
+    @JsonBackReference
     private Account taiKhoan;
 
     @Column(name = "ngay_dat", columnDefinition = "DATETIME DEFAULT CURRENT_TIMESTAMP")
@@ -62,7 +70,9 @@ public class Orders {
     private String ghiChu;
 
     @OneToMany(mappedBy = "donHang", cascade = CascadeType.ALL, orphanRemoval = true)
-    private List<OrdersDetail> chiTietDonHang;
+    @Builder.Default
+    @JsonManagedReference
+    private List<OrdersDetail> chiTietDonHang = new ArrayList<>();
 
     // 🧾 Enum nội bộ
     public enum PaymentMethod {

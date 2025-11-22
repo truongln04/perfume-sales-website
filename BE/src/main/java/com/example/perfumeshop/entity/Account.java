@@ -1,4 +1,6 @@
 package com.example.perfumeshop.entity;
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -36,6 +38,11 @@ public class Account {
     @Column(name = "vai_tro", nullable = false)
     @Builder.Default
     private VaiTro vaiTro = VaiTro.KHACHHANG;
+
+    @OneToMany(mappedBy = "taiKhoan") 
+    @JsonManagedReference 
+    @Builder.Default 
+    private java.util.List<Orders> donHangs = new java.util.ArrayList<>();
 
     public enum VaiTro {
         ADMIN,

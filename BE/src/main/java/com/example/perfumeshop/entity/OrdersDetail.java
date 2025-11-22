@@ -3,20 +3,24 @@ package com.example.perfumeshop.entity;
 import java.io.Serializable;
 import java.math.BigDecimal;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+
 import jakarta.persistence.*;
 import lombok.*;
 
 @Entity
 @Table(name = "chi_tiet_don_hang")
-@Data
+@Getter  // ← Thay @Data bằng các cái riêng
+@Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
+@ToString(exclude = {"donHang", "sanPham"})  // ← LOẠI TRỪ FIELD NÀY KHỎI toString()
+@EqualsAndHashCode(exclude = {"donHang", "sanPham"})  // ← LOẠI TRỪ KHỎI equals()/hashCode()
 public class OrdersDetail implements Serializable {
-
     private static final long serialVersionUID = 1L;
 
-     @Id
+    @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_ctdh")
     private Integer idCtdh;
@@ -27,6 +31,7 @@ public class OrdersDetail implements Serializable {
         nullable = false,
         foreignKey = @ForeignKey(name = "fk_ctdh_donhang")
     )
+    @JsonBackReference  // ← THÊM NÀY CHO PHÍA CON (không serialize ngược lại)
     private Orders donHang;
 
     @ManyToOne

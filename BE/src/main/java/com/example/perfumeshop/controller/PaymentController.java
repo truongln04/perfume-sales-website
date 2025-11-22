@@ -1,4 +1,3 @@
-// src/main/java/com/example/perfumeshop/controller/PaymentController.java
 package com.example.perfumeshop.controller;
 
 import com.example.perfumeshop.dto.MomoPayload;
@@ -16,12 +15,12 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/payment")
-@CrossOrigin(origins = "http://localhost:3000/client/payment/momo-return") // cho React chạy port 3000
+@CrossOrigin(origins = "http://localhost:5173") // cho React chạy port 3000
 public class PaymentController {
 
-    private static final String PARTNER_CODE = "MOMO_PARTNER_CODE_CỦA_BẠN";
-    private static final String ACCESS_KEY = "YOUR_ACCESS_KEY";
-    private static final String SECRET_KEY = "YOUR_SECRET_KEY";
+    private static final String PARTNER_CODE = "MOMO";
+    private static final String ACCESS_KEY = "F8BBA842ECF85";
+    private static final String SECRET_KEY = "K951B6PE1waDMi640xX08PD3vg6EkVlz";
     private static final String MOMO_API_URL = "https://test-payment.momo.vn/v2/gateway/api/create";
 
     @PostMapping("/momo")
@@ -32,8 +31,8 @@ public class PaymentController {
         String orderId = "DH" + System.currentTimeMillis();
         String requestId = UUID.randomUUID().toString();
 
-        String redirectUrl = "http://localhost:3000/payment/momo-return";  // trang React của bạn
-        String ipnUrl = "https://yourdomain.com/api/payment/momo-ipn";      // backend nhận thông báo
+        String redirectUrl = "http://localhost:5173/client/payment/momo-return";  // trang React của bạn
+        String ipnUrl = "http://localhost:8081/payment/momo-ipn";      // backend nhận thông báo
 
         String rawSignature = "accessKey=" + ACCESS_KEY +
                 "&amount=" + req.getAmount() +
@@ -44,7 +43,7 @@ public class PaymentController {
                 "&partnerCode=" + PARTNER_CODE +
                 "&redirectUrl=" + redirectUrl +
                 "&requestId=" + requestId +
-                "&requestType=captureWallet";
+                "&requestType=payWithMethod";
 
         String signature = hmacSHA256(rawSignature, SECRET_KEY);
 
@@ -58,7 +57,7 @@ public class PaymentController {
                 .redirectUrl(redirectUrl)
                 .ipnUrl(ipnUrl)
                 .extraData(req.getExtraData())
-                .requestType("captureWallet")
+                .requestType("payWithMethod")
                 .signature(signature)
                 .build();
 

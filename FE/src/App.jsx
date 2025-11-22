@@ -37,7 +37,7 @@ import Profile from "./pages/client/Profile";
 import BrandDetail from "./pages/client/BrandDetail";
 import CategoryDetail from "./pages/client/CategoryDetail";
 import OrdersList from "./pages/client/OrdersList";
-import MomoReturnPage from "./pages/payment/MomoReturnPage";
+import MomoReturnPage from "./pages/client/payment/MomoReturnPage";
 
 // Custom Hook: Luôn trả về role mới nhất sau mỗi lần login/logout
 function useRole() {
@@ -102,7 +102,6 @@ function RootRedirect() {
   const role = useRole();
   const location = useLocation();
 
-  useLocation();
 
   if (location.pathname !== "/") return null;
 
