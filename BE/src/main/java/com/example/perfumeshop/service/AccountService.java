@@ -162,7 +162,20 @@ public class AccountService {
     Account account = repository.findByEmail(email)
         .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
     return toResponse(account);
-}
+    }
+
+    public AccountResponse updateAccountByEmail(String email, AccountRequest request) {
+    Account account = repository.findByEmail(email)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy tài khoản"));
+
+    account.setTenHienThi(request.getTenHienThi());
+    account.setSdt(request.getSdt());
+    account.setAnhDaiDien(request.getAnhDaiDien());
+
+    Account saved = repository.save(account);
+    return toResponse(saved);
+    }
+
 
     private AccountResponse toResponse(Account account) {
         return AccountResponse.builder()

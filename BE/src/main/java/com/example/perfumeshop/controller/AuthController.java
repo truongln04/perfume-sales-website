@@ -80,5 +80,13 @@ public ResponseEntity<AccountResponse> getCurrentUser(@AuthenticationPrincipal S
     return ResponseEntity.ok(account);
 }
 
+    @PutMapping("/me")
+public ResponseEntity<AccountResponse> updateCurrentUser(
+        @AuthenticationPrincipal String email,
+        @RequestBody AccountRequest request
+) {
+    AccountResponse updated = service.updateAccountByEmail(email, request);
+    return ResponseEntity.ok(updated);
+}
 
 }

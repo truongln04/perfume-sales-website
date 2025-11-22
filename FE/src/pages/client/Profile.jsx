@@ -5,12 +5,21 @@ import { useNavigate } from "react-router-dom";
 export default function Profile() {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [showPassword, setShowPassword] = useState(false);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  const [formData, setFormData] = useState({
+    tenHienThi: "",
+    sdt: "",
+    anhDaiDien: ""
+  });
+  const [previewAvatar, setPreviewAvatar] = useState("");
+
   const navigate = useNavigate();
 
+  // Lấy thông tin user
   useEffect(() => {
     const token = localStorage.getItem("token");
-
     if (!token) {
       setLoading(false);
       return;
@@ -20,23 +29,87 @@ export default function Profile() {
       .get("http://localhost:8081/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       })
-      .then((res) => setUser(res.data))
+      .then((res) => {
+        const data = res.data;
+        setUser(data);
+        setFormData({
+          tenHienThi: data.tenHienThi || "",
+          sdt: data.sdt || "",
+          anhDaiDien: data.anhDaiDien || ""
+        });
+        setPreviewAvatar(data.anhDaiDien || "/default-avatar.png");
+      })
       .catch((err) => {
-        console.error("Lỗi lấy thông tin user:", err);
+        console.error("Lỗi lấy thông tin:", err);
         localStorage.removeItem("token");
-        localStorage.removeItem("user");
-        alert("Phiên đăng nhập hết hạn. Vui lòng đăng nhập lại.");
+        alert("Phiên đăng nhập hết hạn!");
         navigate("/login");
       })
       .finally(() => setLoading(false));
   }, [navigate]);
 
-  // Logout function
+  // Xử lý chọn ảnh
+  const handleAvatarChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert("Ảnh quá lớn! Vui lòng chọn ảnh dưới 5MB.");
+      return;
+    }
+
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      const base64 = reader.result;
+      setPreviewAvatar(base64);
+      setFormData(prev => ({ ...prev, anhDaiDien: base64 }));
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Lưu thông tin
+  const handleSave = async () => {
+    if (!formData.tenHienThi.trim()) {
+      alert("Vui lòng nhập họ và tên!");
+      return;
+    }
+
+    setSaving(true);
+    try {
+      const token = localStorage.getItem("token");
+      console.log("Token đang dùng:", token);
+      console.log("User ID:", user.idTaiKhoan);
+
+      // Gọi API cập nhật (dùng PUT /accounts/{id} hoặc /auth/me/update tùy bạn)
+      await axios.put(
+        `http://localhost:8081/auth/me`,
+        {
+          tenHienThi: formData.tenHienThi.trim(),
+          sdt: formData.sdt.trim(),
+          anhDaiDien: formData.anhDaiDien
+        },
+        { headers: { Authorization: `Bearer ${token}` } }
+      );
+
+      // Cập nhật lại user
+      const updatedUser = { ...user, ...formData };
+      setUser(updatedUser);
+      setEditing(false);
+
+      alert("Cập nhật thông tin thành công!");
+      window.dispatchEvent(new Event("account-updated")); // Cập nhật Navbar, Checkout, v.v.
+    } catch (err) {
+      console.error(err);
+      alert("Cập nhật thất bại: " + (err.response?.data?.message || err.message));
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleLogout = () => {
     if (confirm("Bạn có chắc muốn đăng xuất?")) {
       localStorage.removeItem("token");
-      localStorage.removeItem("user");
-      window.dispatchEvent(new Event("account-updated")); // thông báo Navbar cập nhật
+      window.dispatchEvent(new Event("account-updated"));
       navigate("/login");
     }
   };
@@ -45,9 +118,7 @@ export default function Profile() {
   if (loading) {
     return (
       <div className="container py-5 text-center">
-        <div className="spinner-border text-primary" style={{ width: "3rem", height: "3rem" }} role="status">
-          <span className="visually-hidden">Đang tải...</span>
-        </div>
+        <div className="spinner-border text-primary" style={{ width: "4rem", height: "4rem" }}></div>
       </div>
     );
   }
@@ -57,11 +128,9 @@ export default function Profile() {
     return (
       <div className="container py-5 min-vh-100 d-flex align-items-center justify-content-center">
         <div className="text-center">
-          <i className="bi bi-person-circle text-muted" style={{ fontSize: "5rem" }}></i>
-          <h3 className="mt-4 text-muted">Bạn chưa đăng nhập</h3>
-          <p className="text-muted mb-4">Đăng nhập để xem thông tin cá nhân và lịch sử đơn hàng</p>
-          <a href="/login" className="btn btn-primary btn-lg px-5">
-            <i className="bi bi-box-arrow-in-right me-2"></i>
+          <i className="bi bi-person-circle text-muted" style={{ fontSize: "6rem" }}></i>
+          <h3 className="mt-4">Bạn chưa đăng nhập</h3>
+          <a href="/login" className="btn btn-primary btn-lg px-5 mt-3">
             Đăng nhập ngay
           </a>
         </div>
@@ -70,124 +139,137 @@ export default function Profile() {
   }
 
   return (
-    <div className="container py-5" style={{ maxWidth: "900px" }}>
+    <div className="container py-5" style={{ maxWidth: "1000px" }}>
       <div className="row g-5">
-        {/* Avatar + Info nhanh */}
-        <div className="col-lg-4">
-          <div className="text-center">
-            <div className="position-relative d-inline-block">
-              <img
-                src={user.anhDaiDien || "/default-avatar.png"}
-                alt="Avatar"
-                className="rounded-circle shadow-lg"
-                width={180}
-                height={180}
-                style={{ objectFit: "cover", border: "6px solid white" }}
-              />
-              <div className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-                   style={{ width: "50px", height: "50px", transform: "translate(20%, 20%)" }}>
-                <i className="bi bi-person-fill fs-4"></i>
-              </div>
-            </div>
+        {/* Avatar + Nút chỉnh sửa */}
+        <div className="col-lg-4 text-center">
+          <div className="position-relative d-inline-block">
+            <img
+              src={previewAvatar}
+              alt="Avatar"
+              className="rounded-circle shadow-lg border border-5 border-white"
+              width={220}
+              height={220}
+              style={{ objectFit: "cover" }}
+            />
 
-            <h4 className="mt-4 fw-bold">{user.tenHienThi || "Khách hàng"}</h4>
-            <p className="text-muted">
-              <i className="bi bi-envelope me-2"></i>
-              {user.email}
-            </p>
+            {editing && (
+              <label
+                className="position-absolute bottom-0 end-0 bg-primary text-white rounded-circle d-flex align-items-center justify-content-center cursor-pointer shadow"
+                style={{ width: 56, height: 56, transform: "translate(30%, 30%)" }}
+              >
+                <i className="bi bi-camera-fill fs-4"></i>
+                <input type="file" accept="image/*" className="d-none" onChange={handleAvatarChange} />
+              </label>
+            )}
+          </div>
 
-            <div className="d-grid gap-2 mt-4">
-              <button className="btn btn-outline-primary rounded-pill py-2">
+          <h3 className="mt-4 fw-bold text-primary">{user.tenHienThi || "Khách hàng"}</h3>
+          <p className="text-muted fs-5">{user.email}</p>
+
+          <div className="d-grid gap-3 mt-4">
+            {!editing ? (
+              <button onClick={() => setEditing(true)} className="btn btn-outline-primary rounded-pill py-2 btn-lg">
                 <i className="bi bi-pencil-square me-2"></i>
                 Chỉnh sửa hồ sơ
               </button>
-              <button onClick={handleLogout} className="btn btn-outline-danger rounded-pill py-2">
-                <i className="bi bi-box-arrow-right me-2"></i>
-                Đăng xuất
-              </button>
-            </div>
+            ) : (
+              <>
+                <button onClick={handleSave} disabled={saving} className="btn btn-success btn-lg rounded-pill">
+                  {saving ? "Đang lưu..." : "Lưu thay đổi"}
+                </button>
+                <button onClick={() => setEditing(false)} className="btn btn-secondary btn-lg rounded-pill">
+                  Hủy
+                </button>
+              </>
+            )}
+
+            <button onClick={handleLogout} className="btn btn-outline-danger rounded-pill py-2 btn-lg">
+              <i className="bi bi-box-arrow-right me-2"></i>
+              Đăng xuất
+            </button>
           </div>
         </div>
 
-        {/* Thông tin chi tiết */}
+        {/* Form thông tin */}
         <div className="col-lg-8">
-          <div className="bg-white rounded-4 shadow-sm p-4 p-md-5" style={{ border: "1px solid #f0f0f0" }}>
-            <h3 className="fw-bold mb-4">
-              <i className="bi bi-person-lines-fill text-primary me-3"></i>
-              Thông tin cá nhân
-            </h3>
+          <div className="card border-0 shadow-lg rounded-4">
+            <div className="card-body p-5">
+              <h3 className="fw-bold mb-5 text-primary">
+                <i className="bi bi-person-lines-fill me-3"></i>
+                Thông tin cá nhân
+              </h3>
 
-            <div className="row g-4">
-              <div className="col-12">
-                <label className="form-label fw-semibold text-muted">Họ và tên</label>
-                <div className="p-3 bg-light rounded-3 border">
-                  <span className="fs-5">{user.tenHienThi || "Chưa cập nhật"}</span>
+              <div className="row g-4">
+                <div className="col-12">
+                  <label className="form-label fw-bold text-dark">Họ và tên *</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-lg"
+                    value={formData.tenHienThi}
+                    onChange={(e) => setFormData({ ...formData, tenHienThi: e.target.value })}
+                    disabled={!editing}
+                    placeholder="Nhập họ và tên"
+                  />
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label fw-bold text-dark">Số điện thoại</label>
+                  <input
+                    type="text"
+                    className="form-control form-control-lg"
+                    value={formData.sdt}
+                    onChange={(e) => setFormData({ ...formData, sdt: e.target.value.replace(/\D/g, "") })}
+                    disabled={!editing}
+                    placeholder="0901234567"
+                    maxLength={11}
+                  />
+                </div>
+
+                <div className="col-md-6">
+                  <label className="form-label fw-bold text-dark">Email</label>
+                  <input
+                    type="email"
+                    className="form-control form-control-lg bg-light"
+                    value={user.email}
+                    disabled
+                  />
                 </div>
               </div>
 
-              <div className="col-md-6">
-                <label className="form-label fw-semibold text-muted">Số điện thoại</label>
-                <div className="p-3 bg-light rounded-3 border">
-                  <span className="fs-5">{user.sdt || "Chưa cập nhật"}</span>
+              {editing && (
+                <div className="alert alert-info mt-4">
+                  <i className="bi bi-info-circle-fill me-2"></i>
+                  Sau khi lưu, thông tin sẽ được cập nhật trên toàn hệ thống (Checkout, đơn hàng, v.v.)
                 </div>
-              </div>
+              )}
 
-              <div className="col-md-6">
-                <label className="form-label fw-semibold text-muted">Email</label>
-                <div className="p-3 bg-light rounded-3 border">
-                  <span className="fs-5">{user.email}</span>
+              <hr className="my-5" />
+
+              <h5 className="fw-bold mb-4 text-primary">
+                <i className="bi bi-grid-3x3-gap-fill me-2"></i>
+                Quản lý tài khoản
+              </h5>
+
+              <div className="row g-4">
+                <div className="col-sm-6">
+                  <a href="/orders" className="btn btn-outline-primary w-100 py-4 rounded-3 text-start shadow-sm">
+                    <i className="bi bi-bag-check-fill fs-3 float-start me-3"></i>
+                    <div>
+                      <strong>Đơn hàng của tôi</strong><br />
+                      <small className="text-muted">Xem và quản lý đơn hàng</small>
+                    </div>
+                  </a>
                 </div>
-              </div>
-
-              <div className="col-12">
-                <label className="form-label fw-semibold text-muted">Mật khẩu</label>
-                <div className="p-3 bg-light rounded-3 border d-flex align-items-center justify-content-between">
-                  <span className="fs-5">
-                    {!user.matKhau || user.matKhau.trim() === ""
-        ? "Chưa đặt mật khẩu"
-        : showPassword
-        ? "Mật khẩu đã được mã hóa"
-        : "••••••••••••"}
-                  </span>
-                  {user.matKhau && user.matKhau.trim() !== "" && (
-                  <button
-                    type="button"
-                    className="btn btn-link text-decoration-none text-muted p-0"
-                    onClick={() => setShowPassword(!showPassword)}
-                  >
-                    <i className={`bi ${showPassword ? "bi-eye-slash" : "bi-eye"} fs-5`}></i>
-                  </button>
-                  )}
+                <div className="col-sm-6">
+                  <a href="/wishlist" className="btn btn-outline-danger w-100 py-4 rounded-3 text-start shadow-sm">
+                    <i className="bi bi-heart-fill fs-3 float-start me-3"></i>
+                    <div>
+                      <strong>Sản phẩm yêu thích</strong><br />
+                      <small className="text-muted">Các sản phẩm bạn đã lưu</small>
+                    </div>
+                  </a>
                 </div>
-              </div>
-            </div>
-
-            <hr className="my-5" />
-
-            {/* Các chức năng khác */}
-            <h5 className="fw-bold mb-4">
-              <i className="bi bi-grid-3x3-gap-fill text-primary me-2"></i>
-              Quản lý tài khoản
-            </h5>
-
-            <div className="row g-3">
-              <div className="col-sm-6">
-                <a href="/orders" className="btn btn-outline-dark w-100 py-3 rounded-3 text-start">
-                  <i className="bi bi-bag-check-fill fs-4 float-start me-3 text-primary"></i>
-                  <div>
-                    <strong>Đơn hàng của tôi</strong><br />
-                    <small className="text-muted">Xem lịch sử mua hàng</small>
-                  </div>
-                </a>
-              </div>
-              <div className="col-sm-6">
-                <a href="/wishlist" className="btn btn-outline-dark w-100 py-3 rounded-3 text-start">
-                  <i className="bi bi-heart-fill fs-4 float-start me-3 text-danger"></i>
-                  <div>
-                    <strong>Yêu thích</strong><br />
-                    <small className="text-muted">Sản phẩm bạn quan tâm</small>
-                  </div>
-                </a>
               </div>
             </div>
           </div>
