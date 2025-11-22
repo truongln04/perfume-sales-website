@@ -2,6 +2,7 @@ package com.example.perfumeshop.service;
 
 import com.example.perfumeshop.dto.*;
 import com.example.perfumeshop.entity.*;
+import com.example.perfumeshop.entity.Orders.PaymentMethod;
 import com.example.perfumeshop.repository.*;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,6 +31,11 @@ public class OrdersService {
                 .taiKhoan(account)
                 .ngayDat(LocalDateTime.now())
                 .phuongThucTT(request.getPhuongThucTT())
+                .trangThaiTT(
+    request.getPhuongThucTT() == PaymentMethod.ONLINE
+        ? Orders.PaymentStatus.DA_THANH_TOAN
+        : Orders.PaymentStatus.CHUA_THANH_TOAN
+)
                 .hoTenNhan(request.getHoTenNhan())
                 .sdtNhan(request.getSdtNhan())
                 .diaChiGiao(request.getDiaChiGiao())

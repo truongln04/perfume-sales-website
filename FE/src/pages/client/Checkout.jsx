@@ -37,7 +37,7 @@ export default function Checkout() {
 
     try {
       const decoded = jwtDecode(token);
-      const hoTen = decoded.hoTen || decoded.fullName || decoded.sub || "";
+      const hoTen = decoded.tenHienThi || decoded.sub || "";
       const sdt = decoded.sdt || decoded.phone || "";
       setForm(prev => ({
         ...prev,

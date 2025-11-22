@@ -28,6 +28,8 @@ public class JwtUtil {
                 .setSubject(account.getEmail())
                 .claim("id", account.getIdTaiKhoan())
                 .claim("role", account.getVaiTro().name())
+                .claim("tenHienThi", account.getTenHienThi() != null ? account.getTenHienThi() : "")
+                .claim("sdt", account.getSdt() != null ? account.getSdt() : "")
                 .setIssuedAt(new Date())
                 .setExpiration(new Date(System.currentTimeMillis() + expirationMs))
                 .signWith(getSigningKey(), SignatureAlgorithm.HS256)

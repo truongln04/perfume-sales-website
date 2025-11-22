@@ -169,40 +169,115 @@ export default function Orders() {
                 <td>{o.tongTien?.toLocaleString("vi-VN")} đ</td>
                 <td>{o.phuongThucTT}</td>
                 <td>
-                  <select
-                    className={`form-select form-select-sm ${
-                      o.trangThaiTT === "DA_THANH_TOAN" ? "text-success border-success" :
-                      o.trangThaiTT === "HOAN_TIEN" ? "text-danger border-danger" : ""
-                    }`}
-                    value={o.trangThaiTT}
-                    onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
-                  >
-                    <option value="CHUA_THANH_TOAN">Chưa thanh toán</option>
-                    <option value="DA_THANH_TOAN">Đã thanh toán</option>
-                    <option value="HOAN_TIEN">Hoàn tiền</option>
-                  </select>
-                </td>
-                <td>
-                  <select
-                    className={`form-select form-select-sm ${
-                      o.trangThai === "HOAN_THANH"
-                        ? "border-success text-success"
-                        : o.trangThai === "HUY"
-                        ? "border-danger text-danger"
-                        : ""
-                    }`}
-                    value={o.trangThai}
-                    onChange={(e) => handleStatusChange(o.id, e.target.value)}
-                  >
-                    <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
-                    <option value="DA_XAC_NHAN">Đã xác nhận</option>
-                    <option value="DANG_GIAO">Đang giao</option>
-                    <option value="GIAO_THAT_BAI">Giao thất bại</option>
-                    <option value="HOAN_THANH">Hoàn thành</option>
-                    <option value="TRA_HANG">Trả hàng</option>
-                    <option value="HUY">Hủy</option>
-                  </select>
-                </td>
+  {o.trangThaiTT === "DA_THANH_TOAN" ? (
+    // ĐÃ THANH TOÁN → chỉ được chọn "HOÀN TIỀN", không được về "Chưa thanh toán"
+    <select
+      className="form-select form-select-sm border-success text-success"
+      value={o.trangThaiTT}
+      onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
+    >
+      <option value="DA_THANH_TOAN">Đã Thanh Toán</option>
+      <option value="HOAN_TIEN">Hoàn tiền</option>
+    </select>
+  ) : o.trangThaiTT === "HOAN_TIEN" ? (
+    // ĐÃ HOÀN TIỀN → khóa chết, không sửa được nữa
+    <span className="badge bg-danger text-white px-3 py-2 rounded">
+      ĐÃ HOÀN TIỀN
+    </span>
+  ) : (
+    // CHƯA THANH TOÁN → cho chọn bình thường
+    <select
+      className="form-select form-select-sm border-warning"
+      value={o.trangThaiTT}
+      onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
+    >
+      <option value="CHUA_THANH_TOAN">Chưa thanh toán</option>
+      <option value="DA_THANH_TOAN">Đã thanh toán</option>
+      <option value="HOAN_TIEN">Hoàn tiền</option>
+    </select>
+  )}
+</td>
+               <td>
+  {/* Các trạng thái KẾT THÚC → hiển thị badge đẹp, KHÔNG cho sửa */}
+  {["HOAN_THANH", "HUY", "TRA_HANG"].includes(o.trangThai) ? (
+    <span
+      className={`badge px-4 py-2 rounded-pill fw-bold ${
+        o.trangThai === "HOAN_THANH"
+          ? "bg-success"
+          : o.trangThai === "HUY"
+          ? "bg-secondary"
+          : "bg-danger"
+      }`}
+    >
+      {o.trangThai === "HOAN_THANH" && "HOÀN THÀNH"}
+      {o.trangThai === "HUY" && "ĐÃ HỦY"}
+      {o.trangThai === "TRA_HANG" && "ĐÃ TRẢ HÀNG"}
+    </span>
+  ) : (
+    /* Các trạng thái đang xử lý → chỉ hiện các option hợp lệ */
+    <select
+      className="form-select form-select-sm"
+      value={o.trangThai}
+      onChange={(e) => {
+        const newStatus = e.target.value;
+
+        // Xác nhận khi hủy đơn
+        if (newStatus === "HUY") {
+          if (window.confirm("Bạn có chắc chắn muốn HỦY đơn hàng này không?")) {
+            handleStatusChange(o.id, newStatus);
+          }
+          return;
+        }
+
+        // Xác nhận khi trả hàng (chỉ từ Hoàn thành)
+        if (newStatus === "TRA_HANG") {
+          if (window.confirm("Xác nhận khách đã TRẢ HÀNG và bạn muốn hoàn tiền?")) {
+            handleStatusChange(o.id, newStatus);
+          }
+          return;
+        }
+
+        // Các chuyển trạng thái bình thường
+        handleStatusChange(o.id, newStatus);
+      }}
+    >
+      {/* 1. Chờ xác nhận */}
+      {o.trangThai === "CHO_XAC_NHAN" && (
+        <>
+          <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
+          <option value="DA_XAC_NHAN">Đã xác nhận</option>
+          <option value="HUY">Hủy đơn</option>
+        </>
+      )}
+
+      {/* 2. Đã xác nhận */}
+      {o.trangThai === "DA_XAC_NHAN" && (
+        <>
+          <option value="DA_XAC_NHAN">Đã xác nhận</option>
+          <option value="DANG_GIAO">Đang giao</option>
+          <option value="HUY">Hủy đơn</option>
+        </>
+      )}
+
+      {/* 3. Đang giao */}
+      {o.trangThai === "DANG_GIAO" && (
+        <>
+          <option value="DANG_GIAO">Đang giao</option>
+          <option value="HOAN_THANH">Giao thành công</option>
+          <option value="HUY">Hủy đơn</option>
+        </>
+      )}
+
+      {/* 4. Hoàn thành → chỉ được trả hàng */}
+      {o.trangThai === "HOAN_THANH" && (
+        <>
+          <option value="HOAN_THANH">HOÀN THÀNH</option>
+          <option value="TRA_HANG">Khách trả hàng</option>
+        </>
+      )}
+    </select>
+  )}
+</td>
                 <td>{o.diaChiGiao}</td>
                 <td>{o.ghiChu || "Không có"}</td>
                 <td className="d-flex gap-2">

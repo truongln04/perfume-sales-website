@@ -194,59 +194,48 @@ export default function OrdersList({ initialOrders = [] }) {
                 {selectedOrder.ghiChu && <p className="mt-2"><strong>Ghi chú:</strong> {selectedOrder.ghiChu}</p>}
 
                 {/* Sản phẩm trong đơn */}
-                <div className="mt-4">
-                  <h6 className="mb-3">Sản phẩm trong đơn</h6>
-                  {selectedOrder.items?.length > 0 ? (
-                    <div className="table-responsive">
-                      <table className="table table-sm align-middle">
-                        <thead className="table-light">
-                          <tr>
-                            <th>IDCTDH</th>
-                            <th>Sản phẩm</th>
-                            <th>SKU/Phân loại</th>
-                            <th className="text-end">Đơn giá</th>
-                            <th className="text-end">Số lượng</th>
-                            <th className="text-end">Thành tiền</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {selectedOrder.items.map((it) => (
-                            <tr key={it.idCTDH || it.id || `${it.sku}-${it.ten}`}>
-                              <td>{it.idCTDH ?? "-"}</td>
-                              <td className="d-flex align-items-center gap-2">
-                                {it.thumbnail && <img src={it.thumbnail} alt={it.ten} width={40} height={40} className="rounded" />}
-                                <div>
-                                  <div className="fw-semibold">{it.ten}</div>
-                                  {it.variant && <div className="text-muted small">{it.variant}</div>}
-                                </div>
-                              </td>
-                              <td>{it.sku || "-"}</td>
-                              <td className="text-end">{(it.donGia ?? 0).toLocaleString()} ₫</td>
-                              <td className="text-end">{it.soLuong ?? 0}</td>
-                              <td className="text-end">{((it.donGia ?? 0) * (it.soLuong ?? 0)).toLocaleString()} ₫</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                        <tfoot>
-                          <tr>
-                            <td colSpan={5} className="text-end fw-semibold">Tổng tiền</td>
-                            <td className="text-end fw-semibold">{(selectedOrder.tongTien ?? 0).toLocaleString()} ₫</td>
-                          </tr>
-                        </tfoot>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="text-muted">Không có sản phẩm trong đơn.</div>
-                  )}
-                </div>
+<div className="mt-4">
+  <h6 className="mb-3">Sản phẩm trong đơn</h6>
+  {selectedOrder.chiTietDonHang?.length > 0 ? (
+    <div className="table-responsive">
+      <table className="table table-sm align-middle">
+        <thead className="table-light">
+          <tr>
+            <th>Tên SP</th>
+            <th className="text-end">Số lượng</th>
+            <th className="text-end">Đơn giá</th>
+            <th className="text-end">Thành tiền</th>
+          </tr>
+        </thead>
+        <tbody>
+          {selectedOrder.chiTietDonHang.map((d, i) => (
+            <tr key={i}>
+              <td className="fw-semibold">{d.tenSanPham}</td>
+              <td className="text-end">{d.soLuong}</td>
+              <td className="text-end">{d.donGia?.toLocaleString("vi-VN")} đ</td>
+              <td className="text-end">{d.thanhTien?.toLocaleString("vi-VN")} đ</td>
+            </tr>
+          ))}
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colSpan={3} className="text-end fw-semibold">Tổng tiền</td>
+            <td className="text-end fw-semibold">
+              {(selectedOrder.tongTien ?? 0).toLocaleString("vi-VN")} đ
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+  ) : (
+    <div className="text-muted">Không có sản phẩm trong đơn.</div>
+  )}
+</div>
+
               </div>
 
               <div className="card-footer d-flex justify-content-end gap-2">
-                {selectedOrder.trangThai !== "HUY" && selectedOrder.trangThai !== "HOAN_THANH" && (
-                  <button className="btn btn-outline-danger" onClick={() => handleCancel(selectedOrder.id)}>
-                    Hủy đơn
-                  </button>
-                )}
+                
                 <button className="btn btn-primary" onClick={() => setSelectedOrder(null)}>Đóng</button>
               </div>
             </div>
