@@ -1,9 +1,14 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
-import { Link } from "react-router-dom";
+import ProductCard from "../../components/Client/ProductCard";
+import Breadcrumb from "../../components/Common/Breadcrumb";
+import Pagination from "../../components/Common/Pagination";
 
-export default function ProductsList({ categoryId, title, linkText }) {
+export default function ProductsList({ categoryId, title = "Nước hoa" }) {
   const [products, setProducts] = useState([]);
+  const [priceFilter, setPriceFilter] = useState("all");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -15,89 +20,77 @@ export default function ProductsList({ categoryId, title, linkText }) {
       .catch(() => setProducts([]));
   }, [categoryId]);
 
-  return (
-    <section className="container py-5 my-5">
-      <div className="d-flex justify-content-between align-items-center mb-5">
-         <h2 className="fw-bold mb-4">Tất cả sản phẩm</h2>
-      </div>
-
-      <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-4 px-2">
-  {products.map((p) => {
+  const filteredProducts = products.filter((p) => {
     const giaSauKm =
       p.giaBan && p.kmPhanTram
         ? Math.round(p.giaBan * (1 - p.kmPhanTram / 100))
         : p.giaBan;
+    if (priceFilter === "0-2000000") return giaSauKm < 2000000;
+    if (priceFilter === "2000000-4000000") return giaSauKm >= 2000000 && giaSauKm <= 4000000;
+    if (priceFilter === "4000001-999999999") return giaSauKm > 4000000;
+    return true;
+  });
 
-    return (
-      <div className="col" key={p.idSanPham}>
-        <Link
-          to={`/client/product/${p.idSanPham}`}
-          className="card h-100 text-center text-decoration-none text-dark position-relative"
-          style={{
-            opacity: 0.95,          // mờ nhẹ
-            transform: "scale(0.95)", // thu nhỏ card
-            transition: "all 0.3s ease",
-          }}
-        >
-          {/* Container ảnh + badge */}
-          <div
-            className="bg-white overflow-hidden position-relative"
-            style={{
-              height: "240px", // thu nhỏ chiều cao ảnh
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              padding: "10px 0",
+  const totalPages = Math.ceil(filteredProducts.length / pageSize);
+  const paginatedProducts = filteredProducts.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize
+  );
+
+  return (
+    <section className="container py-4 my-4">
+        {/* Tiêu đề */}
+      <h4 className="fw-bold mb-3">{title}</h4>
+
+      {/* Breadcrumb tái sử dụng */}
+      <Breadcrumb items={[{ label: "Trang chủ", to: "/client" }, { label: title }]} />
+
+      {/* Bộ lọc giá */}
+      <div className="d-flex flex-wrap align-items-center gap-3 mb-4">
+        <span className="text-muted fw-medium me-2" style={{ fontSize: "0.95rem" }}>
+          Lọc theo giá:
+        </span>
+        {["all", "0-2000000", "2000000-4000000", "4000001-999999999"].map((range) => (
+          <button
+            key={range}
+            className={`btn btn-sm rounded-pill px-4 ${
+              priceFilter === range ? "btn-dark" : "btn-outline-secondary"
+            }`}
+            onClick={() => {
+              setPriceFilter(range);
+              setCurrentPage(1);
             }}
+            style={{ fontSize: "0.875rem" }}
           >
-            {p.kmPhanTram > 0 && (
-              <span
-                className="badge bg-danger position-absolute top-0 start-0 m-2"
-                style={{ zIndex: 2 }}
-              >
-                -{p.kmPhanTram}%
-              </span>
-            )}
-            <img
-              src={p.hinhAnh || "/placeholder.jpg"}
-              alt={p.tenSanPham}
-              className="img-fluid"
-              style={{
-                maxHeight: "100%",
-                width: "auto",
-                objectFit: "contain",
-                zIndex: 1,
-              }}
-              loading="lazy"
-            />
-          </div>
-
-          {/* Thông tin sản phẩm */}
-          <div className="card-body p-2">
-            <p className="text-muted small mb-1 fw-medium text-uppercase">
-              {p.tenThuongHieu || p.thuongHieu || "ORCHARD"}
-            </p>
-            <h6 className="fw-bold mb-2" style={{ fontSize: "0.9rem" }}>
-              {p.tenSanPham}
-            </h6>
-
-            <div className="d-flex align-items-center justify-content-center gap-2 flex-wrap">
-              <span className="text-danger fw-bold fs-6">
-                {giaSauKm?.toLocaleString()} ₫
-              </span>
-              {p.kmPhanTram > 0 && (
-                <span className="text-muted small text-decoration-line-through">
-                  {p.giaBan?.toLocaleString()} ₫
-                </span>
-              )}
-            </div>
-          </div>
-        </Link>
+            {range === "all"
+              ? "Tất cả"
+              : range === "0-2000000"
+              ? "Dưới 2 triệu"
+              : range === "2000000-4000000"
+              ? "2 - 4 triệu"
+              : "Trên 4 triệu"}
+          </button>
+        ))}
       </div>
-    );
-  })}
-</div>
 
+      {/* Grid sản phẩm */}
+      <div className="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-4">
+        {paginatedProducts.map((p) => (
+          <div className="col" key={p.idSanPham}>
+            <ProductCard product={p} />
+          </div>
+        ))}
+      </div>
+
+      {/* Phân trang tái sử dụng */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={(page) => {
+          setCurrentPage(page);
+          window.scrollTo({ top: 0, behavior: "smooth" });
+        }}
+      />
     </section>
   );
 }

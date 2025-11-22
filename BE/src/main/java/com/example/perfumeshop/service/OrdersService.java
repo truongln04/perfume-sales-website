@@ -10,6 +10,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import com.example.perfumeshop.repository.WarehouseRepository;
 
 @Service
 public class OrdersService {
@@ -18,6 +19,7 @@ public class OrdersService {
     @Autowired private AccountRepository accountRepo;
     @Autowired private ProductRepository productRepo;
     @Autowired private OrdersDetailRepository ordersDetailRepo;
+    @Autowired private WarehouseRepository warehouseRepository;
 
     // 🧾 Tạo đơn hàng mới (giống ReceiptService)
     @Transactional
@@ -102,9 +104,29 @@ public OrdersResponse updatePaymentStatus(Integer id, Orders.PaymentStatus trang
 public OrdersResponse updateStatus(Integer id, Orders.OrderStatus trangThai) {
     Orders order = ordersRepo.findById(id)
             .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+
+    // chỉ cộng số lượng bán khi chuyển sang HOÀN THÀNH
+    if (order.getTrangThai() != Orders.OrderStatus.HOAN_THANH 
+        && trangThai == Orders.OrderStatus.HOAN_THANH) {
+
+        List<OrdersDetail> details = ordersDetailRepo.findByDonHang(order);
+        for (OrdersDetail detail : details) {
+            Product product = detail.getSanPham();
+            if (product != null) {
+                Warehouse warehouse = warehouseRepository.findBySanPham(product);
+                if (warehouse != null) {
+                    int currentSold = warehouse.getSoLuongBan() != null ? warehouse.getSoLuongBan() : 0;
+                    warehouse.setSoLuongBan(currentSold + detail.getSoLuong());
+                    warehouseRepository.save(warehouse);
+                }
+            }
+        }
+    }
+
     order.setTrangThai(trangThai);
     return toResponse(ordersRepo.save(order));
 }
+
 
     // 🧾 Mapping entity → DTO
     private OrdersResponse toResponse(Orders order) {
