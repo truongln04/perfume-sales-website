@@ -85,7 +85,7 @@ export default function Brands() {
 
     try {
       if (editing) {
-        await fetch(`${API_URL}/${editing.id}`, {
+        await fetch(`${API_URL}/${editing.idthuonghieu}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, },
           body: JSON.stringify(payload),

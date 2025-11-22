@@ -43,20 +43,30 @@ const handleAddToCart = async () => {
     return;
   }
 
+  // kiểm tra tồn kho
+  if (!product || product.soLuongTon === 0) {
+    alert("Sản phẩm đã hết hàng, không thể thêm vào giỏ.");
+    return;
+  }
+  if (quantity > product.soLuongTon) {
+    alert(`Số lượng vượt quá tồn kho (${product.soLuongTon}).`);
+    return;
+  }
+
   try {
-    // lấy user id từ token qua /auth/me
+    // lấy user id
     const userRes = await fetch("http://localhost:8081/auth/me", {
       headers: { Authorization: `Bearer ${token}` },
     });
     const user = await userRes.json();
 
-    // ✅ tính giá sau khuyến mãi
+    // giá sau khuyến mãi
     const finalPrice =
       product.kmPhanTram && product.kmPhanTram > 0
         ? Math.round(product.giaBan * (1 - product.kmPhanTram / 100))
         : product.giaBan;
 
-    // ✅ gọi API thêm giỏ hàng với giá sau khuyến mãi
+    // gọi API thêm giỏ hàng
     const res = await fetch("http://localhost:8081/cart/add", {
       method: "POST",
       headers: {
@@ -67,7 +77,7 @@ const handleAddToCart = async () => {
         idTaiKhoan: user.idTaiKhoan,
         idSanPham: product.idSanPham,
         soLuong: quantity,
-        donGia: finalPrice, // luôn gửi giá sau khuyến mãi
+        donGia: finalPrice,
       }),
     });
 
@@ -76,24 +86,21 @@ const handleAddToCart = async () => {
 
     alert("Đã thêm vào giỏ hàng thành công!");
 
-    // cập nhật số lượng giỏ hàng
-    setCartCount((prev) => prev + 1);
-// phát sự kiện để Navbar nhận
-    window.dispatchEvent(new CustomEvent("cart-updated", { detail: cartCount + 1 }));
+    // cập nhật số lượng giỏ hàng chính xác
+    const updatedCartRes = await fetch(`http://localhost:8081/cart/${user.idTaiKhoan}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const updatedCart = await updatedCartRes.json();
+    const totalQty = updatedCart.reduce((sum, it) => sum + it.soLuong, 0);
 
-//     // ✅ Tính tổng số lượng
-// const totalQty = (cart || []).reduce((sum, it) => sum + it.soLuong, 0);
-
-// // Cập nhật state local nếu cần
-// setCartCount(totalQty);
-
-// // Phát sự kiện để Navbar nhận đúng số lượng
-// window.dispatchEvent(new CustomEvent("cart-updated", { detail: totalQty }));
+    setCartCount(totalQty);
+    window.dispatchEvent(new CustomEvent("cart-updated", { detail: totalQty }));
   } catch (err) {
     console.error("Lỗi khi thêm giỏ hàng:", err);
     alert("Có lỗi xảy ra khi thêm giỏ hàng");
   }
 };
+
 
 
 

@@ -119,52 +119,56 @@ useEffect(() => {
 
   // ------------------- Render -------------------
   return (
-    <header className="border-bottom bg-white">
-      {/* Top bar */}
-      <div className="container py-3 d-flex align-items-center justify-content-between">
-        {/* Logo */}
-        <Link to="/client" className="text-decoration-none">
-          <img
-            src="https://orchard.vn/wp-content/uploads/2024/04/logo-orchard-2024-small.png"
-            alt="Logo Orchard"
-            style={{ height: "50px", objectFit: "contain" }}
-          />
-        </Link>
+    // Thay đổi phần header
+<header className="border-bottom bg-white sticky-top" style={{ zIndex: 1100 }}>
+  {/* Top bar */}
+  <div className="container py-3 d-flex align-items-center justify-content-between">
+    {/* Logo */}
+    <Link to="/client" className="text-decoration-none">
+      <img
+        src="https://orchard.vn/wp-content/uploads/2024/04/logo-orchard-2024-small.png"
+        alt="Logo Orchard"
+        style={{ height: "50px", objectFit: "contain" }}
+      />
+    </Link>
 
-        {/* Search */}
-        <div className="flex-grow-1 mx-4 mx-md-5 position-relative">
-          <input
-            type="text"
-            className="form-control form-control-lg rounded-pill ps-5"
-            placeholder="Tìm kiếm sản phẩm..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            onFocus={() => setShowSearchDropdown(true)}
-            onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
-            onKeyDown={(e) =>
-              e.key === "Enter" && navigate("/client/products?q=" + searchQuery)
-            }
-          />
-          <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
+    {/* Search → ghim riêng */}
+    <div
+      className="flex-grow-1 mx-4 mx-md-5 position-relative"
+      style={{ position: "sticky", top: "10px", zIndex: 1200 }}
+    >
+      <input
+        type="text"
+        className="form-control form-control-lg rounded-pill ps-5"
+        placeholder="Tìm kiếm sản phẩm..."
+        value={searchQuery}
+        onChange={(e) => setSearchQuery(e.target.value)}
+        onFocus={() => setShowSearchDropdown(true)}
+        onBlur={() => setTimeout(() => setShowSearchDropdown(false), 200)}
+        onKeyDown={(e) =>
+          e.key === "Enter" && navigate("/client/products?q=" + searchQuery)
+        }
+      />
+      <i className="bi bi-search position-absolute top-50 start-0 translate-middle-y ms-3 text-muted"></i>
 
-          {showSearchDropdown && searchResults.length > 0 && (
-            <div
-              className="position-absolute w-100 bg-white shadow rounded-3 mt-1"
-              style={{ zIndex: 1050 }}
+      {showSearchDropdown && searchResults.length > 0 && (
+        <div
+          className="position-absolute w-100 bg-white shadow rounded-3 mt-1"
+          style={{ zIndex: 1300 }}
+        >
+          {searchResults.map((product) => (
+            <Link
+              key={product.idSanPham}
+              to={`/client/product/${product.idSanPham}`}
+              className="d-block px-3 py-2 text-decoration-none text-dark"
+              onClick={() => setShowSearchDropdown(false)}
             >
-              {searchResults.map((product) => (
-                <Link
-                  key={product.idSanPham}
-                  to={`/client/product/${product.idSanPham}`}
-                  className="d-block px-3 py-2 text-decoration-none text-dark"
-                  onClick={() => setShowSearchDropdown(false)}
-                >
-                  {product.tenSanPham}
-                </Link>
-              ))}
-            </div>
-          )}
+              {product.tenSanPham}
+            </Link>
+          ))}
         </div>
+      )}
+    </div>
 
         {/* Cart + User */}
         <div className="d-flex align-items-center gap-4">
@@ -236,7 +240,7 @@ useEffect(() => {
       <i className="bi bi-person me-2"></i> Thông tin cá nhân
     </Link>
     <Link
-      to="/client/orders"
+      to="/client/orderslist"
       className="btn btn-outline-secondary w-100 mb-3 rounded-pill"
       style={{ fontSize: "0.95rem", padding: "8px 12px" }}
       onClick={() => setShowMenu(false)}

@@ -48,7 +48,7 @@ export default function Cart() {
     }
   };
 
-  // 👉 Cập nhật số lượng
+  // Cập nhật số lượng
   const updateQuantity = async (idGh, newQuantity) => {
     try {
       const res = await fetch(`http://localhost:8081/cart/${idGh}?soLuong=${newQuantity}`, {
@@ -86,12 +86,8 @@ export default function Cart() {
       if (res.ok) {
         setCartItems(cartItems.filter((item) => item.idGh !== idGh));
         setSelectedItems(selectedItems.filter((id) => id !== idGh));
-        // phát sự kiện cập nhật giỏ hàng
         window.dispatchEvent(new CustomEvent("cart-updated", { detail: cartItems.length - 1 }));
         alert("Xóa sản phẩm thành công!");
-        
-      
-
       }
     } catch (err) {
       console.error("Lỗi khi xóa sản phẩm:", err);
@@ -101,113 +97,126 @@ export default function Cart() {
 
   // Đặt hàng
   const handleOrder = () => {
-  if (selectedItems.length === 0) {
-    alert("Vui lòng chọn ít nhất một sản phẩm!");
-    return;
-  }
+    if (selectedItems.length === 0) {
+      alert("Vui lòng chọn ít nhất một sản phẩm!");
+      return;
+    }
 
-  // Lấy danh sách sản phẩm đã chọn (có đầy đủ thông tin để hiển thị ở trang checkout)
-  const itemsToCheckout = cartItems
-    .filter((item) => selectedItems.includes(item.idGh))
-    .map((item) => ({
-      idGh: item.idGh,
-      idSanPham: item.idSanPham,
-      tenSanPham: item.tenSanPham,
-      donGia: item.donGia,
-      soLuong: item.soLuong,
-      hinhAnh: item.hinhAnh,
-    }));
+    const itemsToCheckout = cartItems
+      .filter((item) => selectedItems.includes(item.idGh))
+      .map((item) => ({
+        idGh: item.idGh,
+        idSanPham: item.idSanPham,
+        tenSanPham: item.tenSanPham,
+        donGia: item.donGia,
+        soLuong: item.soLuong,
+        hinhAnh: item.hinhAnh,
+      }));
 
-  // Chuyển sang trang checkout và truyền dữ liệu qua state
-  navigate("../checkout", {
-    replace: false,
-    state: {
-      selectedItems: itemsToCheckout,
-      totalPrice: totalPrice,
-    },
-  });
-};
+    navigate("../checkout", {
+      replace: false,
+      state: {
+        selectedItems: itemsToCheckout,
+        totalPrice: totalPrice,
+      },
+    });
+  };
 
   return (
     <div className="container py-4">
       <h3 className="fw-bold mb-4">Giỏ hàng</h3>
       {cartItems.length === 0 ? (
-        <p>Giỏ hàng của bạn đang trống.</p>
+        <p className="text-muted">Giỏ hàng của bạn đang trống.</p>
       ) : (
         <>
-          <table className="table align-middle">
-            <thead>
-              <tr>
-                <th>
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                  />
-                </th>
-                <th>Ảnh</th>
-                <th>Sản phẩm</th>
-                <th>Đơn giá</th>
-                <th>Số lượng</th>
-                <th>Số tiền</th>
-                <th>Thao tác</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cartItems.map((item) => (
-                <tr key={item.idGh}>
-                  <td>
+          <div className="table-responsive">
+            <table className="table table-hover align-middle">
+              <thead className="table-light">
+                <tr>
+                  <th>
                     <input
                       type="checkbox"
-                      checked={selectedItems.includes(item.idGh)}
-                      onChange={() => handleSelectItem(item.idGh)}
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      aria-label="Chọn tất cả sản phẩm"
                     />
-                  </td>
-                  <td>
-                    <img
-                      src={item.hinhAnh || "/placeholder.jpg"}
-                      alt={item.tenSanPham}
-                      style={{ width: "60px", height: "60px", objectFit: "cover" }}
-                    />
-                  </td>
-                  <td>{item.tenSanPham}</td>
-                  <td>{item.donGia.toLocaleString()} ₫</td>
-                  <td>
-                    <input
-                      type="number"
-                      min="1"
-                      value={item.soLuong}
-                      onChange={(e) =>
-                        updateQuantity(item.idGh, parseInt(e.target.value))
-                      }
-                      style={{ width: "60px" }}
-                    />
-                  </td>
-                  <td>{(item.donGia * item.soLuong).toLocaleString()} ₫</td>
-                  <td>
-                    <button
-                      className="btn btn-sm btn-danger"
-                      onClick={() => removeItem(item.idGh)}
-                    >
-                      Xóa
-                    </button>
-                  </td>
+                  </th>
+                  <th>Ảnh</th>
+                  <th>Sản phẩm</th>
+                  <th className="text-end">Đơn giá</th>
+                  <th className="text-center">Số lượng</th>
+                  <th className="text-end">Thành tiền</th>
+                  <th>Thao tác</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
+              </thead>
+              <tbody>
+                {cartItems.map((item) => (
+                  <tr key={item.idGh}>
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedItems.includes(item.idGh)}
+                        onChange={() => handleSelectItem(item.idGh)}
+                        aria-label={`Chọn sản phẩm ${item.tenSanPham}`}
+                      />
+                    </td>
+                    <td>
+                      <img
+                        src={item.hinhAnh || "/placeholder.jpg"}
+                        alt={`Ảnh sản phẩm ${item.tenSanPham}`}
+                        title={item.tenSanPham}
+                        className="rounded"
+                        style={{ width: 60, height: 60, objectFit: "cover" }}
+                      />
+                    </td>
+                    <td>{item.tenSanPham}</td>
+                    <td className="text-end">{item.donGia.toLocaleString()} ₫</td>
+
+                    {/* Cột số lượng căn giữa */}
+                    <td className="text-center" style={{ minWidth: 100 }}>
+                      <input
+                        type="number"
+                        min="1"
+                        value={item.soLuong}
+                        onChange={(e) =>
+                          updateQuantity(item.idGh, parseInt(e.target.value))
+                        }
+                        className="form-control form-control-sm text-center mx-auto"
+                        style={{ width: 70 }}
+                        aria-label={`Số lượng của ${item.tenSanPham}`}
+                      />
+                    </td>
+
+                    <td className="text-end">
+                      {(item.donGia * item.soLuong).toLocaleString()} ₫
+                    </td>
+                    <td>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => removeItem(item.idGh)}
+                        aria-label={`Xóa ${item.tenSanPham}`}
+                      >
+                        Xóa
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
 
           <div className="d-flex justify-content-between align-items-center mt-4">
-            <h4>
+            <h4 className="mb-0">
               Tổng tiền:{" "}
-              <span className="text-danger">
+              <span className="text-danger fw-bold">
                 {totalPrice.toLocaleString()} ₫
               </span>
             </h4>
             <button
-              className="btn btn-primary btn-lg"
+              className="btn btn-primary btn-sm px-3 rounded-pill"
               disabled={selectedItems.length === 0}
               onClick={handleOrder}
+              aria-label="Tiến hành đặt hàng"
             >
               Đặt hàng
             </button>
