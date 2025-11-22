@@ -1,23 +1,15 @@
 import Sidebar from "../components/Sidebar";
 import { Outlet } from "react-router-dom";
+import { useState } from "react";
+import "./layout.css";
 
 export default function AppLayout() {
-  return (
-    <div className="d-flex">
-      {/* Sidebar cố định bên trái */}
-      <Sidebar />
+  const [collapsed, setCollapsed] = useState(false);
 
-      {/* Nội dung chính */}
-      <main
-        className="flex-grow-1"
-        style={{
-          marginLeft: 240, // khớp với chiều rộng sidebar
-          minHeight: "100vh",
-          padding: "1rem",
-          background: "#f8f9fa",
-          overflowX: "auto", // tránh bảng bị tràn
-        }}
-      >
+  return (
+    <div className={`app-layout d-flex ${collapsed ? "collapsed" : ""}`}>
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+      <main className="main-content flex-grow-1">
         <Outlet />
       </main>
     </div>

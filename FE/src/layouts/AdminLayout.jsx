@@ -1,21 +1,17 @@
 import Sidebar from "../components/admin/Sidebar";
 import Header from "../components/admin/Header";
 import { Outlet } from "react-router-dom";
+import { useState } from "react";
+import "./layout.css";
 
 export default function AdminLayout() {
+  const [collapsed, setCollapsed] = useState(false);
+
   return (
-    <div>
-      <Sidebar />
-      <Header />
-      <div
-        className="main-content"
-        style={{
-          marginLeft: 240,
-          paddingTop: 70, // tránh bị header đè
-          background: "#f8f9fa",
-          minHeight: "100vh",
-        }}
-      >
+    <div className={`admin-layout ${collapsed ? "collapsed" : ""}`}>
+      <Sidebar collapsed={collapsed} setCollapsed={setCollapsed} />
+      <Header collapsed={collapsed} />
+      <div className="main-content">
         <div className="container-fluid py-3">
           <Outlet />
         </div>

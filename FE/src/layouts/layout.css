@@ -1,0 +1,17 @@
+.main-content {
+  margin-left: 240px;   /* mặc định sidebar rộng */
+  background: #f8f9fa;
+  min-height: 100vh;
+  transition: margin-left 0.3s ease;
+  padding: 1rem;
+  overflow-x: auto;
+}
+
+.admin-layout .main-content {
+  padding-top: 70px;    /* tránh header đè */
+}
+
+/* Khi sidebar thu gọn */
+.collapsed .main-content {
+  margin-left: 70px;
+}

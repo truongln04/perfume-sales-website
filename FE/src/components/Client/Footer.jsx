@@ -49,11 +49,8 @@ export default function Footer() {
 
         {/* Dòng cuối */}
         <div className="border-top border-secondary mt-3 pt-2 text-center">
-          <p className="mb-1 text-muted small">
+          <p className="">
             © 2025 Orchard.vn. Bản quyền nội dung thuộc về Orchard. Trích dẫn "orchard.vn" khi sử dụng thông tin từ website này.
-          </p>
-          <p className="mb-0 text-muted small">
-            <i className="bi bi-shield-check text-light me-1"></i> Đã thông báo Bộ Công Thương
           </p>
         </div>
       </div>
