@@ -23,6 +23,10 @@ import Receipts from "./pages/admin/Receipts";
 import Warehouse from "./pages/admin/Warehouse";
 import Orders from "./pages/admin/Orders";
 import Reports from "./pages/admin/Reports";
+import DonHangReport from "./pages/admin/DonHangReport";
+import DoanhThuReport from "./pages/admin/DoanhThuReport";
+import TonKhoReport from "./pages/admin/TonKhoReport";
+import BanChayReport from "./pages/admin/BanChayReport";
 
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
@@ -158,6 +162,10 @@ export default function App() {
           {(isAdmin || isStaff) && <Route path="orders" element={<Orders />} />}
           {isAdmin && <Route path="accounts" element={<Accounts />} />}
           {isAdmin && <Route path="reports" element={<Reports />} />}
+          {isAdmin && <Route path="reports/donhang" element={<DonHangReport />} />}
+          {isAdmin && <Route path="reports/doanhthu" element={<DoanhThuReport />} />}
+          {isAdmin && <Route path="reports/tonkho" element={<TonKhoReport />} />}
+          {isAdmin && <Route path="reports/banchay" element={<BanChayReport />} />}
         </Route>
 
         <Route path="*" element={<Navigate to="/" replace />} />
