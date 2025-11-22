@@ -6,7 +6,6 @@ const STATUS_TABS = [
   { key: "CHO_XAC_NHAN", label: "Chờ xác nhận", color: "warning" },
   { key: "DA_XAC_NHAN", label: "Đã xác nhận", color: "info" },
   { key: "DANG_GIAO", label: "Đang giao", color: "primary" },
-  { key: "GIAO_THAT_BAI", label: "Giao thất bại", color: "danger" },
   { key: "HOAN_THANH", label: "Hoàn thành", color: "success" },
   { key: "TRA_HANG", label: "Trả hàng", color: "dark" },
   { key: "HUY", label: "Hủy", color: "danger" },
@@ -19,29 +18,38 @@ const PAYMENT_STATUS_LABEL = {
   HOAN_TIEN: "Hoàn tiền",
 };
 
-export default function OrdersList({ initialOrders = [] }) {
+export default function OrdersList() {
   const [activeTab, setActiveTab] = useState("ALL");
-  const [orders, setOrders] = useState(initialOrders);
+  const [orders, setOrders] = useState([]);
   const [selectedOrder, setSelectedOrder] = useState(null);
+  const token = localStorage.getItem("token");
 
-  // Lấy danh sách đơn hàng
+  // Lấy đơn hàng theo id tài khoản từ token
   useEffect(() => {
     const fetchOrders = async () => {
       try {
-        const token = localStorage.getItem("token");
-        const res = await fetch("http://localhost:8081/orders", {
+        if (!token) return;
+
+        // gọi /auth/me để lấy thông tin user
+        const resUser = await fetch("http://localhost:8081/auth/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
-        const data = await res.json();
+        const user = await resUser.json();
+        const idTaiKhoan = user.idTaiKhoan;
+
+        // gọi API lấy đơn hàng theo id tài khoản
+        const resOrders = await fetch(`http://localhost:8081/orders/account/${idTaiKhoan}`, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        const data = await resOrders.json();
         setOrders(Array.isArray(data) ? data : []);
       } catch (e) {
         console.error("Không tải được danh sách đơn hàng:", e);
       }
     };
     fetchOrders();
-  }, []);
+  }, [token]);
 
-  // Khóa scroll khi mở modal
   useEffect(() => {
     document.body.style.overflow = selectedOrder ? "hidden" : "";
     return () => (document.body.style.overflow = "");
@@ -55,7 +63,6 @@ export default function OrdersList({ initialOrders = [] }) {
   const handleCancel = async (id) => {
     if (!window.confirm("Xác nhận hủy đơn hàng?")) return;
     try {
-      const token = localStorage.getItem("token");
       const res = await fetch(`http://localhost:8081/orders/${id}/status?trangThai=HUY`, {
         method: "PUT",
         headers: { Authorization: `Bearer ${token}` },
@@ -63,14 +70,13 @@ export default function OrdersList({ initialOrders = [] }) {
       if (!res.ok) throw new Error("Hủy đơn thất bại");
       const updated = await res.json();
       setOrders((prev) => prev.map((o) => (o.id === id ? updated : o)));
+      setSelectedOrder(null);
     } catch (e) {
       alert("Không thể hủy đơn hàng.");
       console.error(e);
     }
   };
-
   const getStatusColor = (key) => STATUS_TABS.find((s) => s.key === key)?.color || "secondary";
-
   return (
     <div className="container py-4">
       {/* Tabs trạng thái */}
@@ -80,7 +86,6 @@ export default function OrdersList({ initialOrders = [] }) {
             key={tab.key}
             className={`btn btn-sm btn-${activeTab === tab.key ? tab.color : "outline-" + tab.color}`}
             onClick={() => setActiveTab(tab.key)}
-            title={`Xem đơn hàng ${tab.label}`}
           >
             {tab.label}
           </button>
@@ -134,7 +139,7 @@ export default function OrdersList({ initialOrders = [] }) {
                       <button className="btn btn-sm btn-outline-secondary" onClick={() => setSelectedOrder(o)}>
                         Xem
                       </button>
-                      {o.trangThai !== "HUY" && o.trangThai !== "HOAN_THANH" && (
+                      {o.trangThai === "CHO_XAC_NHAN" && (
                         <button className="btn btn-sm btn-outline-danger" onClick={() => handleCancel(o.id)}>
                           Hủy
                         </button>
@@ -149,99 +154,99 @@ export default function OrdersList({ initialOrders = [] }) {
       </div>
 
       {/* Modal chi tiết đơn hàng */}
-      {selectedOrder && (
-        <>
-          <div
-            className="position-fixed top-0 start-0 w-100 h-100"
-            style={{ background: "rgba(0,0,0,0.5)", zIndex: 1040 }}
-            onClick={() => setSelectedOrder(null)}
-          />
-          <div
-            className="position-fixed top-50 start-50 translate-middle"
-            style={{ zIndex: 1050, width: "min(92vw, 960px)" }}
-            role="dialog"
-            aria-modal="true"
-          >
-            <div className="card shadow-lg">
-              <div className="card-header d-flex justify-content-between align-items-center">
-                <h5 className="mb-0">Chi tiết đơn hàng #{selectedOrder.id}</h5>
-                <button className="btn btn-sm btn-outline-secondary" onClick={() => setSelectedOrder(null)}>
-                  Đóng
-                </button>
-              </div>
+    {selectedOrder && (
+  <>
+    {/* Backdrop */}
+    <div
+      className="position-fixed top-0 start-0 w-100 h-100"
+      style={{ background: "rgba(0,0,0,0.5)", zIndex: 1040 }}
+      onClick={() => setSelectedOrder(null)}
+    />
 
-              <div className="card-body">
-                {/* Thông tin chung */}
-                <div className="row g-3">
-                  <div className="col-md-6">
-                    <p><strong>Người nhận:</strong> {selectedOrder.hoTenNhan}</p>
-                    <p><strong>SĐT:</strong> {selectedOrder.sdtNhan}</p>
-                    <p><strong>Địa chỉ:</strong> {selectedOrder.diaChiGiao}</p>
-                  </div>
-                  <div className="col-md-6">
-                    <p><strong>Ngày đặt:</strong> {selectedOrder.ngayDat ? new Date(selectedOrder.ngayDat).toLocaleString() : "-"}</p>
-                    <p><strong>Phương thức TT:</strong> {PAYMENT_METHOD_LABEL[selectedOrder.phuongThucTT]}</p>
-                    <p><strong>Trạng thái TT:</strong> {PAYMENT_STATUS_LABEL[selectedOrder.trangThaiTT]}</p>
-                    <p>
-                      <strong>Trạng thái ĐH:</strong>{" "}
-                      <span className={`badge bg-${getStatusColor(selectedOrder.trangThai)}`}>
-                        {STATUS_TABS.find((s) => s.key === selectedOrder.trangThai)?.label ?? selectedOrder.trangThai}
-                      </span>
-                    </p>
-                  </div>
-                </div>
+    {/* Modal */}
+    <div
+      className="position-fixed top-50 start-50 translate-middle"
+      style={{
+        zIndex: 2000, // cao hơn navbar (navbar thường z-index ~1030)
+        width: "min(92vw, 960px)",
+        maxHeight: "90vh", // giới hạn chiều cao
+        overflowY: "auto", // cho phép cuộn nội dung
+      }}
+    >
+      <div className="card shadow-lg">
+        <div className="card-header d-flex justify-content-between align-items-center sticky-top bg-white">
+          <h5 className="mb-0">Chi tiết đơn hàng #{selectedOrder.id}</h5>
+          <button className="btn-close" onClick={() => setSelectedOrder(null)} />
+        </div>
 
-                {selectedOrder.ghiChu && <p className="mt-2"><strong>Ghi chú:</strong> {selectedOrder.ghiChu}</p>}
-
-                {/* Sản phẩm trong đơn */}
-<div className="mt-4">
-  <h6 className="mb-3">Sản phẩm trong đơn</h6>
-  {selectedOrder.chiTietDonHang?.length > 0 ? (
-    <div className="table-responsive">
-      <table className="table table-sm align-middle">
-        <thead className="table-light">
-          <tr>
-            <th>Tên SP</th>
-            <th className="text-end">Số lượng</th>
-            <th className="text-end">Đơn giá</th>
-            <th className="text-end">Thành tiền</th>
-          </tr>
-        </thead>
-        <tbody>
-          {selectedOrder.chiTietDonHang.map((d, i) => (
-            <tr key={i}>
-              <td className="fw-semibold">{d.tenSanPham}</td>
-              <td className="text-end">{d.soLuong}</td>
-              <td className="text-end">{d.donGia?.toLocaleString("vi-VN")} đ</td>
-              <td className="text-end">{d.thanhTien?.toLocaleString("vi-VN")} đ</td>
-            </tr>
-          ))}
-        </tbody>
-        <tfoot>
-          <tr>
-            <td colSpan={3} className="text-end fw-semibold">Tổng tiền</td>
-            <td className="text-end fw-semibold">
-              {(selectedOrder.tongTien ?? 0).toLocaleString("vi-VN")} đ
-            </td>
-          </tr>
-        </tfoot>
-      </table>
-    </div>
-  ) : (
-    <div className="text-muted">Không có sản phẩm trong đơn.</div>
-  )}
-</div>
-
-              </div>
-
-              <div className="card-footer d-flex justify-content-end gap-2">
-                
-                <button className="btn btn-primary" onClick={() => setSelectedOrder(null)}>Đóng</button>
-              </div>
+        <div className="card-body">
+          {/* Thông tin chung */}
+          <div className="row g-3">
+            <div className="col-md-6">
+              <p><strong>Người nhận:</strong> {selectedOrder.hoTenNhan}</p>
+              <p><strong>SĐT:</strong> {selectedOrder.sdtNhan}</p>
+              <p><strong>Địa chỉ:</strong> {selectedOrder.diaChiGiao}</p>
+            </div>
+            <div className="col-md-6">
+              <p><strong>Ngày đặt:</strong> {selectedOrder.ngayDat ? new Date(selectedOrder.ngayDat).toLocaleString() : "-"}</p>
+              <p><strong>Phương thức TT:</strong> {PAYMENT_METHOD_LABEL[selectedOrder.phuongThucTT]}</p>
+              <p><strong>Trạng thái TT:</strong> {PAYMENT_STATUS_LABEL[selectedOrder.trangThaiTT]}</p>
+              <p>
+                <strong>Trạng thái ĐH:</strong>{" "}
+                <span className={`badge bg-${getStatusColor(selectedOrder.trangThai)}`}>
+                  {STATUS_TABS.find((s) => s.key === selectedOrder.trangThai)?.label ?? selectedOrder.trangThai}
+                </span>
+              </p>
             </div>
           </div>
-        </>
-      )}
+
+          {selectedOrder.ghiChu && <p className="mt-2"><strong>Ghi chú:</strong> {selectedOrder.ghiChu}</p>}
+
+          {/* Sản phẩm trong đơn */}
+          <div className="mt-4">
+            <h6 className="mb-3">Sản phẩm trong đơn</h6>
+            {selectedOrder.chiTietDonHang?.length > 0 ? (
+              <div className="table-responsive">
+                <table className="table table-sm align-middle">
+                  <thead className="table-light">
+                    <tr>
+                      <th>Tên SP</th>
+                      <th className="text-end">Số lượng</th>
+                      <th className="text-end">Đơn giá</th>
+                      <th className="text-end">Thành tiền</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {selectedOrder.chiTietDonHang.map((d, i) => (
+                      <tr key={i}>
+                        <td className="fw-semibold">{d.tenSanPham}</td>
+                        <td className="text-end">{d.soLuong}</td>
+                        <td className="text-end">{(d.donGia ?? 0).toLocaleString("vi-VN")} đ</td>
+                        <td className="text-end">{(d.thanhTien ?? d.soLuong * d.donGia).toLocaleString("vi-VN")} đ</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      <td colSpan={3} className="text-end fw-semibold">Tổng tiền</td>
+                      <td className="text-end fw-semibold">
+                        {(selectedOrder.tongTien ?? 0).toLocaleString("vi-VN")} đ
+                      </td>
+                    </tr>
+                  </tfoot>
+                </table>
+              </div>
+            ) : (
+              <div className="text-muted">Không có sản phẩm trong đơn.</div>
+            )}
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </>
+)}
+
     </div>
   );
 }

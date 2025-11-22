@@ -60,4 +60,8 @@ public OrdersResponse updatePaymentStatus(@PathVariable Integer id,
     public void deleteOrder(@PathVariable Integer id) {
         service.deleteOrder(id);
     }
+    @GetMapping("/account/{idTaiKhoan}")
+    public List<OrdersResponse> getOrdersByAccount(@PathVariable Integer idTaiKhoan) {
+        return service.getByAccountId(idTaiKhoan);
+    }
 }

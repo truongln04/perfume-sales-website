@@ -19,10 +19,10 @@ public class Warehouse {
     @MapsId
     @JoinColumn(name = "id_san_pham")
     private Product sanPham;
-
+@Builder.Default
     @Column(name = "so_luong_nhap")
     private Integer soLuongNhap = 0;
-
+@Builder.Default
     @Column(name = "so_luong_ban")
     private Integer soLuongBan = 0;
 }

@@ -1,8 +1,5 @@
 package com.example.perfumeshop.entity;
 
-
-import java.math.BigDecimal;
-
 import jakarta.persistence.*;
 import lombok.*;
 

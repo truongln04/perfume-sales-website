@@ -11,7 +11,6 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
-import com.example.perfumeshop.repository.WarehouseRepository;
 
 @Service
 public class OrdersService {
@@ -131,6 +130,13 @@ public OrdersResponse updateStatus(Integer id, Orders.OrderStatus trangThai) {
 
     order.setTrangThai(trangThai);
     return toResponse(ordersRepo.save(order));
+}
+// 📋 Lấy tất cả đơn hàng theo id tài khoản
+public List<OrdersResponse> getByAccountId(Integer idTaiKhoan) {
+    List<Orders> orders = ordersRepo.findByTaiKhoan_IdTaiKhoan(idTaiKhoan);
+    return orders.stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
 }
 
 
