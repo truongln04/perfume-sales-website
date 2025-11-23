@@ -28,7 +28,7 @@ public class Account {
     @Column(name = "google_id", length = 255)
     private String googleId;
 
-    @Column(name = "anh_dai_dien", columnDefinition = "TEXT")
+    @Column(name = "anh_dai_dien", columnDefinition = "MEDIUMTEXT")
     private String anhDaiDien;
 
     @Column(name = "mat_khau", length = 255)

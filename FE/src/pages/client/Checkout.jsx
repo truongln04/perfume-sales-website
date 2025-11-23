@@ -17,7 +17,7 @@ export default function Checkout() {
     phuongThucTT: "COD", // COD hoặc ONLINE (MoMo)
   });
 
-  // Hàm mã hóa Base64 an toàn với tiếng Việt - PHIÊN BẢN MỚI NHẤT 2025 (không deprecated)
+  // Hàm mã hóa Base64 an toàn với tiếng Việt
   const safeBtoa = (obj) =>
     btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(obj))));
 
@@ -66,7 +66,7 @@ export default function Checkout() {
     let idTaiKhoan = null;
     try {
       const decoded = jwtDecode(token);
-      
+
       idTaiKhoan = decoded.idTaiKhoan || decoded.id || decoded.userId || null;
     } catch (err) {
       console.error("Token lỗi:", err);
@@ -102,20 +102,41 @@ export default function Checkout() {
 
       if (res.ok) {
         const result = await res.json();
-        await fetch(`http://localhost:8081/cart/clear/${idTaiKhoan}`, {
-          method: "DELETE",
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        window.dispatchEvent(new CustomEvent("cart-updated", { detail: 0 }));
+
+        // XÓA CHỈNH XÁC TỪNG MÓN TRONG ĐƠN HÀNG DỰA TRÊN idGh (theo controller bạn cung cấp)
+        const deletePromises = selectedItems.map(item =>
+          fetch(`http://localhost:8081/cart/${item.idGh}`, {
+            method: "DELETE",
+            headers: {
+              Authorization: `Bearer ${token}`
+            }
+          }).then(response => {
+            if (!response.ok) {
+              console.warn(`Không thể xóa item idGh=${item.idGh}`);
+            }
+          })
+        );
+
+        // Chờ tất cả các yêu cầu xóa hoàn tất
+        await Promise.all(deletePromises);
+
+        // Thông báo giỏ hàng cần refresh lại số lượng (không set cứng về 0 nữa)
+        window.dispatchEvent(new CustomEvent("cart-updated", { detail: "0" }));
+
+        // Thông báo thành công
         alert(`Đặt hàng thành công! Mã đơn hàng: #${result.id}`);
-        navigate("/client");
+
+        // Chuyển về trang danh sách đơn hàng → UX cực mượt
+        navigate("/client/orderslist");
+
       } else {
-        const error = await res.text();
-        alert("Đặt hàng thất bại: " + error);
+        // Đặt hàng thất bại → không xóa gì cả
+        const errorText = await res.text();
+        alert("Đặt hàng thất bại: " + (errorText || "Lỗi không xác định"));
       }
     } catch (err) {
-      console.error(err);
-      alert("Lỗi kết nối server!");
+      console.error("Lỗi khi đặt hàng:", err);
+      alert("Lỗi kết nối server! Vui lòng thử lại.");
     } finally {
       setLoading(false);
     }
@@ -217,7 +238,7 @@ export default function Checkout() {
 
               <div className="mt-4">
                 <h5 className="mb-3">Phương thức thanh toán</h5>
-                
+
                 <div className="form-check mb-3">
                   <input
                     className="form-check-input"
@@ -292,10 +313,10 @@ export default function Checkout() {
                 onClick={handleConfirmOrder}
                 disabled={loading}
               >
-                {loading 
-                  ? "Đang xử lý..." 
-                  : form.phuongThucTT === "ONLINE" 
-                    ? "THANH TOÁN VỚI MOMO" 
+                {loading
+                  ? "Đang xử lý..."
+                  : form.phuongThucTT === "ONLINE"
+                    ? "THANH TOÁN VỚI MOMO"
                     : "XÁC NHẬN ĐẶT HÀNG"
                 }
               </button>

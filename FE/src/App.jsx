@@ -1,11 +1,4 @@
-// App.jsx - PHIÊN BẢN HOÀN CHỈNH, FIX TRIỆT ĐỂ (2025)
-import {
-  BrowserRouter as Router,
-  Routes,
-  Route,
-  Navigate,
-  useLocation,
-} from "react-router-dom";
+import {BrowserRouter as Router, Routes, Route, Navigate, useLocation} from "react-router-dom";
 import { useState, useEffect } from "react";
 import { jwtDecode } from "jwt-decode";
 
@@ -57,6 +50,20 @@ function useRole() {
 
       try {
         const decoded = jwtDecode(token);
+
+        // KIỂM TRA TOKEN EXPIRE → AUTO LOGOUT
+        if (decoded.exp * 1000 < Date.now()) {
+          console.warn("Token expired → auto logout");
+
+          localStorage.removeItem("token");
+          localStorage.removeItem("user");
+
+          // Trigger redirect (global)
+          window.dispatchEvent(new Event("storage"));
+
+          setRole(null);
+          return;
+        }
 
         // Google login → luôn là KHACHHANG
         if (decoded.email && !decoded.authorities) {
@@ -110,6 +117,7 @@ function RootRedirect() {
   if (location.pathname !== "/") return null;
 
   if (role === "ADMIN" || role === "NHANVIEN") return <Navigate to="/admin" replace />;
+  if (role === "KHACHHANG") return <Navigate to="/client" replace />;
   return <Navigate to="/client" replace />;
 }
 
@@ -119,9 +127,6 @@ export default function App() {
   const isAdmin = role === "ADMIN";
   const isStaff = role === "NHANVIEN";
   const isCustomer = role === "KHACHHANG";
-
-  // Optional: truyền onLogin xuống nếu muốn (nhưng không cần nữa là không cần vì useRole tự động cập nhật)
-  // const handleLoginSuccess = () => { /* có thể để trống */ };
 
   return (
     <Router>
@@ -133,17 +138,18 @@ export default function App() {
         <Route path="/forgotpassword" element={<ForgotPassword />} />
 
         {/* CLIENT AREA */}
-        <Route path="/client" element={<ClientLayout />}>
+        <Route path="/client/*"  element={<ClientLayout />}>
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
           <Route path="products" element={<ProductList />} />
           <Route path="product/:id" element={<ProductDetail />} />
           <Route path="brand/:id" element={<BrandDetail />} />
           <Route path="category/:id" element={<CategoryDetail />} />
+          {/* Các trang chỉ dành cho khách hàng đã đăng nhập */}
           <Route path="orderslist" element={isCustomer ? <OrdersList /> : <Navigate to="/login" replace />} />
           <Route path="cart" element={isCustomer ? <Cart /> : <Navigate to="/login" replace />} />
           <Route path="checkout" element={isCustomer ? <Checkout /> : <Navigate to="/login" replace />} />
-          <Route path="profile" element={localStorage.getItem("token") ? <Profile /> : <Navigate to="/login" replace />} />
+          <Route path="profile" element={isCustomer ? <Profile /> : <Navigate to="/login" replace />} />
           <Route path="payment/momo-return" element={<MomoReturnPage />} />
         </Route>
 

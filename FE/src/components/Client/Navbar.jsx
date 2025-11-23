@@ -135,7 +135,7 @@ useEffect(() => {
     {/* Search → ghim riêng */}
     <div
       className="flex-grow-1 mx-4 mx-md-5 position-relative"
-      style={{ position: "sticky", top: "10px", zIndex: 1200 }}
+      ref={containerRef}
     >
       <input
         type="text"

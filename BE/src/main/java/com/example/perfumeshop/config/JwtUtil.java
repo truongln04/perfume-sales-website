@@ -16,7 +16,7 @@ public class JwtUtil {
     @Value("${jwt.secret}")
     private String secret;
 
-    private final long expirationMs = 86400000; // 1 ngày
+    private final long expirationMs = 600000; // Hạn token 1 ngày
 
     private Key getSigningKey() {
         byte[] keyBytes = Base64.getDecoder().decode(secret);
@@ -24,6 +24,7 @@ public class JwtUtil {
     }
 
     public String generateToken(Account account) {
+        System.out.println("JWT Expiration: " + expirationMs + " ms");
         return Jwts.builder()
                 .setSubject(account.getEmail())
                 .claim("id", account.getIdTaiKhoan())
