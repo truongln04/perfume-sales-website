@@ -15,11 +15,16 @@ import java.util.stream.Collectors;
 @Service
 public class OrdersService {
 
-    @Autowired private OrdersRepository ordersRepo;
-    @Autowired private AccountRepository accountRepo;
-    @Autowired private ProductRepository productRepo;
-    @Autowired private OrdersDetailRepository ordersDetailRepo;
-    @Autowired private WarehouseRepository warehouseRepository;
+    @Autowired
+    private OrdersRepository ordersRepo;
+    @Autowired
+    private AccountRepository accountRepo;
+    @Autowired
+    private ProductRepository productRepo;
+    @Autowired
+    private OrdersDetailRepository ordersDetailRepo;
+    @Autowired
+    private WarehouseRepository warehouseRepository;
 
     // 🧾 Tạo đơn hàng mới (giống ReceiptService)
     @Transactional
@@ -31,10 +36,9 @@ public class OrdersService {
                 .ngayDat(LocalDateTime.now())
                 .phuongThucTT(request.getPhuongThucTT())
                 .trangThaiTT(
-    request.getPhuongThucTT() == PaymentMethod.ONLINE
-        ? Orders.PaymentStatus.DA_THANH_TOAN
-        : Orders.PaymentStatus.CHUA_THANH_TOAN
-)
+                        request.getPhuongThucTT() == PaymentMethod.ONLINE
+                                ? Orders.PaymentStatus.DA_THANH_TOAN
+                                : Orders.PaymentStatus.CHUA_THANH_TOAN)
                 .hoTenNhan(request.getHoTenNhan())
                 .sdtNhan(request.getSdtNhan())
                 .diaChiGiao(request.getDiaChiGiao())
@@ -46,7 +50,8 @@ public class OrdersService {
 
         for (OrdersDetailRequest d : chiTietDonHang) {
             Product sanPham = productRepo.findById(d.getIdSanPham()).orElse(null);
-            if (sanPham == null) continue;
+            if (sanPham == null)
+                continue;
 
             OrdersDetail detail = OrdersDetail.builder()
                     .donHang(order)
@@ -86,59 +91,87 @@ public class OrdersService {
         ordersRepo.deleteById(id);
     }
 
-
     // 🔍 Tìm kiếm đơn hàng theo tên người nhận hoặc số điện thoại
     public List<OrdersResponse> searchOrders(String hoTenNhan, String sdtNhan) {
-    List<Orders> orders = ordersRepo.searchOrders(hoTenNhan, sdtNhan);
-    return orders.stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
+        List<Orders> orders = ordersRepo.searchOrders(hoTenNhan, sdtNhan);
+        return orders.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
-// ✏️ Cập nhật trạng thái thanh toán
+    // ✏️ Cập nhật trạng thái thanh toán
     @Transactional
-public OrdersResponse updatePaymentStatus(Integer id, Orders.PaymentStatus trangThaiTT) {
-    Orders order = ordersRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
-    order.setTrangThaiTT(trangThaiTT);
-    return toResponse(ordersRepo.save(order));
-}
+    public OrdersResponse updatePaymentStatus(Integer id, Orders.PaymentStatus trangThaiTT) {
+        Orders order = ordersRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+        order.setTrangThaiTT(trangThaiTT);
+        return toResponse(ordersRepo.save(order));
+    }
 
-// ✏️ Cập nhật trạng thái đơn hàng
-@Transactional
-public OrdersResponse updateStatus(Integer id, Orders.OrderStatus trangThai) {
-    Orders order = ordersRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
+    // ✏️ Cập nhật trạng thái đơn hàng
+    @Transactional
+    public OrdersResponse updateStatus(Integer id, Orders.OrderStatus trangThai, Orders.PaymentStatus paymentStatus) {
+        Orders order = ordersRepo.findById(id)
+                .orElseThrow(() -> new RuntimeException("Không tìm thấy đơn hàng"));
 
-    // chỉ cộng số lượng bán khi chuyển sang HOÀN THÀNH
-    if (order.getTrangThai() != Orders.OrderStatus.HOAN_THANH 
-        && trangThai == Orders.OrderStatus.HOAN_THANH) {
+        // Nếu chuyển từ trạng thái khác sang HOÀN THÀNH → cộng số lượng bán
+        if (order.getTrangThai() != Orders.OrderStatus.HOAN_THANH
+                && trangThai == Orders.OrderStatus.HOAN_THANH) {
 
-        List<OrdersDetail> details = ordersDetailRepo.findByDonHang(order);
-        for (OrdersDetail detail : details) {
-            Product product = detail.getSanPham();
-            if (product != null) {
-                Warehouse warehouse = warehouseRepository.findBySanPham(product);
-                if (warehouse != null) {
-                    int currentSold = warehouse.getSoLuongBan() != null ? warehouse.getSoLuongBan() : 0;
-                    warehouse.setSoLuongBan(currentSold + detail.getSoLuong());
-                    warehouseRepository.save(warehouse);
+            List<OrdersDetail> details = ordersDetailRepo.findByDonHang(order);
+            for (OrdersDetail detail : details) {
+                Product product = detail.getSanPham();
+                if (product != null) {
+                    Warehouse warehouse = warehouseRepository.findBySanPham(product);
+                    if (warehouse != null) {
+                        int currentSold = warehouse.getSoLuongBan() != null ? warehouse.getSoLuongBan() : 0;
+                        warehouse.setSoLuongBan(currentSold + detail.getSoLuong());
+                        warehouseRepository.save(warehouse);
+                    }
                 }
             }
+
+            // tự động set trạng thái thanh toán
+            order.setTrangThaiTT(Orders.PaymentStatus.DA_THANH_TOAN);
+
         }
+
+        // Nếu chuyển từ HOÀN THÀNH sang TRẢ_HÀNG → trừ lại số lượng bán
+        if (order.getTrangThai() == Orders.OrderStatus.HOAN_THANH
+                && trangThai == Orders.OrderStatus.TRA_HANG) {
+
+            List<OrdersDetail> details = ordersDetailRepo.findByDonHang(order);
+            for (OrdersDetail detail : details) {
+                Product product = detail.getSanPham();
+                if (product != null) {
+                    Warehouse warehouse = warehouseRepository.findBySanPham(product);
+                    if (warehouse != null) {
+                        int currentSold = warehouse.getSoLuongBan() != null ? warehouse.getSoLuongBan() : 0;
+                        warehouse.setSoLuongBan(currentSold - detail.getSoLuong());
+                        if (warehouse.getSoLuongBan() < 0)
+                            warehouse.setSoLuongBan(0); // tránh âm
+                        warehouseRepository.save(warehouse);
+                    }
+                }
+            }
+
+            // set trạng thái thanh toán hoàn tiền
+            order.setTrangThaiTT(
+                    paymentStatus != null ? paymentStatus : Orders.PaymentStatus.HOAN_TIEN);
+
+        }
+
+        order.setTrangThai(trangThai);
+        return toResponse(ordersRepo.save(order));
     }
 
-    order.setTrangThai(trangThai);
-    return toResponse(ordersRepo.save(order));
-}
-// 📋 Lấy tất cả đơn hàng theo id tài khoản
-public List<OrdersResponse> getByAccountId(Integer idTaiKhoan) {
-    List<Orders> orders = ordersRepo.findByTaiKhoan_IdTaiKhoan(idTaiKhoan);
-    return orders.stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
-}
-
+    // 📋 Lấy tất cả đơn hàng theo id tài khoản
+    public List<OrdersResponse> getByAccountId(Integer idTaiKhoan) {
+        List<Orders> orders = ordersRepo.findByTaiKhoan_IdTaiKhoan(idTaiKhoan);
+        return orders.stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
 
     // 🧾 Mapping entity → DTO
     private OrdersResponse toResponse(Orders order) {

@@ -78,11 +78,14 @@ public class Orders {
     public enum PaymentMethod {
         COD, ONLINE
     }
+// @Enumerated(EnumType.STRING)
+//     private PaymentStatus trangThaiThanhToan; // thêm field này
 
     public enum PaymentStatus {
         CHUA_THANH_TOAN("Chưa thanh toán"),
         DA_THANH_TOAN("Đã thanh toán"),
-        HOAN_TIEN("Hoàn tiền");
+        HOAN_TIEN("Hoàn tiền"),
+        DA_HOAN_TIEN("Đã hoàn tiền");
 
         private final String value;
         PaymentStatus(String value) { this.value = value; }
@@ -93,7 +96,6 @@ public class Orders {
         CHO_XAC_NHAN("Chờ xác nhận"),
         DA_XAC_NHAN("Đã xác nhận"),
         DANG_GIAO("Đang giao"),
-        GIAO_THAT_BAI("Giao thất bại"),
         HOAN_THANH("Hoàn thành"),
         TRA_HANG("Trả hàng"),
         HUY("Hủy");

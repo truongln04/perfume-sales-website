@@ -49,11 +49,13 @@ public OrdersResponse updatePaymentStatus(@PathVariable Integer id,
 }
 
     // ✏️ Cập nhật trạng thái đơn hàng
-    @PutMapping("/{id}/status")
-    public OrdersResponse updateOrderStatus(@PathVariable Integer id,
-                                            @RequestParam Orders.OrderStatus trangThai) {
-        return service.updateStatus(id, trangThai);
-    }
+   @PutMapping("/{id}/status")
+public OrdersResponse updateOrderStatus(@PathVariable Integer id,
+                                        @RequestParam Orders.OrderStatus trangThai,
+                                        @RequestParam(required = false) Orders.PaymentStatus paymentStatus) {
+    return service.updateStatus(id, trangThai, paymentStatus);
+}
+
 
     // 🗑️ Xóa đơn hàng
     @DeleteMapping("/{id}")

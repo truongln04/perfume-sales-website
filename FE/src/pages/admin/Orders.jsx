@@ -38,14 +38,14 @@ export default function Orders() {
     }
     try {
       // Nếu người dùng nhập toàn số → tìm theo SDT, ngược lại tìm theo họ tên
-    const isPhone = /^[0-9]+$/.test(value.trim());
-    const queryParam = isPhone
-      ? `sdtNhan=${encodeURIComponent(value)}`
-      : `hoTenNhan=${encodeURIComponent(value)}`;
+      const isPhone = /^[0-9]+$/.test(value.trim());
+      const queryParam = isPhone
+        ? `sdtNhan=${encodeURIComponent(value)}`
+        : `hoTenNhan=${encodeURIComponent(value)}`;
 
-    const res = await fetch(`${API_URL}/search?${queryParam}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const res = await fetch(`${API_URL}/search?${queryParam}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
       if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
       setOrders(data);
@@ -122,6 +122,7 @@ export default function Orders() {
     setSelectedOrder(null);
     setShowDetail(false);
   };
+  const cancellableStatuses = ["CHO_XAC_NHAN", "DA_XAC_NHAN", "DANG_GIAO"];
 
   return (
     <div className="card">
@@ -129,10 +130,11 @@ export default function Orders() {
         <h5 className="m-0">Quản lý Đơn hàng</h5>
         <input
           type="text"
-          className="form-control form-control-sm w-25"
+          className="form-control "
           placeholder="Tìm theo tên hoặc SDT..."
           value={search}
           onChange={(e) => handleSearch(e.target.value)}
+          style={{ width: 260 }}
         />
       </div>
 
@@ -168,125 +170,144 @@ export default function Orders() {
                 <td>{new Date(o.ngayDat).toLocaleString("vi-VN")}</td>
                 <td>{o.tongTien?.toLocaleString("vi-VN")} đ</td>
                 <td>{o.phuongThucTT}</td>
+
+                {/* Trạng thái thanh toán */}
                 <td>
-  {o.trangThaiTT === "DA_THANH_TOAN" ? (
-    // ĐÃ THANH TOÁN → chỉ được chọn "HOÀN TIỀN", không được về "Chưa thanh toán"
-    <select
-      className="form-select form-select-sm border-success text-success"
-      value={o.trangThaiTT}
-      onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
-    >
-      <option value="DA_THANH_TOAN">Đã Thanh Toán</option>
-      <option value="HOAN_TIEN">Hoàn tiền</option>
-    </select>
-  ) : o.trangThaiTT === "HOAN_TIEN" ? (
-    // ĐÃ HOÀN TIỀN → khóa chết, không sửa được nữa
-    <span className="badge bg-danger text-white px-3 py-2 rounded">
-      ĐÃ HOÀN TIỀN
-    </span>
-  ) : (
-    // CHƯA THANH TOÁN → cho chọn bình thường
-    <select
-      className="form-select form-select-sm border-warning"
-      value={o.trangThaiTT}
-      onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
-    >
-      <option value="CHUA_THANH_TOAN">Chưa thanh toán</option>
-      <option value="DA_THANH_TOAN">Đã thanh toán</option>
-      <option value="HOAN_TIEN">Hoàn tiền</option>
-    </select>
-  )}
-</td>
-               <td>
-  {/* Các trạng thái KẾT THÚC → hiển thị badge đẹp, KHÔNG cho sửa */}
-  {["HOAN_THANH", "HUY", "TRA_HANG"].includes(o.trangThai) ? (
-    <span
-      className={`badge px-4 py-2 rounded-pill fw-bold ${
-        o.trangThai === "HOAN_THANH"
-          ? "bg-success"
-          : o.trangThai === "HUY"
-          ? "bg-secondary"
-          : "bg-danger"
-      }`}
-    >
-      {o.trangThai === "HOAN_THANH" && "HOÀN THÀNH"}
-      {o.trangThai === "HUY" && "ĐÃ HỦY"}
-      {o.trangThai === "TRA_HANG" && "ĐÃ TRẢ HÀNG"}
-    </span>
-  ) : (
-    /* Các trạng thái đang xử lý → chỉ hiện các option hợp lệ */
-    <select
-      className="form-select form-select-sm"
-      value={o.trangThai}
-      onChange={(e) => {
-        const newStatus = e.target.value;
+                  {o.trangThaiTT === "CHUA_THANH_TOAN" ? (
+                    <select
+                      className="form-select form-select-sm border-warning text-center"
+                      style={{ width: "120px", fontSize: "0.875rem" }}
+                      value={o.trangThaiTT}
+                      onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
+                    >
+                      <option value="CHUA_THANH_TOAN">Chưa TT</option>
+                      <option value="DA_THANH_TOAN">Đã TT</option>
+                      <option value="HOAN_TIEN">Hoàn tiền</option>
+                    </select>
+                  ) : o.trangThaiTT === "DA_THANH_TOAN" ? (
+                    <select
+                      className="form-select form-select-sm border-success text-success text-center"
+                      style={{ width: "120px", fontSize: "0.875rem" }}
+                      value={o.trangThaiTT}
+                      onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
+                    >
+                      <option value="DA_THANH_TOAN">Đã TT</option>
+                      <option value="HOAN_TIEN">Hoàn tiền</option>
+                    </select>
+                  ) : o.trangThaiTT === "HOAN_TIEN" ? (
+                    <select
+                      className="form-select form-select-sm border-danger text-danger text-center"
+                      style={{ width: "120px", fontSize: "0.875rem" }}
+                      value={o.trangThaiTT}
+                      onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
+                    >
+                      <option value="HOAN_TIEN">Hoàn tiền</option>
+                      <option value="DA_HOAN_TIEN">Đã hoàn</option>
+                    </select>
+                  ) : (
+                    <span
+                      className="badge bg-danger text-white rounded text-center"
+                      style={{ width: "120px", fontSize: "0.875rem" }}
+                    >
+                      Đã hoàn
+                    </span>
+                  )}
+                </td>
 
-        // Xác nhận khi hủy đơn
-        if (newStatus === "HUY") {
-          if (window.confirm("Bạn có chắc chắn muốn HỦY đơn hàng này không?")) {
-            handleStatusChange(o.id, newStatus);
-          }
-          return;
-        }
+                {/* Trạng thái đơn hàng */}
+                <td>
+                  {["HUY", "TRA_HANG"].includes(o.trangThai) ? (
+                    <span
+                      className={`badge fw-bold rounded-pill text-center ${o.trangThai === "HUY" ? "bg-secondary" : "bg-danger"
+                        }`}
+                      style={{ width: "120px", fontSize: "0.875rem" }}
+                    >
+                      {o.trangThai === "HUY" && "Đã hủy"}
+                      {o.trangThai === "TRA_HANG" && "Trả hàng"}
+                    </span>
+                  ) : (
+                    <select
+                      className="form-select form-select-sm text-center"
+                      style={{ width: "120px", fontSize: "0.875rem" }}
+                      value={o.trangThai}
+                      onChange={(e) => {
+                        const newStatus = e.target.value;
 
-        // Xác nhận khi trả hàng (chỉ từ Hoàn thành)
-        if (newStatus === "TRA_HANG") {
-          if (window.confirm("Xác nhận khách đã TRẢ HÀNG và bạn muốn hoàn tiền?")) {
-            handleStatusChange(o.id, newStatus);
-          }
-          return;
-        }
+                        if (newStatus === "HUY") {
+                          if (window.confirm("Bạn có chắc chắn muốn HỦY đơn hàng này không?")) {
+                            handleStatusChange(o.id, newStatus);
+                          }
+                          return;
+                        }
 
-        // Các chuyển trạng thái bình thường
-        handleStatusChange(o.id, newStatus);
-      }}
-    >
-      {/* 1. Chờ xác nhận */}
-      {o.trangThai === "CHO_XAC_NHAN" && (
-        <>
-          <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
-          <option value="DA_XAC_NHAN">Đã xác nhận</option>
-          <option value="HUY">Hủy đơn</option>
-        </>
-      )}
+                        if (newStatus === "TRA_HANG") {
+                          if (window.confirm("Xác nhận TRẢ HÀNG và bạn muốn hoàn tiền?")) {
+                            handleStatusChange(o.id, newStatus);
+                            handlePaymentStatusChange(o.id, "HOAN_TIEN");
+                          }
+                          return;
+                        }
 
-      {/* 2. Đã xác nhận */}
-      {o.trangThai === "DA_XAC_NHAN" && (
-        <>
-          <option value="DA_XAC_NHAN">Đã xác nhận</option>
-          <option value="DANG_GIAO">Đang giao</option>
-          <option value="HUY">Hủy đơn</option>
-        </>
-      )}
+                        if (newStatus === "HOAN_THANH") {
+                          handleStatusChange(o.id, newStatus);
+                          handlePaymentStatusChange(o.id, "DA_THANH_TOAN");
+                          return;
+                        }
 
-      {/* 3. Đang giao */}
-      {o.trangThai === "DANG_GIAO" && (
-        <>
-          <option value="DANG_GIAO">Đang giao</option>
-          <option value="HOAN_THANH">Giao thành công</option>
-          <option value="HUY">Hủy đơn</option>
-        </>
-      )}
+                        handleStatusChange(o.id, newStatus);
+                      }}
+                    >
+                      {o.trangThai === "CHO_XAC_NHAN" && (
+                        <>
+                          <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
+                          <option value="DA_XAC_NHAN">Đã xác nhận</option>
+                          <option value="HUY">Hủy đơn</option>
+                        </>
+                      )}
+                      {o.trangThai === "DA_XAC_NHAN" && (
+                        <>
+                          <option value="DA_XAC_NHAN">Đã xác nhận</option>
+                          <option value="DANG_GIAO">Đang giao</option>
+                          <option value="HUY">Hủy đơn</option>
+                        </>
+                      )}
+                      {o.trangThai === "DANG_GIAO" && (
+                        <>
+                          <option value="DANG_GIAO">Đang giao</option>
+                          <option value="HOAN_THANH">Hoàn thành</option>
+                          <option value="HUY">Hủy đơn</option>
+                        </>
+                      )}
+                      {o.trangThai === "HOAN_THANH" && (
+                        <>
+                          <option value="HOAN_THANH">Hoàn thành</option>
+                          <option value="TRA_HANG">Trả hàng</option>
+                        </>
+                      )}
+                    </select>
+                  )}
+                </td>
 
-      {/* 4. Hoàn thành → chỉ được trả hàng */}
-      {o.trangThai === "HOAN_THANH" && (
-        <>
-          <option value="HOAN_THANH">HOÀN THÀNH</option>
-          <option value="TRA_HANG">Khách trả hàng</option>
-        </>
-      )}
-    </select>
-  )}
-</td>
+
                 <td>{o.diaChiGiao}</td>
                 <td>{o.ghiChu || "Không có"}</td>
                 <td className="d-flex gap-2">
-                  <button className="btn btn-sm btn-outline-primary" onClick={() => handleViewDetail(o.id)}>
+                  <button
+                    className="btn btn-sm btn-outline-primary"
+                    onClick={() => handleViewDetail(o.id)}
+                  >
                     Chi tiết
                   </button>
-                  <button className="btn btn-sm btn-outline-danger" onClick={() => handleStatusChange(o.id, "HUY")}>
-                    Hủy
-                  </button>
+                  {cancellableStatuses.includes(o.trangThai) && (
+                    <button
+                      className="btn btn-sm btn-outline-danger"
+                      onClick={() => handleStatusChange(o.id, "HUY")}
+                    >
+                      Hủy
+                    </button>
+                  )}
+
+
                 </td>
               </tr>
             ))}
