@@ -74,8 +74,8 @@ public class ReportService {
 
         List<Object> params = new ArrayList<>();
 
-        if (fromDate != null && !fromDate.isBlank()) { sql += " AND dh.ngay_dat >= ?"; params.add(fromDate); }
-        if (toDate != null && !toDate.isBlank()) { sql += " AND dh.ngay_dat <= ?"; params.add(toDate); }
+        if (fromDate != null && !fromDate.isBlank()) { sql += " AND DATE(dh.ngay_dat) >= ?"; params.add(fromDate); }
+        if (toDate != null && !toDate.isBlank()) { sql += "AND DATE(dh.ngay_dat) <= ?"; params.add(toDate); }
         if (orderStatus != null && !orderStatus.isBlank()) { sql += " AND dh.trang_thai = ?"; params.add(orderStatus); }
 
         sql += " GROUP BY dh.trang_thai";
@@ -142,7 +142,7 @@ public class ReportService {
             JOIN san_pham sp ON ct.id_san_pham = sp.id_san_pham
             LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id_danh_muc
             LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id_thuong_hieu
-            WHERE dh.trang_thai = 'Hoàn thành'
+            WHERE dh.trang_thai = 'HOAN_THANH'
             """;
 
     List<Object> params = new ArrayList<>();

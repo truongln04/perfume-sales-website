@@ -16,7 +16,14 @@ export default function BanChayReport({ token }) {
   }, [token]);
 
   const handleChange = (e) => setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
-  const buildParams = () => Object.entries(filters).reduce((p,[k,v])=>(v?p.append(k,v):p,p),new URLSearchParams()).toString();
+  const buildParams = () => {
+  const params = new URLSearchParams();
+  Object.entries(filters).forEach(([k, v]) => {
+    if (v) params.append(k, v);
+  });
+  return params.toString();
+};
+
 
   const handleFilter = async () => {
     setLoading(true);
@@ -60,7 +67,7 @@ export default function BanChayReport({ token }) {
           <label>Thương hiệu</label>
           <select name="brand" value={filters.brand} onChange={handleChange} className="form-select">
             <option value="">Tất cả</option>
-            {brands.map(b => <option key={b.idThuongHieu} value={b.tenThuongHieu}>{b.tenThuongHieu}</option>)}
+            {brands.map(b => <option key={b.idthuonghieu} value={b.tenthuonghieu}>{b.tenthuonghieu}</option>)}
           </select>
         </div>
         <div className="col-md-3">

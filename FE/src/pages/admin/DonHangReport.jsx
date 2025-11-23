@@ -44,11 +44,11 @@ export default function DonHangReport({ token }) {
           <label>Trạng thái đơn hàng</label>
           <select name="orderStatus" value={filters.orderStatus} onChange={handleChange} className="form-select">
             <option value="">Tất cả</option>
-            <option>Chờ xác nhận</option>
-            <option>Đã xác nhận</option>
-            <option>Đang giao</option>
-            <option>Hoàn thành</option>
-            <option>Hủy</option>
+            <option value="CHO_XAC_NHAN">Chờ xác nhận</option>
+<option value="DA_XAC_NHAN">Đã xác nhận</option>
+<option value="DANG_GIAO">Đang giao</option>
+<option value="HOAN_THANH">Hoàn thành</option>
+<option value="HUY">Hủy</option>
           </select>
         </div>
         <div className="col-md-4 d-flex gap-2">
