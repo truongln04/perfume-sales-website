@@ -11,4 +11,6 @@ import java.time.LocalDate;
 public class DoanhThuDTO {
     private LocalDate ngay;
     private BigDecimal doanhThu;
+    // private String phuongThucTT;
+    // private String trangThaiTT;
 }

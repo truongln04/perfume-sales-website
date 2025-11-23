@@ -12,4 +12,6 @@ public class BanChayDTO {
     private String tenSanPham;
     private Long tongBan;
     private BigDecimal doanhThu;
+    private String tenDanhMuc;
+    private String tenthuonghieu;
 }

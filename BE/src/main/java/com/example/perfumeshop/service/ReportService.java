@@ -31,38 +31,37 @@ public class ReportService {
     // =========================
     public List<DoanhThuDTO> getDoanhThu(String fromDate, String toDate, String payment, String paymentStatus) {
 
-    String sql = "SELECT DATE(dh.ngay_dat) AS ngay, SUM(dh.tong_tien) AS doanhThu FROM don_hang dh WHERE 1=1";
-    List<Object> params = new ArrayList<>();
+        String sql = "SELECT DATE(dh.ngay_dat) AS ngay, SUM(dh.tong_tien) AS doanhThu FROM don_hang dh WHERE 1=1";
+        List<Object> params = new ArrayList<>();
 
-    if (fromDate != null && !fromDate.isBlank()) { 
-        sql += " AND DATE(dh.ngay_dat) >= ?"; 
-        params.add(fromDate); 
-    }
-    if (toDate != null && !toDate.isBlank()) { 
-        sql += " AND DATE(dh.ngay_dat) <= ?"; 
-        params.add(toDate); 
-    }
-    if (payment != null && !payment.isBlank()) { 
-        sql += " AND dh.phuong_thuc_tt = ?"; 
-        params.add(payment); 
-    }
-    if (paymentStatus != null && !paymentStatus.isBlank()) { 
-        sql += " AND dh.trang_thai_tt = ?"; 
-        params.add(paymentStatus); 
-    }
+        if (fromDate != null && !fromDate.isBlank()) {
+            sql += " AND DATE(dh.ngay_dat) >= ?";
+            params.add(fromDate);
+        }
+        if (toDate != null && !toDate.isBlank()) {
+            sql += " AND DATE(dh.ngay_dat) <= ?";
+            params.add(toDate);
+        }
+        if (payment != null && !payment.isBlank()) {
+            sql += " AND dh.phuong_thuc_tt = ?";
+            params.add(payment);
+        }
+        if (paymentStatus != null && !paymentStatus.isBlank()) {
+            sql += " AND dh.trang_thai_tt = ?";
+            params.add(paymentStatus);
+        }
 
-    sql += " GROUP BY DATE(dh.ngay_dat) ORDER BY ngay ASC";
+        sql += " GROUP BY DATE(dh.ngay_dat) ORDER BY ngay ASC";
 
-    return jdbc.query(
-            sql,
-            (rs, i) -> new DoanhThuDTO(
-                    rs.getDate("ngay").toLocalDate(),
-                    rs.getBigDecimal("doanhThu") // key "doanhThu" phải khớp với frontend
-            ),
-            params.toArray()
-    );
-}
+        return jdbc.query(
+                sql,
+                (rs, i) -> new DoanhThuDTO(
+                        rs.getDate("ngay").toLocalDate(),
+                        rs.getBigDecimal("doanhThu")
 
+                ),
+                params.toArray());
+    }
 
     // =========================
     // 2) ĐƠN HÀNG
@@ -74,9 +73,18 @@ public class ReportService {
 
         List<Object> params = new ArrayList<>();
 
-        if (fromDate != null && !fromDate.isBlank()) { sql += " AND DATE(dh.ngay_dat) >= ?"; params.add(fromDate); }
-        if (toDate != null && !toDate.isBlank()) { sql += "AND DATE(dh.ngay_dat) <= ?"; params.add(toDate); }
-        if (orderStatus != null && !orderStatus.isBlank()) { sql += " AND dh.trang_thai = ?"; params.add(orderStatus); }
+        if (fromDate != null && !fromDate.isBlank()) {
+            sql += " AND DATE(dh.ngay_dat) >= ?";
+            params.add(fromDate);
+        }
+        if (toDate != null && !toDate.isBlank()) {
+            sql += "AND DATE(dh.ngay_dat) <= ?";
+            params.add(toDate);
+        }
+        if (orderStatus != null && !orderStatus.isBlank()) {
+            sql += " AND dh.trang_thai = ?";
+            params.add(orderStatus);
+        }
 
         sql += " GROUP BY dh.trang_thai";
 
@@ -85,10 +93,8 @@ public class ReportService {
                 (rs, i) -> new DonHangDTO(
                         rs.getString("trang_thai"),
                         rs.getLong("so_luong"),
-                        rs.getBigDecimal("tong_tien")
-                ),
-                params.toArray()
-        );
+                        rs.getBigDecimal("tong_tien")),
+                params.toArray());
     }
 
     // =========================
@@ -99,7 +105,9 @@ public class ReportService {
         String sql = """
                 SELECT sp.id_san_pham, sp.ten_san_pham,
                        k.so_luong_nhap, k.so_luong_ban,
-                       (k.so_luong_nhap - k.so_luong_ban) AS ton_kho
+                       (k.so_luong_nhap - k.so_luong_ban) AS ton_kho,
+                       dm.ten_danh_muc,
+                       th.ten_thuong_hieu
                 FROM kho k
                 JOIN san_pham sp ON k.id_san_pham = sp.id_san_pham
                 LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id_danh_muc
@@ -109,9 +117,18 @@ public class ReportService {
 
         List<Object> params = new ArrayList<>();
 
-        if (productCode != null && !productCode.isBlank()) { sql += " AND sp.id_san_pham = ?"; params.add(productCode); }
-        if (category != null && !category.isBlank()) { sql += " AND dm.ten_danh_muc = ?"; params.add(category); }
-        if (brand != null && !brand.isBlank()) { sql += " AND th.ten_thuong_hieu = ?"; params.add(brand); }
+        if (productCode != null && !productCode.isBlank()) {
+            sql += " AND sp.id_san_pham = ?";
+            params.add(productCode);
+        }
+        if (category != null && !category.isBlank()) {
+            sql += " AND dm.ten_danh_muc = ?";
+            params.add(category);
+        }
+        if (brand != null && !brand.isBlank()) {
+            sql += " AND th.ten_thuong_hieu = ?";
+            params.add(brand);
+        }
 
         sql += " ORDER BY sp.id_san_pham";
 
@@ -122,10 +139,10 @@ public class ReportService {
                         rs.getString("ten_san_pham"),
                         rs.getInt("so_luong_nhap"),
                         rs.getInt("so_luong_ban"),
-                        rs.getInt("ton_kho")
-                ),
-                params.toArray()
-        );
+                        rs.getInt("ton_kho"),
+                        rs.getString("ten_danh_muc"),
+                        rs.getString("ten_thuong_hieu")),
+                params.toArray());
     }
 
     // =========================
@@ -133,40 +150,53 @@ public class ReportService {
     // =========================
     public List<BanChayDTO> getBanChay(String fromDate, String toDate, String category, String brand, int top) {
 
-    String sql = """
-            SELECT sp.id_san_pham AS idSanPham, sp.ten_san_pham AS tenSanPham,
-                   SUM(ct.so_luong) AS tongBan,
-                   SUM(ct.so_luong * ct.don_gia) AS doanhThu
-            FROM chi_tiet_don_hang ct
-            JOIN don_hang dh ON ct.id_don_hang = dh.id_don_hang
-            JOIN san_pham sp ON ct.id_san_pham = sp.id_san_pham
-            LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id_danh_muc
-            LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id_thuong_hieu
-            WHERE dh.trang_thai = 'HOAN_THANH'
-            """;
+        String sql = """
+                SELECT sp.id_san_pham AS idSanPham, sp.ten_san_pham AS tenSanPham,
+                       SUM(ct.so_luong) AS tongBan,
+                       SUM(ct.so_luong * ct.don_gia) AS doanhThu,
+                       dm.ten_danh_muc,
+                       th.ten_thuong_hieu
+                FROM chi_tiet_don_hang ct
+                JOIN don_hang dh ON ct.id_don_hang = dh.id_don_hang
+                JOIN san_pham sp ON ct.id_san_pham = sp.id_san_pham
+                LEFT JOIN danh_muc dm ON sp.id_danh_muc = dm.id_danh_muc
+                LEFT JOIN thuong_hieu th ON sp.id_thuong_hieu = th.id_thuong_hieu
+                WHERE dh.trang_thai = 'HOAN_THANH'
+                """;
 
-    List<Object> params = new ArrayList<>();
+        List<Object> params = new ArrayList<>();
 
-    if (fromDate != null && !fromDate.isBlank()) { sql += " AND DATE(dh.ngay_dat) >= ?"; params.add(fromDate); }
-    if (toDate != null && !toDate.isBlank()) { sql += " AND DATE(dh.ngay_dat) <= ?"; params.add(toDate); }
-    if (category != null && !category.isBlank()) { sql += " AND dm.ten_danh_muc = ?"; params.add(category); }
-    if (brand != null && !brand.isBlank()) { sql += " AND th.ten_thuong_hieu = ?"; params.add(brand); }
+        if (fromDate != null && !fromDate.isBlank()) {
+            sql += " AND DATE(dh.ngay_dat) >= ?";
+            params.add(fromDate);
+        }
+        if (toDate != null && !toDate.isBlank()) {
+            sql += " AND DATE(dh.ngay_dat) <= ?";
+            params.add(toDate);
+        }
+        if (category != null && !category.isBlank()) {
+            sql += " AND dm.ten_danh_muc = ?";
+            params.add(category);
+        }
+        if (brand != null && !brand.isBlank()) {
+            sql += " AND th.ten_thuong_hieu = ?";
+            params.add(brand);
+        }
 
-    sql += " GROUP BY sp.id_san_pham, sp.ten_san_pham ORDER BY tongBan DESC LIMIT ?";
-    params.add(top);
+        sql += " GROUP BY sp.id_san_pham, sp.ten_san_pham ORDER BY tongBan DESC LIMIT ?";
+        params.add(top);
 
-    return jdbc.query(
-            sql,
-            (rs, i) -> new BanChayDTO(
-                    rs.getLong("idSanPham"),
-                    rs.getString("tenSanPham"),
-                    rs.getLong("tongBan"),
-                    rs.getBigDecimal("doanhThu") // key trùng frontend
-            ),
-            params.toArray()
-    );
-}
-
+        return jdbc.query(
+                sql,
+                (rs, i) -> new BanChayDTO(
+                        rs.getLong("idSanPham"),
+                        rs.getString("tenSanPham"),
+                        rs.getLong("tongBan"),
+                        rs.getBigDecimal("doanhThu"), // key trùng frontend
+                        rs.getString("ten_danh_muc"),
+                        rs.getString("ten_thuong_hieu")),
+                params.toArray());
+    }
 
     // =========================
     // EXPORT EXCEL (KHÔNG THAY ĐỔI)
@@ -179,12 +209,17 @@ public class ReportService {
         Row header = sheet.createRow(0);
         header.createCell(0).setCellValue("Ngày");
         header.createCell(1).setCellValue("Doanh thu");
+        // header.createCell(2).setCellValue("Phương thức TT");
+        // header.createCell(3).setCellValue("Trạng thái TT");
 
         int i = 1;
         for (DoanhThuDTO dto : data) {
             Row row = sheet.createRow(i++);
             row.createCell(0).setCellValue(dto.getNgay().toString());
             row.createCell(1).setCellValue(dto.getDoanhThu().doubleValue());
+            // row.createCell(2).setCellValue(dto.getPhuongThucTT());
+            // row.createCell(3).setCellValue(dto.getTrangThaiTT());
+
         }
 
         return toExcelResponse(wb, "doanhthu.xlsx");
@@ -220,6 +255,8 @@ public class ReportService {
         header.createCell(2).setCellValue("Số lượng nhập");
         header.createCell(3).setCellValue("Số lượng bán");
         header.createCell(4).setCellValue("Tồn kho");
+        header.createCell(5).setCellValue("Tên danh mục");
+        header.createCell(6).setCellValue("Tên thương hiệu");
 
         int i = 1;
         for (TonKhoDTO dto : data) {
@@ -229,9 +266,11 @@ public class ReportService {
             row.createCell(2).setCellValue(dto.getSoLuongNhap());
             row.createCell(3).setCellValue(dto.getSoLuongBan());
             row.createCell(4).setCellValue(dto.getTonKho());
+            row.createCell(5).setCellValue(dto.getTenDanhMuc());
+            row.createCell(6).setCellValue(dto.getTenthuonghieu());
         }
 
-        return toExcelResponse(wb, "tonkho.xlsx");
+        return toExcelResponse(wb, "xuatnhaptonkho.xlsx");
     }
 
     public ResponseEntity<ByteArrayResource> exportBanChayExcel(List<BanChayDTO> data) throws IOException {
@@ -243,6 +282,8 @@ public class ReportService {
         header.createCell(1).setCellValue("Tên sản phẩm");
         header.createCell(2).setCellValue("Số lượng bán");
         header.createCell(3).setCellValue("Doanh thu");
+        header.createCell(4).setCellValue("Tên danh mục");
+        header.createCell(5).setCellValue("Tên thương hiệu");
 
         int i = 1;
         for (BanChayDTO dto : data) {
@@ -251,9 +292,11 @@ public class ReportService {
             row.createCell(1).setCellValue(dto.getTenSanPham());
             row.createCell(2).setCellValue(dto.getTongBan());
             row.createCell(3).setCellValue(dto.getDoanhThu().doubleValue());
+            row.createCell(4).setCellValue(dto.getTenDanhMuc());
+            row.createCell(5).setCellValue(dto.getTenthuonghieu());
         }
 
-        return toExcelResponse(wb, "banchay.xlsx");
+        return toExcelResponse(wb, "sanphambanchay.xlsx");
     }
 
     private ResponseEntity<ByteArrayResource> toExcelResponse(Workbook wb, String filename) throws IOException {
@@ -264,7 +307,8 @@ public class ReportService {
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=" + filename)
-                .contentType(MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
+                .contentType(
+                        MediaType.parseMediaType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"))
                 .contentLength(resource.contentLength())
                 .body(resource);
     }

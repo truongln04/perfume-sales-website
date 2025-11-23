@@ -3,6 +3,9 @@ package com.example.perfumeshop.service;
 import com.example.perfumeshop.dto.*;
 import com.example.perfumeshop.entity.*;
 import com.example.perfumeshop.repository.*;
+
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -15,10 +18,16 @@ import java.util.stream.Collectors;
 @Service
 public class ReceiptService {
 
-    @Autowired private ReceiptRepository receiptRepo;
-    @Autowired private SupplierRepository supplierRepo;
-    @Autowired private ProductRepository productRepo;
-    @Autowired private WarehouseRepository warehouseRepo;
+    @Autowired
+    private ReceiptRepository receiptRepo;
+    @Autowired
+    private SupplierRepository supplierRepo;
+    @Autowired
+    private ProductRepository productRepo;
+    @Autowired
+    private WarehouseRepository warehouseRepo;
+    @PersistenceContext
+    private EntityManager em;
 
     @Transactional
     public ReceiptResponse create(ReceiptRequest request) {
@@ -35,7 +44,8 @@ public class ReceiptService {
 
         for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
             Product sanPham = productRepo.findById(d.getIdSanPham()).orElse(null);
-            if (sanPham == null) continue;
+            if (sanPham == null)
+                continue;
 
             ReceiptDetail detail = ReceiptDetail.builder()
                     .phieuNhap(receipt)
@@ -58,7 +68,7 @@ public class ReceiptService {
         Receipt saved = receiptRepo.save(receipt);
         return toResponse(saved);
     }
-    
+
     public ReceiptResponse getById(Integer id) {
         Receipt receipt = receiptRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
@@ -85,7 +95,8 @@ public class ReceiptService {
 
         for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
             Product sanPham = productRepo.findById(d.getIdSanPham()).orElse(null);
-            if (sanPham == null) continue;
+            if (sanPham == null)
+                continue;
 
             ReceiptDetail detail = ReceiptDetail.builder()
                     .phieuNhap(receipt)
@@ -109,17 +120,34 @@ public class ReceiptService {
         return toResponse(updated);
     }
 
-    @Transactional
-    public void delete(Integer id) {
-        Receipt receipt = receiptRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
+@Transactional
+public void delete(Integer id) {
+    Receipt receipt = receiptRepo.findById(id)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
 
-        for (ReceiptDetail detail : receipt.getChiTietPhieuNhap()) {
-            updateSoLuongNhap(detail.getSanPham(), -detail.getSoLuong());
-        }
+    // ✅ Truy vấn kiểm tra sản phẩm trong phiếu nhập đã được bán chưa
+    List<Integer> productIds = receipt.getChiTietPhieuNhap()
+            .stream()
+            .map(d -> d.getSanPham().getIdSanPham())
+            .toList();
 
-        receiptRepo.delete(receipt);
+    Long count = em.createQuery(
+            "SELECT COUNT(od) FROM OrdersDetail od WHERE od.sanPham.idSanPham IN :ids", Long.class)
+            .setParameter("ids", productIds)
+            .getSingleResult();
+
+    if (count > 0) {
+        throw new IllegalStateException("Có sản phẩm trong phiếu nhập đã được bán, không thể xóa!");
     }
+
+    // ✅ Nếu qua được kiểm tra thì mới trừ số lượng nhập
+    for (ReceiptDetail detail : receipt.getChiTietPhieuNhap()) {
+        updateSoLuongNhap(detail.getSanPham(), -detail.getSoLuong());
+    }
+
+    receiptRepo.delete(receipt);
+}
+
 
     public List<ReceiptResponse> getAll() {
         return receiptRepo.findAll().stream()
@@ -137,10 +165,12 @@ public class ReceiptService {
                     .build();
         } else if (kho != null) {
             int newNhap = kho.getSoLuongNhap() + delta;
-            if (newNhap < 0) throw new RuntimeException("Số lượng nhập không hợp lệ");
+            if (newNhap < 0)
+                throw new RuntimeException("Số lượng nhập không hợp lệ");
             kho.setSoLuongNhap(newNhap);
         }
-        if (kho != null) warehouseRepo.save(kho);
+        if (kho != null)
+            warehouseRepo.save(kho);
     }
 
     private ReceiptResponse toResponse(Receipt r) {

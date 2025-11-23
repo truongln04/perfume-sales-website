@@ -11,4 +11,7 @@ public class TonKhoDTO {
     private Integer soLuongNhap;
     private Integer soLuongBan;
     private Integer tonKho;
+    private String tenDanhMuc;
+    private String tenthuonghieu;
+
 }

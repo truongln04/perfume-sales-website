@@ -202,7 +202,7 @@ export default function Orders() {
                       onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
                     >
                       <option value="HOAN_TIEN">Hoàn tiền</option>
-                      <option value="DA_HOAN_TIEN">Đã hoàn</option>
+                      <option value="DA_HOAN_TIEN">Đã hoàn tiền</option>
                     </select>
                   ) : (
                     <span

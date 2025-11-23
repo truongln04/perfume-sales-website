@@ -54,7 +54,7 @@ export default function TonKhoReport({ token }) {
       value={filters.productCode}
       onChange={handleChange}
       className="form-control"
-      placeholder="Nhập mã sản phẩm"
+      placeholder="Nhập mã sp"
     />
 
     {/* Select từ danh sách */}
@@ -64,7 +64,7 @@ export default function TonKhoReport({ token }) {
       onChange={handleChange}
       className="form-select"
     >
-      <option value="">Chọn từ danh sách</option>
+      <option value="">Chọn mã sp</option>
       {products.map(p => (
         <option key={p.idSanPham} value={p.idSanPham}>
           {p.idSanPham}
@@ -95,8 +95,12 @@ export default function TonKhoReport({ token }) {
 
       {loading ? <div>⏳ Đang tải dữ liệu...</div> :
         !data.length ? <div>Không có dữ liệu</div> :
-        <ResponsiveContainer width="100%" height={350}>
-          <BarChart data={data} layout="vertical" margin={{ top: 20, right: 30, left: 100, bottom: 20 }}>
+        <ResponsiveContainer width="100%" height={Math.max(500, data.length * 45)}>
+    <BarChart
+      data={data}
+      layout="vertical"
+      margin={{ top: 20, right: 30, left: 10, bottom: 20 }}
+    >
             <CartesianGrid strokeDasharray="3 3" />
             <XAxis type="number" />
             <YAxis type="category" dataKey="tenSanPham" width={150} />

@@ -80,7 +80,7 @@ export default function ReceiptManager({
                   <td>{r.ghiChu}</td>
                   <td className="d-flex gap-2">
                     <button className="btn btn-sm btn-outline-info" onClick={() => onView(r)}>Xem chi tiết</button>
-                    <button className="btn btn-sm btn-outline-primary" onClick={() => onEdit(r)}>Sửa</button>
+                    {/* <button className="btn btn-sm btn-outline-primary" onClick={() => onEdit(r)}>Sửa</button> */}
                     <button className="btn btn-sm btn-outline-danger" onClick={() => onDelete(r.idPhieuNhap)}>Xóa</button>
                   </td>
                 </tr>

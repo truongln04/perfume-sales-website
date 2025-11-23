@@ -43,8 +43,15 @@ export async function deleteReceipt(id) {
     method: "DELETE",
     headers: getAuthHeader(),
   });
-  if (!res.ok) throw new Error("Không thể xóa phiếu nhập");
+
+  if (!res.ok) {
+    // ✅ lấy message từ backend
+    const errorData = await res.json().catch(() => null);
+    const message = errorData?.message || "Không thể xóa phiếu nhập";
+    throw new Error(message);
+  }
 }
+
 
 // Lấy danh sách sản phẩm
 export async function fetchProducts() {

@@ -31,4 +31,13 @@ public class GlobalExceptionHandler {
         error.put("status", HttpStatus.INTERNAL_SERVER_ERROR.value());
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(error);
     }
+
+
+     @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<Map<String, Object>> handleIllegalState(IllegalStateException ex) {
+        Map<String, Object> body = new HashMap<>();
+        body.put("success", false);
+        body.put("message", ex.getMessage());
+        return ResponseEntity.badRequest().body(body);
+    }
 }

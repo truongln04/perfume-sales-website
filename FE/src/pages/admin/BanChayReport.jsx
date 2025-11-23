@@ -17,15 +17,25 @@ export default function BanChayReport({ token }) {
 
   const handleChange = (e) => setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
   const buildParams = () => {
-  const params = new URLSearchParams();
-  Object.entries(filters).forEach(([k, v]) => {
-    if (v) params.append(k, v);
-  });
-  return params.toString();
-};
+    const params = new URLSearchParams();
+    Object.entries(filters).forEach(([k, v]) => {
+      if (v) params.append(k, v);
+    });
+    return params.toString();
+  };
 
-
+  const [error, setError] = useState("");
   const handleFilter = async () => {
+    if (filters.fromDate && filters.toDate) {
+      const from = new Date(filters.fromDate);
+      const to = new Date(filters.toDate);
+      if (to < from) {
+        setError("❌ Thời gian kết thúc phải lớn hơn hoặc bằng thời gian bắt đầu");
+        setTimeout(() => setError(""), 3000); // 3 giây sau tự xoá
+        return;
+      }
+    }
+    setError(""); // xoá lỗi nếu hợp lệ
     setLoading(true);
     try {
       const res = await fetch(`http://localhost:8081/reports/banchay?${buildParams()}`, { headers: { Authorization: `Bearer ${token}` } });
@@ -50,11 +60,11 @@ export default function BanChayReport({ token }) {
       <div className="row g-3 align-items-end mb-3">
         <div className="col-md-3">
           <label>Từ ngày</label>
-          <input type="date" name="fromDate" value={filters.fromDate} onChange={handleChange} className="form-control"/>
+          <input type="date" name="fromDate" value={filters.fromDate} onChange={handleChange} className="form-control" />
         </div>
         <div className="col-md-3">
           <label>Đến ngày</label>
-          <input type="date" name="toDate" value={filters.toDate} onChange={handleChange} className="form-control"/>
+          <input type="date" name="toDate" value={filters.toDate} onChange={handleChange} className="form-control" />
         </div>
         <div className="col-md-3">
           <label>Danh mục</label>
@@ -83,18 +93,22 @@ export default function BanChayReport({ token }) {
           <button className="btn btn-outline-primary w-100" onClick={handleExport}>📥 Xuất Excel</button>
         </div>
       </div>
+      {error && <div className="alert alert-danger mt-2">{error}</div>}
 
       {loading ? <div>⏳ Đang tải dữ liệu...</div> :
         !data.length ? <div>Không có dữ liệu</div> :
-        <ResponsiveContainer width="100%" height={260}>
-          <BarChart data={data} layout="vertical">
-            <CartesianGrid strokeDasharray="3 3" />
-            <XAxis type="number" />
-            <YAxis type="category" dataKey="tenSanPham" width={120} />
-            <Tooltip />
-            <Bar dataKey="tongBan" fill="#0d6efd" barSize={20} />
-          </BarChart>
-        </ResponsiveContainer>
+          <ResponsiveContainer width="100%" height={260}>
+            <BarChart data={data}
+              layout="vertical"
+              margin={{ top: 20, right: 30, left: 20, bottom: 20 }}
+            >
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis type="number" />
+              <YAxis type="category" dataKey="tenSanPham" width={120} />
+              <Tooltip />
+              <Bar dataKey="tongBan" fill="#0d6efd" barSize={20} />
+            </BarChart>
+          </ResponsiveContainer>
       }
     </div>
   );

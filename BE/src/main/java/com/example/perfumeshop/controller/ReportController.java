@@ -25,8 +25,7 @@ public class ReportController {
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
             @RequestParam(required = false) String payment,
-            @RequestParam(required = false) String paymentStatus
-    ) {
+            @RequestParam(required = false) String paymentStatus) {
         return service.getDoanhThu(fromDate, toDate, payment, paymentStatus);
     }
 
@@ -35,8 +34,7 @@ public class ReportController {
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
             @RequestParam(required = false) String payment,
-            @RequestParam(required = false) String paymentStatus
-    ) throws IOException {
+            @RequestParam(required = false) String paymentStatus) throws IOException {
         List<DoanhThuDTO> data = service.getDoanhThu(fromDate, toDate, payment, paymentStatus);
         return service.exportDoanhThuExcel(data);
     }
@@ -46,8 +44,7 @@ public class ReportController {
     public List<DonHangDTO> donHang(
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
-            @RequestParam(required = false) String orderStatus
-    ) {
+            @RequestParam(required = false) String orderStatus) {
         return service.getDonHang(fromDate, toDate, orderStatus);
     }
 
@@ -55,8 +52,7 @@ public class ReportController {
     public ResponseEntity<ByteArrayResource> exportDonHang(
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
-            @RequestParam(required = false) String orderStatus
-    ) throws IOException {
+            @RequestParam(required = false) String orderStatus) throws IOException {
         List<DonHangDTO> data = service.getDonHang(fromDate, toDate, orderStatus);
         return service.exportDonHangExcel(data);
     }
@@ -66,8 +62,7 @@ public class ReportController {
     public List<TonKhoDTO> tonKho(
             @RequestParam(required = false) String productCode,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) String brand
-    ) {
+            @RequestParam(required = false) String brand) {
         return service.getTonKho(productCode, category, brand);
     }
 
@@ -75,8 +70,7 @@ public class ReportController {
     public ResponseEntity<ByteArrayResource> exportTonKho(
             @RequestParam(required = false) String productCode,
             @RequestParam(required = false) String category,
-            @RequestParam(required = false) String brand
-    ) throws IOException {
+            @RequestParam(required = false) String brand) throws IOException {
         List<TonKhoDTO> data = service.getTonKho(productCode, category, brand);
         return service.exportTonKhoExcel(data);
     }
@@ -88,8 +82,7 @@ public class ReportController {
             @RequestParam(required = false) String toDate,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String brand,
-            @RequestParam(defaultValue = "10") int top
-    ) {
+            @RequestParam(defaultValue = "10") int top) {
         return service.getBanChay(fromDate, toDate, category, brand, top);
     }
 
@@ -99,8 +92,7 @@ public class ReportController {
             @RequestParam(required = false) String toDate,
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String brand,
-            @RequestParam(defaultValue = "10") int top
-    ) throws IOException {
+            @RequestParam(defaultValue = "10") int top) throws IOException {
         List<BanChayDTO> data = service.getBanChay(fromDate, toDate, category, brand, top);
         return service.exportBanChayExcel(data);
     }

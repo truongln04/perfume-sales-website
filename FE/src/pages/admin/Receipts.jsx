@@ -106,16 +106,18 @@ export default function Receipt() {
 };
 
 
-  const onDelete = async (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa phiếu nhập này?")) {
-      try {
-        await deleteReceipt(id);
-        loadData();
-      } catch (err) {
-        console.error("Xóa thất bại:", err);
-      }
-    }
-  };
+const onDelete = async (id) => {
+  if (!window.confirm("⚠️ Bạn có chắc muốn xóa phiếu nhập này?")) return;
+
+  try {
+    await deleteReceipt(id);
+    alert("✅ Xóa phiếu nhập thành công!");
+    loadData();
+  } catch (err) {
+    console.error("Xóa thất bại:", err);
+    alert(err.message); // ✅ giờ sẽ hiện đúng message từ backend
+  }
+};
 
   const onSave = async () => {
     if (!form.idNcc) {
