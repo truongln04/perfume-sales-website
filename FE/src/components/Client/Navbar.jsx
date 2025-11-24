@@ -94,28 +94,56 @@ export default function Navbar() {
     scrollIndex + visibleCount
   );
   // ------------------- Cập nhật giỏ hàng -------------------
+// ------------------- Cập nhật giỏ hàng -------------------
 const [cartCount, setCartCount] = useState(0);
 
 useEffect(() => {
   const token = localStorage.getItem("token");
-  if (token) {
-    axios.get("http://localhost:8081/auth/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    })
-    .then((res) => axios.get(`http://localhost:8081/cart/${res.data.idTaiKhoan}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    }))
-    .then((res) => setCartCount(res.data.length))
-    .catch(() => setCartCount(0));
-  }
 
-  // ✅ Lắng nghe sự kiện cart-updated
-  const handleCartUpdate = (e) => setCartCount(e.detail);
+  // Hàm load số lượng giỏ hàng (gọi lại khi cần refresh)
+  const loadCartCount = async () => {
+    if (!token) {
+      setCartCount(0);
+      return;
+    }
+
+    try {
+      const meRes = await axios.get("http://localhost:8081/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const userId = meRes.data.idTaiKhoan;
+
+      const cartRes = await axios.get(`http://localhost:8081/cart/${userId}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setCartCount(cartRes.data.length || 0);
+    } catch (err) {
+      console.warn("Lỗi load giỏ hàng:", err);
+      setCartCount(0);
+    }
+  };
+
+  // Load lần đầu khi vào trang
+  loadCartCount();
+
+  // Lắng nghe sự kiện cập nhật giỏ hàng
+  const handleCartUpdate = (e) => {
+    if (e.detail === "refresh") {
+      loadCartCount(); // ← Tự động reload lại số lượng chính xác
+    } else if (typeof e.detail === "number") {
+      setCartCount(e.detail);
+    }
+    // Nếu detail là bất kỳ giá trị nào khác → bỏ qua (an toàn)
+  };
+
   window.addEventListener("cart-updated", handleCartUpdate);
 
-  return () => window.removeEventListener("cart-updated", handleCartUpdate);
-}, []);
-
+  // Cleanup
+  return () => {
+    window.removeEventListener("cart-updated", handleCartUpdate);
+  };
+}, []); // Chỉ chạy 1 lần khi mount
 
   // ------------------- Render -------------------
   return (

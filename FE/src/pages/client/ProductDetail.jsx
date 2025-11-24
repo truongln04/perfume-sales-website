@@ -36,70 +36,68 @@ export default function ProductDetail() {
     }
   }, [id]);
 
-const handleAddToCart = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    alert("Bạn cần đăng nhập để thêm giỏ hàng");
-    return;
-  }
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Bạn cần đăng nhập để thêm giỏ hàng");
+      return;
+    }
 
-  // kiểm tra tồn kho
-  if (!product || product.soLuongTon === 0) {
-    alert("Sản phẩm đã hết hàng, không thể thêm vào giỏ.");
-    return;
-  }
-  if (quantity > product.soLuongTon) {
-    alert(`Số lượng vượt quá tồn kho (${product.soLuongTon}).`);
-    return;
-  }
+    // kiểm tra tồn kho
+    if (!product || product.soLuongTon === 0) {
+      alert("Sản phẩm đã hết hàng, không thể thêm vào giỏ.");
+      return;
+    }
+    if (quantity > product.soLuongTon) {
+      alert(`Số lượng vượt quá tồn kho (${product.soLuongTon}).`);
+      return;
+    }
 
-  try {
-    // lấy user id
-    const userRes = await fetch("http://localhost:8081/auth/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const user = await userRes.json();
+    try {
+      // lấy user id
+      const userRes = await fetch("http://localhost:8081/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = await userRes.json();
 
-    // giá sau khuyến mãi
-    const finalPrice =
-      product.kmPhanTram && product.kmPhanTram > 0
-        ? Math.round(product.giaBan * (1 - product.kmPhanTram / 100))
-        : product.giaBan;
+      // giá sau khuyến mãi
+      const finalPrice =
+        product.kmPhanTram && product.kmPhanTram > 0
+          ? Math.round(product.giaBan * (1 - product.kmPhanTram / 100))
+          : product.giaBan;
 
-    // gọi API thêm giỏ hàng
-    const res = await fetch("http://localhost:8081/cart/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        idTaiKhoan: user.idTaiKhoan,
-        idSanPham: product.idSanPham,
-        soLuong: quantity,
-        donGia: finalPrice,
-      }),
-    });
+      // gọi API thêm giỏ hàng
+      const res = await fetch("http://localhost:8081/cart/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          idTaiKhoan: user.idTaiKhoan,
+          idSanPham: product.idSanPham,
+          soLuong: quantity,
+          donGia: finalPrice,
+        }),
+      });
 
-    if (!res.ok) throw new Error("Thêm giỏ hàng thất bại");
-    await res.json();
+      if (!res.ok) throw new Error("Thêm giỏ hàng thất bại");
+      await res.json();
 
-    alert("Đã thêm vào giỏ hàng thành công!");
+      alert("Đã thêm vào giỏ hàng thành công!");
 
-    // cập nhật số lượng giỏ hàng chính xác
-    const updatedCartRes = await fetch(`http://localhost:8081/cart/${user.idTaiKhoan}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const updatedCart = await updatedCartRes.json();
-    const totalQty = updatedCart.reduce((sum, it) => sum + it.soLuong, 0);
-
-    setCartCount(totalQty);
-    window.dispatchEvent(new CustomEvent("cart-updated", { detail: totalQty }));
-  } catch (err) {
-    console.error("Lỗi khi thêm giỏ hàng:", err);
-    alert("Có lỗi xảy ra khi thêm giỏ hàng");
-  }
-};
+      // cập nhật số lượng giỏ hàng chính xác
+      const updatedCartRes = await fetch(`http://localhost:8081/cart/${user.idTaiKhoan}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      // Thông báo giỏ hàng cần refresh lại số lượng (không set cứng về 0 nữa)
+      window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+      
+    } catch (err) {
+      console.error("Lỗi khi thêm giỏ hàng:", err);
+      alert("Có lỗi xảy ra khi thêm giỏ hàng");
+    }
+  };
 
 
 
@@ -152,7 +150,7 @@ const handleAddToCart = async () => {
             <span className="text-danger fw-bold fs-4">
               {(
                 product.giaBan &&
-                product.kmPhanTram
+                  product.kmPhanTram
                   ? Math.round(product.giaBan * (1 - product.kmPhanTram / 100))
                   : product.giaBan
               )?.toLocaleString()}{" "}

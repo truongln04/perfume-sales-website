@@ -209,7 +209,7 @@ export default function Orders() {
                       className="badge bg-danger text-white rounded text-center"
                       style={{ width: "120px", fontSize: "0.875rem" }}
                     >
-                      Đã hoàn
+                      Đã hoàn tiền
                     </span>
                   )}
                 </td>

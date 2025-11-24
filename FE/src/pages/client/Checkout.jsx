@@ -121,7 +121,7 @@ export default function Checkout() {
         await Promise.all(deletePromises);
 
         // Thông báo giỏ hàng cần refresh lại số lượng (không set cứng về 0 nữa)
-        window.dispatchEvent(new CustomEvent("cart-updated", { detail: "0" }));
+        window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
 
         // Thông báo thành công
         alert(`Đặt hàng thành công! Mã đơn hàng: #${result.id}`);

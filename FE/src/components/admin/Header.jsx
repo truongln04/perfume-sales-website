@@ -66,8 +66,8 @@ export default function Header({ collapsed }) {
             src={formData.anhDaiDien}
             alt="avatar"
             className="rounded-circle"
-            width={56}
-            height={56}
+            width={50}
+            height={50}
           />
         </div>
       </div>

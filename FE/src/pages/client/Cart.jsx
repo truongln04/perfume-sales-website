@@ -22,10 +22,14 @@ export default function Cart() {
         });
         const data = await cartRes.json();
         setCartItems(data);
+
+        // ✅ phát sự kiện với số sản phẩm (length)
+        window.dispatchEvent(new CustomEvent("cart-updated", { detail: data.length }));
       } catch (err) {
         console.error("Lỗi khi lấy giỏ hàng:", err);
       }
     };
+
     fetchCart();
   }, [token]);
 
@@ -84,9 +88,8 @@ export default function Cart() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
-        setCartItems(cartItems.filter((item) => item.idGh !== idGh));
-        setSelectedItems(selectedItems.filter((id) => id !== idGh));
-        window.dispatchEvent(new CustomEvent("cart-updated", { detail: cartItems.length - 1 }));
+        // Thông báo giỏ hàng cần refresh lại số lượng (không set cứng về 0 nữa)
+        window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
         alert("Xóa sản phẩm thành công!");
       }
     } catch (err) {

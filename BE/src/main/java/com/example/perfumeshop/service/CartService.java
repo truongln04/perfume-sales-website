@@ -32,33 +32,32 @@ public class CartService {
         return carts.stream().map(this::toResponse).collect(Collectors.toList());
     }
 
-   // Thêm sản phẩm vào giỏ hàng từ CartRequest
-public CartResponse addToCart(CartRequest request) {
-    Cart existing = cartRepository.findByTaiKhoan_IdTaiKhoanAndSanPham_IdSanPham(
-            request.getIdTaiKhoan(), request.getIdSanPham());
+    // Thêm sản phẩm vào giỏ hàng từ CartRequest
+    public CartResponse addToCart(CartRequest request) {
+        Cart existing = cartRepository.findByTaiKhoan_IdTaiKhoanAndSanPham_IdSanPham(
+                request.getIdTaiKhoan(), request.getIdSanPham());
 
-    Product product = productRepository.findById(request.getIdSanPham()).orElseThrow();
-    Account account = accountRepository.findById(request.getIdTaiKhoan()).orElseThrow();
+        Product product = productRepository.findById(request.getIdSanPham()).orElseThrow();
+        Account account = accountRepository.findById(request.getIdTaiKhoan()).orElseThrow();
 
-    if (existing != null) {
-        existing.setSoLuong(existing.getSoLuong() + request.getSoLuong());
-        // ✅ cập nhật lại giá nếu cần (ví dụ khi khuyến mãi thay đổi)
-        existing.setDonGia(request.getDonGia());
-        Cart updated = cartRepository.save(existing);
-        return toResponse(updated);
+        if (existing != null) {
+            existing.setSoLuong(existing.getSoLuong() + request.getSoLuong()); // cộng dồn
+            // ✅ cập nhật lại giá nếu cần (ví dụ khi khuyến mãi thay đổi)
+            existing.setDonGia(request.getDonGia());
+            Cart updated = cartRepository.save(existing);
+            return toResponse(updated);
+        }
+
+        Cart cart = new Cart();
+        cart.setTaiKhoan(account);
+        cart.setSanPham(product);
+        cart.setSoLuong(request.getSoLuong());
+        // ✅ lưu giá sau khuyến mãi từ request
+        cart.setDonGia(request.getDonGia());
+
+        Cart saved = cartRepository.save(cart);
+        return toResponse(saved);
     }
-
-    Cart cart = new Cart();
-    cart.setTaiKhoan(account);
-    cart.setSanPham(product);
-    cart.setSoLuong(request.getSoLuong());
-    // ✅ lưu giá sau khuyến mãi từ request
-    cart.setDonGia(request.getDonGia());
-
-    Cart saved = cartRepository.save(cart);
-    return toResponse(saved);
-}
-
 
     // Cập nhật số lượng
     public CartResponse updateQuantity(Integer idGh, Integer soLuong) {
@@ -91,4 +90,30 @@ public CartResponse addToCart(CartRequest request) {
         res.setDonGia(cart.getDonGia());
         return res;
     }
+
+    // Cập nhật số lượng theo user + sản phẩm
+    public CartResponse updateByUserAndProduct(CartRequest request) {
+        Cart existing = cartRepository.findByTaiKhoan_IdTaiKhoanAndSanPham_IdSanPham(
+                request.getIdTaiKhoan(), request.getIdSanPham());
+
+        Product product = productRepository.findById(request.getIdSanPham()).orElseThrow();
+        Account account = accountRepository.findById(request.getIdTaiKhoan()).orElseThrow();
+
+        if (existing != null) {
+            existing.setSoLuong(request.getSoLuong()); // hoặc cộng dồn: existing.getSoLuong() + request.getSoLuong()
+            existing.setDonGia(request.getDonGia());
+            Cart updated = cartRepository.save(existing);
+            return toResponse(updated);
+        }
+
+        Cart cart = new Cart();
+        cart.setTaiKhoan(account);
+        cart.setSanPham(product);
+        cart.setSoLuong(request.getSoLuong());
+        cart.setDonGia(request.getDonGia());
+
+        Cart saved = cartRepository.save(cart);
+        return toResponse(saved);
+    }
+
 }

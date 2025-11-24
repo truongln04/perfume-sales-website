@@ -30,7 +30,7 @@ public class CartController {
     // Cập nhật số lượng sản phẩm trong giỏ
     @PutMapping("/{idGh}")
     public CartResponse updateCart(@PathVariable Integer idGh,
-                                   @RequestParam Integer soLuong) {
+            @RequestParam Integer soLuong) {
         return cartService.updateQuantity(idGh, soLuong);
     }
 
@@ -45,4 +45,11 @@ public class CartController {
     public void clearCart(@PathVariable Integer idTaiKhoan) {
         cartService.clearCart(idTaiKhoan);
     }
+
+    // Cập nhật số lượng theo user + sản phẩm
+    @PutMapping("/update")
+    public CartResponse updateCartByUserAndProduct(@RequestBody CartRequest request) {
+        return cartService.updateByUserAndProduct(request);
+    }
+
 }
