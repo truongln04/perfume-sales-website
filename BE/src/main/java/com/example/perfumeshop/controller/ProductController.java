@@ -48,4 +48,13 @@ public class ProductController {
     public List<ProductResponse> search(@RequestParam String keyword) {
         return service.search(keyword);
     }
+
+    
+    @GetMapping("/active")
+public List<ProductResponse> getActiveProducts() {
+    return service.getActiveProducts();
+}
+
+
+
 }

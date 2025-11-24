@@ -8,16 +8,16 @@ export default function ProductsList({ categoryId, title = "Nước hoa" }) {
   const [products, setProducts] = useState([]);
   const [priceFilter, setPriceFilter] = useState("all");
   const [currentPage, setCurrentPage] = useState(1);
-  const pageSize = 5;
+  const pageSize = 20;
 
   useEffect(() => {
     const token = localStorage.getItem("token");
-    axios
-      .get(`http://localhost:8081/products?category=${categoryId}`, {
-        headers: token ? { Authorization: `Bearer ${token}` } : {},
-      })
-      .then((res) => setProducts(res.data))
-      .catch(() => setProducts([]));
+      axios.get("http://localhost:8081/products/active", {
+  headers: token ? { Authorization: `Bearer ${token}` } : {},
+})
+.then((res) => setProducts(res.data))
+.catch(() => setProducts([]));
+
   }, [categoryId]);
 
   const filteredProducts = products.filter((p) => {

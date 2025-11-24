@@ -117,15 +117,23 @@ public class ProductService {
     }
 
     public List<ProductResponse> getProductsByBrandId(Integer brandId) {
-        return productRepository.findByThuonghieu_Idthuonghieu(brandId).stream()
+    return productRepository.findByThuonghieu_IdthuonghieuAndTrangThai(brandId, true).stream()
             .map(this::toResponse)
             .collect(Collectors.toList());
-    }
+}
 
-    // Trong ProductService.java
-    public List<ProductResponse> getProductsByCategoryId(Integer categoryId) {
-        return productRepository.findByDanhMuc_IdDanhMuc(categoryId).stream()
+public List<ProductResponse> getProductsByCategoryId(Integer categoryId) {
+    return productRepository.findByDanhMuc_IdDanhMucAndTrangThai(categoryId, true).stream()
             .map(this::toResponse)
             .collect(Collectors.toList());
-    }
+}
+
+
+    public List<ProductResponse> getActiveProducts() {
+    List<Product> products = productRepository.findByTrangThai(true); // true = đang bán
+    return products.stream()
+                   .map(this::toResponse)
+                   .collect(Collectors.toList());
+}
+
 }
