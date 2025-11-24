@@ -280,9 +280,6 @@ export default function Profile() {
                       />
                     </div>
                   </div>
-                  <small className="text-muted d-block mt-2">
-                    * Để trống nếu bạn không muốn đổi mật khẩu
-                  </small>
                 </>
               )}
 
@@ -302,7 +299,7 @@ export default function Profile() {
 
               <div className="row g-4">
                 <div className="col-sm-6">
-                  <a href="/client" className="btn btn-outline-primary w-100 py-4 rounded-3 text-start shadow-sm">
+                  <a href="/orderslist" className="btn btn-outline-primary w-100 py-4 rounded-3 text-start shadow-sm">
                     <i className="bi bi-bag-check-fill fs-3 float-start me-3"></i>
                     <div>
                       <strong>Đơn hàng của tôi</strong><br />

@@ -26,7 +26,7 @@ export default function Accounts() {
     return { Authorization: `Bearer ${token}` };
   };
 
-   useEffect(() => {
+  useEffect(() => {
     const fetchAccounts = async () => {
       try {
         const res = await fetch("http://localhost:8081/accounts", {
@@ -46,15 +46,15 @@ export default function Accounts() {
     };
 
     fetchAccounts();
-    
+
     // Khi Header cập nhật tài khoản, cập nhật lại danh sách ngay
-  const handleAccountUpdated = () => {
-    fetchAccounts();
-  };
+    const handleAccountUpdated = () => {
+      fetchAccounts();
+    };
 
-  window.addEventListener("account-updated", handleAccountUpdated);
+    window.addEventListener("account-updated", handleAccountUpdated);
 
-  return () => window.removeEventListener("account-updated", handleAccountUpdated);
+    return () => window.removeEventListener("account-updated", handleAccountUpdated);
   }, [navigate]);
 
   const filtered = useMemo(() => {
@@ -62,10 +62,10 @@ export default function Accounts() {
     const result = !q
       ? accounts
       : accounts.filter(
-          (a) =>
-            a.tenHienThi?.toLowerCase().includes(q) ||
-            a.email?.toLowerCase().includes(q)
-        );
+        (a) =>
+          a.tenHienThi?.toLowerCase().includes(q) ||
+          a.email?.toLowerCase().includes(q)
+      );
     return [...result].sort((a, b) => a.idTaiKhoan - b.idTaiKhoan);
   }, [accounts, search]);
 
@@ -141,238 +141,265 @@ export default function Accounts() {
   };
 
   return (
-  <div className="card mt-0">
-    {/* Header */}
-    <div className="card-header d-flex justify-content-between align-items-center">
-      <h5 className="m-0 text-primary fw-bold">Quản lý tài khoản</h5>
+    <div className="card mt-0">
+      {/* Header */}
+      <div className="card-header d-flex justify-content-between align-items-center">
+        <h5 className="m-0 text-primary fw-bold">Quản lý tài khoản</h5>
 
-      <div className="d-flex gap-2">
-        <button className="btn btn-primary" onClick={onAdd}>
-          Thêm mới
-        </button>
-        <input
-          className="form-control"
-          placeholder="Tìm theo tên hoặc email..."
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          style={{ width: 240 }}
-        />
-      </div>
-    </div>
-
-    {/* Table */}
-    <div className="card-body p-0">
-      <table className="table table-hover table-striped align-middle m-0">
-        <thead className="table-light">
-          <tr>
-            <th style={{ width: 60 }}>ID</th>
-            <th style={{ width: 70 }}>Ảnh</th>
-            <th>Tên hiển thị</th>
-            <th>Email</th>
-            <th>Vai trò</th>
-            <th>SĐT</th>
-            <th>Google ID</th>
-            <th>Mật khẩu</th>
-            <th style={{ width: 120 }}>Thao tác</th>
-          </tr>
-        </thead>
-
-        <tbody>
-          {filtered.length === 0 ? (
-            <tr>
-              <td colSpan="9" className="text-center py-4 text-muted">
-                Không có dữ liệu
-              </td>
-            </tr>
-          ) : (
-            filtered.map((acc) => (
-              <tr key={acc.idTaiKhoan}>
-                <td>{acc.idTaiKhoan}</td>
-
-                <td>
-                  {acc.anhDaiDien ? (
-                    <img
-                      src={acc.anhDaiDien}
-                      alt="avatar"
-                      width={38}
-                      height={38}
-                      className="rounded-circle border"
-                    />
-                  ) : (
-                    <small className="text-muted">N/A</small>
-                  )}
-                </td>
-
-                <td>{acc.tenHienThi}</td>
-                <td>{acc.email}</td>
-
-                <td>
-                <span
-                  className={
-                    "badge " +
-                    (acc.vaiTro === "ADMIN"
-                      ? "bg-danger"
-                      : acc.vaiTro === "NHANVIEN"
-                      ? "bg-primary"
-                      : "bg-success")
-                  }
-                >
-                  {acc.vaiTro}
-                </span>
-              </td>
-
-
-                <td>{acc.sdt || "N/A"}</td>
-                <td>{acc.googleId || "N/A"}</td>
-
-                <td>
-                  <small className="text-muted" style={{ fontFamily: "monospace" }}>
-                    {acc.matKhau ? acc.matKhau.slice(0, 10) + "..." : "N/A"}
-                  </small>
-                </td>
-
-                <td>
-                  <div className="d-flex gap-2">
-                    <button
-                      className="btn btn-sm btn-outline-primary"
-                      onClick={() => onEdit(acc)}
-                    >
-                      Sửa
-                    </button>
-                    <button
-                      className="btn btn-sm btn-outline-danger"
-                      onClick={() => onDelete(acc.idTaiKhoan)}
-                    >
-                      Xóa
-                    </button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-
-    {/* Modal */}
-    {showModal && (
-      <div
-        className="modal d-block"
-        style={{ background: "rgba(0,0,0,.45)" }}
-      >
-        <div className="modal-dialog modal-lg">
-          <div className="modal-content">
-
-            {/* Modal header */}
-            <div className="modal-header">
-              <h5 className="modal-title fw-bold">
-                {editing ? "Sửa tài khoản" : "Thêm tài khoản"}
-              </h5>
-              <button className="btn-close" onClick={() => setShowModal(false)}></button>
-            </div>
-
-            {/* Modal body */}
-            <div className="modal-body">
-              <div className="row g-3">
-
-                <div className="col-md-6">
-                  <label className="form-label">Tên hiển thị</label>
-                  <input
-                    type="text"
-                    name="tenHienThi"
-                    className="form-control"
-                    value={form.tenHienThi}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Email</label>
-                  <input
-                    type="email"
-                    name="email"
-                    className="form-control"
-                    value={form.email}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Vai trò</label>
-                  <select
-                    name="vaiTro"
-                    className="form-select"
-                    value={form.vaiTro}
-                    onChange={handleChange}
-                  >
-                    <option value="ADMIN">Admin</option>
-                    <option value="NHANVIEN">Nhân viên</option>
-                    <option value="KHACHHANG">Khách hàng</option>
-                  </select>
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Số điện thoại</label>
-                  <input
-                    type="text"
-                    name="sdt"
-                    className="form-control"
-                    value={form.sdt}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Google ID</label>
-                  <input
-                    type="text"
-                    name="googleId"
-                    className="form-control"
-                    value={form.googleId || ""}
-                    readOnly
-                  />
-                </div>
-
-                <div className="col-md-12">
-                  <label className="form-label">Ảnh đại diện (URL)</label>
-                  <input
-                    type="text"
-                    name="anhDaiDien"
-                    className="form-control"
-                    value={form.anhDaiDien}
-                    onChange={handleChange}
-                  />
-                </div>
-
-                <div className="col-md-6">
-                  <label className="form-label">Mật khẩu</label>
-                  <input
-                    type="password"
-                    name="matKhau"
-                    className="form-control"
-                    value={form.matKhau}
-                    onChange={handleChange}
-                    placeholder="Nhập mật khẩu"
-                  />
-                </div>
-
-              </div>
-            </div>
-
-            {/* Modal footer */}
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
-                Đóng
-              </button>
-              <button className="btn btn-primary" onClick={onSave}>
-                Lưu
-              </button>
-            </div>
-
-          </div>
+        <div className="d-flex gap-2">
+          <button className="btn btn-primary" onClick={onAdd}>
+            Thêm mới
+          </button>
+          <input
+            className="form-control"
+            placeholder="Tìm theo tên hoặc email..."
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            style={{ width: 240 }}
+          />
         </div>
       </div>
-    )}
-  </div>
-);
+
+      {/* Table */}
+      <div className="card-body p-0">
+        <table className="table table-hover table-striped align-middle m-0">
+          <thead className="table-light">
+            <tr>
+              <th style={{ width: 60 }}>ID</th>
+              <th style={{ width: 70 }}>Ảnh</th>
+              <th>Tên hiển thị</th>
+              <th>Email</th>
+              <th>Vai trò</th>
+              <th>SĐT</th>
+              <th>Google ID</th>
+              <th>Mật khẩu</th>
+              <th style={{ width: 120 }}>Thao tác</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            {filtered.length === 0 ? (
+              <tr>
+                <td colSpan="9" className="text-center py-4 text-muted">
+                  Không có dữ liệu
+                </td>
+              </tr>
+            ) : (
+              filtered.map((acc) => (
+                <tr key={acc.idTaiKhoan}>
+                  <td>{acc.idTaiKhoan}</td>
+
+                  <td>
+                    {acc.anhDaiDien ? (
+                      <img
+                        src={acc.anhDaiDien}
+                        alt="avatar"
+                        width={38}
+                        height={38}
+                        className="rounded-circle border"
+                      />
+                    ) : (
+                      <small className="text-muted">N/A</small>
+                    )}
+                  </td>
+
+                  <td>{acc.tenHienThi}</td>
+                  <td>{acc.email}</td>
+
+                  <td>
+                    <span
+                      className={
+                        "badge " +
+                        (acc.vaiTro === "ADMIN"
+                          ? "bg-danger"
+                          : acc.vaiTro === "NHANVIEN"
+                            ? "bg-primary"
+                            : "bg-success")
+                      }
+                    >
+                      {acc.vaiTro}
+                    </span>
+                  </td>
+
+
+                  <td>{acc.sdt || "N/A"}</td>
+                  <td>{acc.googleId || "N/A"}</td>
+
+                  <td>
+                    <small className="text-muted" style={{ fontFamily: "monospace" }}>
+                      {acc.matKhau ? acc.matKhau.slice(0, 10) + "..." : "N/A"}
+                    </small>
+                  </td>
+
+                  <td>
+                    <div className="d-flex gap-2">
+                      <button
+                        className="btn btn-sm btn-outline-primary"
+                        onClick={() => onEdit(acc)}
+                      >
+                        Sửa
+                      </button>
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => onDelete(acc.idTaiKhoan)}
+                      >
+                        Xóa
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* Modal */}
+      {showModal && (
+        <div
+          className="modal d-block"
+          style={{ background: "rgba(0,0,0,.45)" }}
+        >
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+
+              {/* Modal header */}
+              <div className="modal-header">
+                <h5 className="modal-title fw-bold">
+                  {editing ? "Sửa tài khoản" : "Thêm tài khoản"}
+                </h5>
+                <button className="btn-close" onClick={() => setShowModal(false)}></button>
+              </div>
+
+              {/* Modal body */}
+              <div className="modal-body">
+                <div className="row g-3">
+
+                  <div className="col-md-6">
+                    <label className="form-label">Tên hiển thị</label>
+                    <input
+                      type="text"
+                      name="tenHienThi"
+                      className="form-control"
+                      value={form.tenHienThi}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Email</label>
+                    <input
+                      type="email"
+                      name="email"
+                      className="form-control"
+                      value={form.email}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Vai trò</label>
+                    {editing ? (
+                      // Nếu vai trò hiện tại là ADMIN, KHACHHANG ⇒ KHÔNG được chỉnh sửa
+                      form.vaiTro === "ADMIN" || form.vaiTro === "KHACHHANG" ? (
+                        <input
+                          type="text"
+                          className="form-control"
+                          value={
+                            form.vaiTro === "ADMIN" ? "Admin"
+                              : form.vaiTro === "NHANVIEN" ? "Nhân viên"
+                                : "Khách hàng"
+                          }
+                          readOnly
+                        />
+                      ) : (
+                        // Nếu role là nhân viên ⇒ ĐƯỢC PHÉP CHỈNH SỬA
+                        <select
+                          name="vaiTro"
+                          className="form-select"
+                          value={form.vaiTro}
+                          onChange={handleChange}
+                        >
+                          <option value="ADMIN">Admin</option>
+                          <option value="NHANVIEN">Nhân viên</option>
+                        </select>
+                      )
+                    ) : (
+                      // Trạng thái thêm mới: luôn cho chọn vai trò
+                      <select
+                        name="vaiTro"
+                        className="form-select"
+                        value={form.vaiTro}
+                        onChange={handleChange}
+                      >
+                        <option value="ADMIN">Admin</option>
+                        <option value="NHANVIEN">Nhân viên</option>
+                      </select>
+                    )}
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Số điện thoại</label>
+                    <input
+                      type="text"
+                      name="sdt"
+                      className="form-control"
+                      value={form.sdt}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Google ID</label>
+                    <input
+                      type="text"
+                      name="googleId"
+                      className="form-control"
+                      value={form.googleId || ""}
+                      readOnly
+                    />
+                  </div>
+
+                  <div className="col-md-12">
+                    <label className="form-label">Ảnh đại diện (URL)</label>
+                    <input
+                      type="text"
+                      name="anhDaiDien"
+                      className="form-control"
+                      value={form.anhDaiDien}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="col-md-6">
+                    <label className="form-label">Mật khẩu</label>
+                    <input
+                      type="password"
+                      name="matKhau"
+                      className="form-control"
+                      value={form.matKhau}
+                      onChange={handleChange}
+                      placeholder="Nhập mật khẩu"
+                    />
+                  </div>
+
+                </div>
+              </div>
+
+              {/* Modal footer */}
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>
+                  Đóng
+                </button>
+                <button className="btn btn-primary" onClick={onSave}>
+                  Lưu
+                </button>
+              </div>
+
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }

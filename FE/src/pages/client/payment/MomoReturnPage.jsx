@@ -22,7 +22,7 @@ export default function MomoReturnPage() {
 
       // Lấy thông tin đơn hàng tạm từ localStorage
       const pendingOrderRaw = localStorage.getItem("pendingMomoOrder");
-      
+
       if (!pendingOrderRaw) {
         setStatus("Không tìm thấy thông tin đơn hàng. Vui lòng thử lại!");
         return;
@@ -88,14 +88,24 @@ export default function MomoReturnPage() {
           if (res.ok) {
             const result = await res.json();
 
-            // Xóa giỏ hàng
-            await fetch(`http://localhost:8081/cart/clear/${idTaiKhoan}`, {
-              method: "DELETE",
-              headers: { Authorization: `Bearer ${token}` }
-            });
+            // === XÓA CHỈNH XÁC TỪNG SẢN PHẨM TRONG ĐƜN HÀNG (giống Checkout.jsx) ===
+            const deletePromises = orderData.selectedItems.map(item =>
+              fetch(`http://localhost:8081/cart/${item.idGh}`, {
+                method: "DELETE",
+                headers: {
+                  Authorization: `Bearer ${token}`
+                }
+              }).then(response => {
+                if (!response.ok) {
+                  console.warn(`Không thể xóa item idGh=${item.idGh} khỏi giỏ hàng`);
+                }
+              })
+            );
+
+            await Promise.all(deletePromises);
 
             // Cập nhật header giỏ hàng
-            window.dispatchEvent(new CustomEvent("cart-updated", { detail: 0 }));
+            window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
 
             // Xóa dữ liệu tạm
             localStorage.removeItem("pendingMomoOrder");
@@ -121,7 +131,7 @@ export default function MomoReturnPage() {
           console.error(err);
           setStatus("Lỗi kết nối server khi tạo đơn hàng!");
         }
-      } 
+      }
       // Thanh toán THẤT BẠI hoặc bị HỦY
       else {
         localStorage.removeItem("pendingMomoOrder"); // xóa tạm để tránh tạo nhầm
@@ -148,14 +158,14 @@ export default function MomoReturnPage() {
           <div className="card shadow-lg border-0">
             <div className="card-body text-center p-5">
               <div className="mb-4">
-                <img 
-                  src="https://developers.momo.vn/v3/vi/img/logo.svg" 
-                  alt="MoMo" 
+                <img
+                  src="https://developers.momo.vn/v3/vi/img/logo.svg"
+                  alt="MoMo"
                   style={{ width: 80 }}
                 />
               </div>
               <h3 className="mb-4">Xử lý kết quả thanh toán MoMo</h3>
-              
+
               <div className="alert alert-info">
                 <div style={{ fontSize: "1.2rem", minHeight: "100px" }}>
                   {status}
