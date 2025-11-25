@@ -31,6 +31,6 @@ public class ReceiptDetail {
     @Column(name = "don_gia")
     private BigDecimal donGia;
 
-    @Column(name = "thanh_tien", insertable = false, updatable = false)
-    private BigDecimal thanhTien;
+    // @Column(name = "thanh_tien", insertable = false, updatable = false)
+    // private BigDecimal thanhTien;
 }

@@ -58,10 +58,10 @@ public class OrdersService {
                     .sanPham(sanPham)
                     .soLuong(d.getSoLuong())
                     .donGia(d.getDonGia())
-                    .thanhTien(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())))
+                    // .thanhTien(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())))
                     .build();
 
-            tongTien = tongTien.add(detail.getThanhTien());
+            tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
             detailList.add(detail);
         }
 
@@ -182,7 +182,7 @@ public class OrdersService {
                         .tenSanPham(detail.getSanPham() != null ? detail.getSanPham().getTenSanPham() : null)
                         .soLuong(detail.getSoLuong())
                         .donGia(detail.getDonGia())
-                        .thanhTien(detail.getThanhTien())
+                        // .thanhTien(detail.getThanhTien())
                         .build())
                 .collect(Collectors.toList());
 

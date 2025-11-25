@@ -9,7 +9,7 @@ export default function ProductCard({ product }) {
 
   return (
     <Link
-      to={`/client/product/${product.idSanPham}`}
+      to={`/client/products/${product.idSanPham}`}
       className="card h-100 text-center text-decoration-none text-dark position-relative shadow-sm"
       style={{
         opacity: 0.95,

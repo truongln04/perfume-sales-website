@@ -142,7 +142,7 @@ export default function App() {
           <Route index element={<Home />} />
           <Route path="home" element={<Home />} />
           <Route path="products" element={<ProductList />} />
-          <Route path="product/:id" element={<ProductDetail />} />
+          <Route path="products/:id" element={<ProductDetail />} />
           <Route path="brand/:id" element={<BrandDetail />} />
           <Route path="category/:id" element={<CategoryDetail />} />
           {/* Các trang chỉ dành cho khách hàng đã đăng nhập */}
@@ -174,7 +174,8 @@ export default function App() {
           {isAdmin && <Route path="reports/banchay" element={<BanChayReport />} />}
         </Route>
 
-        <Route path="*" element={<Navigate to="/" replace />} />
+        <Route path="*" element={<div>404 - Không tìm thấy trang</div>} />
+
       </Routes>
     </Router>
   );

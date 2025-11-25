@@ -14,6 +14,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.math.RoundingMode;
 
 @Service
 public class ReceiptService {
@@ -29,95 +30,124 @@ public class ReceiptService {
     @PersistenceContext
     private EntityManager em;
 
-    @Transactional
-    public ReceiptResponse create(ReceiptRequest request) {
-        Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc()).orElse(null);
+@Transactional
+public ReceiptResponse create(ReceiptRequest request) {
+    Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc()).orElse(null);
 
-        Receipt receipt = Receipt.builder()
-                .nhaCungCap(nhaCungCap)
-                .ngayNhap(LocalDateTime.now())
-                .ghiChu(request.getGhiChu())
+    Receipt receipt = Receipt.builder()
+            .nhaCungCap(nhaCungCap)
+            .ngayNhap(LocalDateTime.now())
+            .ghiChu(request.getGhiChu())
+            .build();
+
+    List<ReceiptDetail> chiTietList = new ArrayList<>();
+    BigDecimal tongTien = BigDecimal.ZERO;
+
+    for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
+        Product sanPham = productRepo.findById(d.getIdSanPham()).orElse(null);
+        if (sanPham == null) continue;
+
+        ReceiptDetail detail = ReceiptDetail.builder()
+                .phieuNhap(receipt)
+                .sanPham(sanPham)
+                .soLuong(d.getSoLuong())
+                .donGia(d.getDonGia())
                 .build();
 
-        List<ReceiptDetail> chiTietList = new ArrayList<>();
-        BigDecimal tongTien = BigDecimal.ZERO;
+        tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
+        chiTietList.add(detail);
 
-        for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
-            Product sanPham = productRepo.findById(d.getIdSanPham()).orElse(null);
-            if (sanPham == null)
-                continue;
+        // ✅ lấy tồn kho thực tế từ Warehouse
+        Warehouse kho = warehouseRepo.findBySanPham(sanPham);
+        int tonKhoThucTe = (kho != null ? kho.getSoLuongNhap() - kho.getSoLuongBan() : 0);
 
-            ReceiptDetail detail = ReceiptDetail.builder()
-                    .phieuNhap(receipt)
-                    .sanPham(sanPham)
-                    .soLuong(d.getSoLuong())
-                    .donGia(d.getDonGia())
-                    .build();
+        BigDecimal giaNhapCu = sanPham.getGiaNhap() != null ? sanPham.getGiaNhap() : BigDecimal.ZERO;
+        BigDecimal tongGiaTriCu = giaNhapCu.multiply(BigDecimal.valueOf(tonKhoThucTe));
+        BigDecimal tongGiaTriMoi = d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong()));
+        int tongSoLuong = tonKhoThucTe + d.getSoLuong();
 
-            tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
-            chiTietList.add(detail);
-
-            updateSoLuongNhap(sanPham, d.getSoLuong());
-            sanPham.setGiaNhap(d.getDonGia()); // ✅ cập nhật giá nhập
-            productRepo.save(sanPham);
+        if (tongSoLuong > 0) {
+            BigDecimal giaNhapTB = tongGiaTriCu.add(tongGiaTriMoi)
+                    .divide(BigDecimal.valueOf(tongSoLuong), 2, RoundingMode.HALF_UP);
+            sanPham.setGiaNhap(giaNhapTB);
         }
 
-        receipt.setTongTien(tongTien);
-        receipt.setChiTietPhieuNhap(chiTietList);
-
-        Receipt saved = receiptRepo.save(receipt);
-        return toResponse(saved);
+        // ✅ cập nhật tồn kho
+        updateSoLuongNhap(sanPham, d.getSoLuong());
+        productRepo.save(sanPham);
     }
+
+    receipt.setTongTien(tongTien);
+    receipt.setChiTietPhieuNhap(chiTietList);
+
+    Receipt saved = receiptRepo.save(receipt);
+    return toResponse(saved);
+}
+
+@Transactional
+public ReceiptResponse update(Integer id, ReceiptRequest request) {
+    Receipt receipt = receiptRepo.findById(id)
+            .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
+
+    // rollback tồn kho cũ
+    for (ReceiptDetail old : receipt.getChiTietPhieuNhap()) {
+        updateSoLuongNhap(old.getSanPham(), -old.getSoLuong());
+    }
+
+    Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc()).orElse(null);
+    receipt.setNhaCungCap(nhaCungCap);
+    receipt.setNgayNhap(LocalDateTime.now());
+    receipt.setGhiChu(request.getGhiChu());
+
+    List<ReceiptDetail> chiTietList = new ArrayList<>();
+    BigDecimal tongTien = BigDecimal.ZERO;
+
+    for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
+        Product sanPham = productRepo.findById(d.getIdSanPham()).orElse(null);
+        if (sanPham == null) continue;
+
+        ReceiptDetail detail = ReceiptDetail.builder()
+                .phieuNhap(receipt)
+                .sanPham(sanPham)
+                .soLuong(d.getSoLuong())
+                .donGia(d.getDonGia())
+                .build();
+
+        tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
+        chiTietList.add(detail);
+
+        // ✅ lấy tồn kho thực tế từ Warehouse (sau khi rollback)
+        Warehouse kho = warehouseRepo.findBySanPham(sanPham);
+        int tonKhoThucTe = (kho != null ? kho.getSoLuongNhap() - kho.getSoLuongBan() : 0);
+
+        BigDecimal giaNhapCu = sanPham.getGiaNhap() != null ? sanPham.getGiaNhap() : BigDecimal.ZERO;
+        BigDecimal tongGiaTriCu = giaNhapCu.multiply(BigDecimal.valueOf(tonKhoThucTe));
+        BigDecimal tongGiaTriMoi = d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong()));
+        int tongSoLuong = tonKhoThucTe + d.getSoLuong();
+
+        if (tongSoLuong > 0) {
+            BigDecimal giaNhapTB = tongGiaTriCu.add(tongGiaTriMoi)
+                    .divide(BigDecimal.valueOf(tongSoLuong), 2, RoundingMode.HALF_UP);
+            sanPham.setGiaNhap(giaNhapTB);
+        }
+
+        // ✅ cập nhật tồn kho
+        updateSoLuongNhap(sanPham, d.getSoLuong());
+        productRepo.save(sanPham);
+    }
+
+    receipt.setTongTien(tongTien);
+    receipt.setChiTietPhieuNhap(chiTietList);
+
+    Receipt updated = receiptRepo.save(receipt);
+    return toResponse(updated);
+}
 
     public ReceiptResponse getById(Integer id) {
         Receipt receipt = receiptRepo.findById(id)
                 .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
 
         return toResponse(receipt);
-    }
-
-    @Transactional
-    public ReceiptResponse update(Integer id, ReceiptRequest request) {
-        Receipt receipt = receiptRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
-
-        for (ReceiptDetail old : receipt.getChiTietPhieuNhap()) {
-            updateSoLuongNhap(old.getSanPham(), -old.getSoLuong());
-        }
-
-        Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc()).orElse(null);
-        receipt.setNhaCungCap(nhaCungCap);
-        receipt.setNgayNhap(LocalDateTime.now());
-        receipt.setGhiChu(request.getGhiChu());
-
-        List<ReceiptDetail> chiTietList = new ArrayList<>();
-        BigDecimal tongTien = BigDecimal.ZERO;
-
-        for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
-            Product sanPham = productRepo.findById(d.getIdSanPham()).orElse(null);
-            if (sanPham == null)
-                continue;
-
-            ReceiptDetail detail = ReceiptDetail.builder()
-                    .phieuNhap(receipt)
-                    .sanPham(sanPham)
-                    .soLuong(d.getSoLuong())
-                    .donGia(d.getDonGia())
-                    .build();
-
-            tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
-            chiTietList.add(detail);
-
-            updateSoLuongNhap(sanPham, d.getSoLuong());
-            sanPham.setGiaNhap(d.getDonGia()); // ✅ cập nhật giá nhập
-            productRepo.save(sanPham);
-        }
-
-        receipt.setTongTien(tongTien);
-        receipt.setChiTietPhieuNhap(chiTietList);
-
-        Receipt updated = receiptRepo.save(receipt);
-        return toResponse(updated);
     }
 
 @Transactional

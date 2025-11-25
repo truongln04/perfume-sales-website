@@ -74,7 +74,7 @@ export default function BrandDetail() {
     <div className="container py-5">
       {/* Tiêu đề */}
       <h1 className="fw-bold mb-4 text-dark" style={{ fontSize: "1.5rem" }}>
-        Nước hoa {brand.tenThuongHieu}
+        Nước hoa {brand.tenthuonghieu}
       </h1>
 
       {/* Breadcrumb tái sử dụng */}
@@ -82,8 +82,7 @@ export default function BrandDetail() {
         items={[
           { label: "Trang chủ", to: "/client" },
           { label: "Nước hoa", to: "/client/products" },
-          { label: "Thương hiệu nước hoa", to: "/client/brand" },
-          { label: brand.tenThuongHieu },
+          { label: brand.tenthuonghieu },
         ]}
       />
 

@@ -177,22 +177,24 @@ export default function ReceiptManager({
                               />
                             ) : (
                               <select
-                                className="form-select"
-                                value={d.idSanPham}
-                                onChange={e => {
-                                  const id = e.target.value;
-                                  onDetailChange(i, "idSanPham", id);
-                                  const selected = products.find(p => p.idSanPham === id);
-                                  if (selected) {
-                                    onDetailChange(i, "donGia", selected.giaBan);
-                                    onDetailChange(i, "tenSanPham", selected.tenSanPham); // ✅ cập nhật tên
-                                  }
-                                }}
-                              >
+  className="form-select"
+  value={d.idSanPham}
+  onChange={e => {
+    const id = parseInt(e.target.value); // ✔ convert string → number
+    onDetailChange(i, "idSanPham", id);
+
+    const selected = products.find(p => p.idSanPham === id); // ✔ tìm đúng
+    if (selected) {
+      onDetailChange(i, "donGia", selected.giaBan || 0);      // ✔ lấy giá nhập
+      onDetailChange(i, "tenSanPham", selected.tenSanPham);    // ✔ lấy tên
+    }
+  }}
+>
+
                                 <option value="">-- Chọn sản phẩm --</option>
                                 {products.map(p => (
                                   <option key={p.idSanPham} value={p.idSanPham}>
-                                    {p.tenSanPham}
+                                  {p.idSanPham} - {p.tenSanPham}
                                   </option>
                                 ))}
                               </select>

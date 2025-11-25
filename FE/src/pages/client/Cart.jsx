@@ -80,23 +80,27 @@ export default function Cart() {
     .filter((item) => selectedItems.includes(item.idGh))
     .reduce((sum, item) => sum + item.donGia * item.soLuong, 0);
 
-  // Xóa sản phẩm
   const removeItem = async (idGh) => {
-    try {
-      const res = await fetch(`http://localhost:8081/cart/${idGh}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) {
-        // Thông báo giỏ hàng cần refresh lại số lượng (không set cứng về 0 nữa)
-        window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
-        alert("Xóa sản phẩm thành công!");
-      }
-    } catch (err) {
-      console.error("Lỗi khi xóa sản phẩm:", err);
-      alert("Có lỗi xảy ra khi xóa sản phẩm!");
+  try {
+    const res = await fetch(`http://localhost:8081/cart/${idGh}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (res.ok) {
+      // cập nhật lại state giỏ hàng
+      setCartItems(cartItems.filter((item) => item.idGh !== idGh));
+      setSelectedItems(selectedItems.filter((id) => id !== idGh));
+      setSelectAll(false);
+
+      window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+      alert("Xóa sản phẩm thành công!");
     }
-  };
+  } catch (err) {
+    console.error("Lỗi khi xóa sản phẩm:", err);
+    alert("Có lỗi xảy ra khi xóa sản phẩm!");
+  }
+};
+
 
   // Đặt hàng
   const handleOrder = () => {
@@ -124,6 +128,32 @@ export default function Cart() {
       },
     });
   };
+
+const removeSelectedItems = async () => {
+  if (selectedItems.length === 0) {
+    alert("Không có sản phẩm nào được chọn để xóa!");
+    return;
+  }
+  try {
+    for (const idGh of selectedItems) {
+      await fetch(`http://localhost:8081/cart/${idGh}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+    // reset lại giỏ hàng và lựa chọn
+    setCartItems(cartItems.filter((item) => !selectedItems.includes(item.idGh)));
+    setSelectedItems([]);
+    setSelectAll(false);
+
+    window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+    alert("Đã xóa các sản phẩm đã chọn!");
+  } catch (err) {
+    console.error("Lỗi khi xóa sản phẩm:", err);
+    alert("Có lỗi xảy ra khi xóa sản phẩm!");
+  }
+};
+
 
   return (
     <div className="container py-4">
@@ -194,13 +224,24 @@ export default function Cart() {
                       {(item.donGia * item.soLuong).toLocaleString()} ₫
                     </td>
                     <td>
-                      <button
-                        className="btn btn-sm btn-outline-danger"
-                        onClick={() => removeItem(item.idGh)}
-                        aria-label={`Xóa ${item.tenSanPham}`}
-                      >
-                        Xóa
-                      </button>
+                    
+  <button
+    className="btn btn-sm btn-outline-danger"
+    onClick={() => {
+      if (selectAll) {
+        // nếu chọn tất cả thì xóa toàn bộ
+        removeSelectedItems();
+      } else {
+        // nếu chỉ chọn 1 thì xóa sản phẩm đó
+        removeItem(item.idGh);
+      }
+    }}
+    aria-label={`Xóa ${item.tenSanPham}`}
+  >
+    Xóa
+  </button>
+
+
                     </td>
                   </tr>
                 ))}
@@ -215,14 +256,20 @@ export default function Cart() {
                 {totalPrice.toLocaleString()} ₫
               </span>
             </h4>
-            <button
-              className="btn btn-primary btn-sm px-3 rounded-pill"
-              disabled={selectedItems.length === 0}
-              onClick={handleOrder}
-              aria-label="Tiến hành đặt hàng"
-            >
-              Đặt hàng
-            </button>
+            <div className="d-flex justify-content-between align-items-center mt-4">
+
+  <div>
+    <button
+      className="btn btn-primary btn-lg px-2 fw-bold rounded-pill shadow-sm"
+      disabled={selectedItems.length === 0}
+      onClick={handleOrder}
+      aria-label="Tiến hành đặt hàng ngay"
+    >
+      🛒 Đặt hàng
+    </button>
+  </div>
+</div>
+
           </div>
         </>
       )}

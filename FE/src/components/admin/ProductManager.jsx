@@ -24,7 +24,7 @@ export default function ProductManager({
             <button className="btn btn-primary" onClick={onAdd}>Thêm mới</button>
             <input
               className="form-control"
-              placeholder="Tìm kiếm..."
+              placeholder="Tìm kiếm tên sản phẩm"
               value={search}
               onChange={e => onSearch(e.target.value)}
               style={{ width: 260 }}
@@ -64,29 +64,29 @@ export default function ProductManager({
                     <td>{p.idDanhMuc}</td>
                     <td>{p.idthuonghieu}</td>
                     <td>{p.tenSanPham}</td>
-                  <td>
-                  <img
-                    src={
-                      p.hinhAnh?.startsWith("data:image") // ảnh từ máy (base64)
-                        ? p.hinhAnh
-                        : p.hinhAnh?.startsWith("http")   // ảnh từ URL
-                        ? p.hinhAnh
-                        : p.hinhAnh                       // ảnh từ thư mục /images/
-                        ? `/images/${p.hinhAnh}`
-                        : "/images/default.jpg"          // ảnh mặc định
-                    }
-                      alt={p.tenSanPham}
-                      width={60}
-                      height={60}
-                      className="rounded"
-                      onError={e => {
-                        e.target.onerror = null;
-                        e.target.src = "/images/default.jpg";
-                      }}
-                    />
-                  </td>
+                    <td>
+                      <img
+                        src={
+                          p.hinhAnh?.startsWith("data:image") // ảnh từ máy (base64)
+                            ? p.hinhAnh
+                            : p.hinhAnh?.startsWith("http")   // ảnh từ URL
+                              ? p.hinhAnh
+                              : p.hinhAnh                       // ảnh từ thư mục /images/
+                                ? `/images/${p.hinhAnh}`
+                                : "/images/default.jpg"          // ảnh mặc định
+                        }
+                        alt={p.tenSanPham}
+                        width={60}
+                        height={60}
+                        className="rounded"
+                        onError={e => {
+                          e.target.onerror = null;
+                          e.target.src = "/images/default.jpg";
+                        }}
+                      />
+                    </td>
 
-                  <td style={{ maxWidth: 200 }}>
+                    <td style={{ maxWidth: 200 }}>
                       {p.moTa.length > 60 ? (
                         <span title={p.moTa}>
                           {p.moTa.slice(0, 60)}... <span className="text-primary" style={{ cursor: "pointer" }}>Xem thêm</span>
@@ -98,16 +98,16 @@ export default function ProductManager({
 
                     <td>{p.giaBan != null ? p.giaBan.toLocaleString("vi-VN") + " đ" : "—"}</td>
                     <td>{p.kmPhanTram != null ? p.kmPhanTram + "%" : "—"}</td>
-                      <td>
-                        {p.giaBan != null && p.kmPhanTram != null
-                          ? (p.giaBan * (1 - p.kmPhanTram / 100)).toLocaleString("vi-VN") + " đ"
-                          : "—"}
-                      </td>
+                    <td>
+                      {p.giaBan != null && p.kmPhanTram != null
+                        ? (p.giaBan * (1 - p.kmPhanTram / 100)).toLocaleString("vi-VN") + " đ"
+                        : "—"}
+                    </td>
 
                     <td>{p.soLuongTon}</td>
                     <td>
                       <span className={"badge " + (p.trangThai ? "bg-success" : "bg-secondary")}>
-                        {p.trangThai ? "Đang bán" : "Ngừng bán"}
+                        {p.trangThai ? "Đang bán" : "Chưa bán"}
                       </span>
                     </td>
                     <td className="d-flex gap-2">
@@ -121,88 +121,88 @@ export default function ProductManager({
           </table>
         </div>
       </div>
-        {showModal && (
-          <div className="modal d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,.5)" }}>
-            <div className="modal-dialog modal-lg">
-              <div className="modal-content">
-                <div className="modal-header">
-                  <h5 className="modal-title">{editing ? "Sửa sản phẩm" : "Thêm sản phẩm"}</h5>
-                  <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
-                </div>
+      {showModal && (
+        <div className="modal d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,.5)" }}>
+          <div className="modal-dialog modal-lg">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">{editing ? "Sửa sản phẩm" : "Thêm sản phẩm"}</h5>
+                <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
+              </div>
 
-                <div className="modal-body">
-                  <div className="row g-3">
-                    {/* Danh mục */}
-                    <div className="col-md-6">
-                      <label className="form-label">Danh Mục</label>
-                      {editing ? (
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={form.tenDanhMuc || ""}
-                          disabled
-                        />
-                      ) : (
-                        <select
-                          className="form-select"
-                          name="idDanhMuc"
-                          value={form.idDanhMuc}
-                          onChange={handleChange}
-                        >
-                          <option value="">-- Chọn danh mục --</option>
-                          {danhMucs.map(dm => (
-                            <option key={dm.idDanhMuc} value={dm.idDanhMuc}>
-                              {dm.tenDanhMuc}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-
-                    {/* Thương hiệu */}
-                    <div className="col-md-6">
-                      <label className="form-label">Thương Hiệu</label>
-                      {editing ? (
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={form.tenthuonghieu || ""}
-                          disabled
-                        />
-                      ) : (
-                        <select
-                          className="form-select"
-                          name="idthuonghieu"
-                          value={form.idthuonghieu}
-                          onChange={handleChange}
-                        >
-                          <option value="">-- Chọn thương hiệu --</option>
-                          {thuongHieus.map(th => (
-                            <option key={th.idthuonghieu} value={th.idthuonghieu}>
-                              {th.tenthuonghieu}
-                            </option>
-                          ))}
-                        </select>
-                      )}
-                    </div>
-
-                    {/* Tên & mô tả */}
-                    <div className="col-md-6">
-                      <label className="form-label">Tên SP</label>
-                      <input className="form-control" name="tenSanPham" value={form.tenSanPham} onChange={handleChange} />
-                    </div>
-                    <div className="col-md-6">
-                      <label className="form-label">Mô tả</label>
-                      <textarea
+              <div className="modal-body">
+                <div className="row g-3">
+                  {/* Danh mục */}
+                  <div className="col-md-6">
+                    <label className="form-label">Danh Mục</label>
+                    {editing ? (
+                      <input
+                        type="text"
                         className="form-control"
-                        name="moTa"
-                        value={form.moTa}
-                        onChange={handleChange}
-                        rows={4}
+                        value={form.tenDanhMuc || ""}
+                        disabled
                       />
-                    </div>
+                    ) : (
+                      <select
+                        className="form-select"
+                        name="idDanhMuc"
+                        value={form.idDanhMuc}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Chọn danh mục --</option>
+                        {danhMucs.map(dm => (
+                          <option key={dm.idDanhMuc} value={dm.idDanhMuc}>
+                            {dm.tenDanhMuc}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
 
-                    {/* Hình ảnh */}
+                  {/* Thương hiệu */}
+                  <div className="col-md-6">
+                    <label className="form-label">Thương Hiệu</label>
+                    {editing ? (
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={form.tenthuonghieu || ""}
+                        disabled
+                      />
+                    ) : (
+                      <select
+                        className="form-select"
+                        name="idthuonghieu"
+                        value={form.idthuonghieu}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Chọn thương hiệu --</option>
+                        {thuongHieus.map(th => (
+                          <option key={th.idthuonghieu} value={th.idthuonghieu}>
+                            {th.tenthuonghieu}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Tên & mô tả */}
+                  <div className="col-md-6">
+                    <label className="form-label">Tên SP</label>
+                    <input className="form-control" name="tenSanPham" value={form.tenSanPham} onChange={handleChange} />
+                  </div>
+                  <div className="col-md-6">
+                    <label className="form-label">Mô tả</label>
+                    <textarea
+                      className="form-control"
+                      name="moTa"
+                      value={form.moTa}
+                      onChange={handleChange}
+                      rows={4}
+                    />
+                  </div>
+
+                  {/* Hình ảnh */}
                   <div className="col-md-6">
                     <label className="form-label">Hình ảnh</label>
 
@@ -235,7 +235,7 @@ export default function ProductManager({
                             setForm(prev => ({
                               ...prev,
                               hinhAnh: reader.result,       // ✅ gán base64 vào ô input
-                            previewImage: reader.result   // ✅ dùng để hiển thị ảnh
+                              previewImage: reader.result   // ✅ dùng để hiển thị ảnh
                             }));
                           };
                           reader.readAsDataURL(file);
@@ -260,62 +260,104 @@ export default function ProductManager({
                   </div>
 
 
-                    {/* Giá cả & khuyến mãi */}
-                    <div className="col-md-3">
-                      <label className="form-label">Giá nhập</label>
-                      <input type="number" className="form-control" name="giaNhap" value={form.giaNhap} onChange={handleChange} disabled />
-                    </div>
-                    <div className="col-md-3">
-                      <label className="form-label">Giá bán</label>
-                      <input type="number" className="form-control" name="giaBan" value={form.giaBan} onChange={handleChange} />
-                    </div>
-                    <div className="col-md-3">
-                      <label className="form-label">KM%</label>
-                      <input type="number" className="form-control" name="kmPhanTram" value={form.kmPhanTram} onChange={handleChange} />
-                    </div>
-                    <div className="col-md-3">
-                      <label className="form-label">Giá sau KM</label>
-                      <input
-                        className="form-control"
-                        value={(form.giaBan * (1 - form.kmPhanTram / 100)).toLocaleString("vi-VN")}
-                        disabled
-                      />
-                    </div>
-
-                    {/* Tồn kho & trạng thái */}
-                    <div className="col-md-3">
-                      <label className="form-label">Tồn kho</label>
-                      <input type="number" className="form-control" name="soLuongTon" value={form.soLuongTon} onChange={handleChange} disabled />
-                    </div>
-                    <div className="col-md-3">
-                      <label className="form-label">Trạng thái</label>
-                      <select
-                        className="form-select"
-                        name="trangThai"
-                        value={form.trangThai ? "Đang bán" : "Ngừng bán"}
-                        onChange={e =>
-                          setForm(prev => ({
-                            ...prev,
-                            trangThai: e.target.value === "Đang bán",
-                          }))
-                        }
-                      >
-                        <option value="Đang bán">Đang bán</option>
-                        <option value="Ngừng bán">Ngừng bán</option>
-                      </select>
-                    </div>
+                  {/* Giá cả & khuyến mãi */}
+                  <div className="col-md-3">
+                    <label className="form-label">Giá nhập</label>
+                    <input
+                      type="text"
+                      className="form-control"
+                      value={new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND"
+                      }).format(form.giaNhap)}
+                      disabled
+                    />
                   </div>
-                </div>
 
-                <div className="modal-footer">
-                  <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Đóng</button>
-                  <button className="btn btn-primary" onClick={onSave}>Lưu</button>
+                  <div className="col-md-3">
+                    <label className="form-label">Giá bán</label>
+                    {/* Ô nhập số thô */}
+                    <input
+                      type="number"
+                      className="form-control"
+                      name="giaBan"
+                      value={form.giaBan}
+                      onChange={handleChange}
+                    />
+                    {/* Hiển thị giá đã format
+                    <small className="text-muted">
+                      {new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND"
+                      }).format(form.giaBan || 0)}
+                    </small> */}
+                  </div>
+
+
+                  <div className="col-md-3">
+                    <label className="form-label">KM%</label>
+                    <input
+                      type="number"
+                      className="form-control"
+                      name="kmPhanTram"
+                      value={form.kmPhanTram}
+                      onChange={handleChange}
+                    />
+                  </div>
+
+                  <div className="col-md-3">
+                    <label className="form-label">Giá sau KM</label>
+                    <input
+                      className="form-control"
+                      value={new Intl.NumberFormat("vi-VN", {
+                        style: "currency",
+                        currency: "VND"
+                      }).format(form.giaBan * (1 - form.kmPhanTram / 100))}
+                      disabled
+                    />
+                  </div>
+
+
+                  {/* Tồn kho & trạng thái */}
+                  <div className="col-md-3">
+                    <label className="form-label">Tồn kho</label>
+                    <input type="number" className="form-control" name="soLuongTon" value={form.soLuongTon} onChange={handleChange} disabled />
+                  </div>
+                  <div className="col-md-3">
+                    <label className="form-label">Trạng thái</label>
+                    <select
+                      className="form-select"
+                      name="trangThai"
+                      value={form.trangThai ? "Đang bán" : "Chưa bán"}
+                      onChange={e => {
+                        const value = e.target.value;
+                        if (value === "Đang bán" && (!form.giaBan || form.giaBan <= 0)) {
+                          alert("Vui lòng nhập giá bán trước khi chuyển sang trạng thái Đang bán!");
+                          return; // ❌ không cho đổi trạng thái
+                        }
+                        setForm(prev => ({
+                          ...prev,
+                          trangThai: value === "Đang bán",
+                        }));
+                      }}
+                    >
+                      <option value="Đang bán">Đang bán</option>
+                      <option value="Chưa bán">Chưa bán</option>
+                    </select>
+                  </div>
+
                 </div>
+              </div>
+
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={() => setShowModal(false)}>Đóng</button>
+                <button className="btn btn-primary" onClick={onSave}>Lưu</button>
               </div>
             </div>
           </div>
-        )}
         </div>
+      )}
+    </div>
   );
 }
-  
+

@@ -47,8 +47,8 @@ public class Product {
     @Column(name = "km_phan_tram", precision = 5, scale = 2)
     private BigDecimal kmPhanTram;
 
-    @Column(name = "gia_sau_km", precision = 12, scale = 0, insertable = false, updatable = false)
-    private BigDecimal giaSauKm;
+    // @Column(name = "gia_sau_km", precision = 12, scale = 0, insertable = false, updatable = false)
+    // private BigDecimal giaSauKm;
     
     @Column(name = "so_luong_ton")
     private Integer soLuongTon;

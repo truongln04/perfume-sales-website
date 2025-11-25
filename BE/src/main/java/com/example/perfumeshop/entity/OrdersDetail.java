@@ -48,6 +48,6 @@ public class OrdersDetail implements Serializable {
     @Column(name = "don_gia", precision = 12, scale = 0)
     private BigDecimal donGia;
 
-    @Column(name = "thanh_tien", precision = 14, scale = 0)
-    private BigDecimal thanhTien;
+    // @Column(name = "thanh_tien", precision = 14, scale = 0)
+    // private BigDecimal thanhTien;
 }
