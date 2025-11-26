@@ -14,10 +14,9 @@ export default function Checkout() {
     sdtNhan: "",
     diaChiGiao: "",
     ghiChu: "",
-    phuongThucTT: "COD", // COD hoặc ONLINE (MoMo)
+    phuongThucTT: "COD",
   });
 
-  // Hàm mã hóa Base64 an toàn với tiếng Việt
   const safeBtoa = (obj) =>
     btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(obj))));
 
@@ -39,7 +38,7 @@ export default function Checkout() {
       const decoded = jwtDecode(token);
       const hoTen = decoded.tenHienThi || decoded.sub || "";
       const sdt = decoded.sdt || decoded.phone || "";
-      setForm(prev => ({
+      setForm((prev) => ({
         ...prev,
         hoTenNhan: hoTen,
         sdtNhan: sdt,
@@ -51,10 +50,10 @@ export default function Checkout() {
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  // XỬ LÝ ĐẶT HÀNG COD
+  // ================= COD =======================
   const handleCODOrder = async () => {
     if (!form.hoTenNhan.trim() || !form.sdtNhan.trim() || !form.diaChiGiao.trim()) {
       alert("Vui lòng điền đầy đủ họ tên, số điện thoại và địa chỉ giao hàng!");
@@ -64,9 +63,9 @@ export default function Checkout() {
     setLoading(true);
     const token = localStorage.getItem("token");
     let idTaiKhoan = null;
+
     try {
       const decoded = jwtDecode(token);
-
       idTaiKhoan = decoded.idTaiKhoan || decoded.id || decoded.userId || null;
     } catch (err) {
       console.error("Token lỗi:", err);
@@ -79,70 +78,53 @@ export default function Checkout() {
         sdtNhan: form.sdtNhan.trim(),
         diaChiGiao: form.diaChiGiao.trim(),
         ghiChu: form.ghiChu.trim() || null,
-        phuongThucTT: "COD"
+        phuongThucTT: "COD",
       },
-      chiTietDonHang: selectedItems.map(item => ({
+      chiTietDonHang: selectedItems.map((item) => ({
         idSanPham: item.idSanPham || item.id,
         soLuong: item.soLuong,
-        donGia: item.donGia
-      }))
+        donGia: item.donGia,
+      })),
     };
-    console.log("Payload gửi lên backend (COD):", payload);
-    console.log("idTaiKhoan đang gửi:", idTaiKhoan);
 
     try {
       const res = await fetch("http://localhost:8081/orders/create", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(payload)
+        body: JSON.stringify(payload),
       });
 
       if (res.ok) {
         const result = await res.json();
 
-        // XÓA CHỈNH XÁC TỪNG MÓN TRONG ĐƠN HÀNG DỰA TRÊN idGh (theo controller bạn cung cấp)
-        const deletePromises = selectedItems.map(item =>
+        // Xóa từng sản phẩm trong giỏ
+        const deletePromises = selectedItems.map((item) =>
           fetch(`http://localhost:8081/cart/${item.idGh}`, {
             method: "DELETE",
-            headers: {
-              Authorization: `Bearer ${token}`
-            }
-          }).then(response => {
-            if (!response.ok) {
-              console.warn(`Không thể xóa item idGh=${item.idGh}`);
-            }
+            headers: { Authorization: `Bearer ${token}` },
           })
         );
 
-        // Chờ tất cả các yêu cầu xóa hoàn tất
         await Promise.all(deletePromises);
-
-        // Thông báo giỏ hàng cần refresh lại số lượng (không set cứng về 0 nữa)
         window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
 
-        // Thông báo thành công
         alert(`Đặt hàng thành công! Mã đơn hàng: #${result.id}`);
-
-        // Chuyển về trang danh sách đơn hàng → UX cực mượt
         navigate("/client/orderslist");
-
       } else {
-        // Đặt hàng thất bại → không xóa gì cả
         const errorText = await res.text();
-        alert("Đặt hàng thất bại: " + (errorText || "Lỗi không xác định"));
+        alert("Đặt hàng thất bại: " + errorText);
       }
     } catch (err) {
-      console.error("Lỗi khi đặt hàng:", err);
-      alert("Lỗi kết nối server! Vui lòng thử lại.");
+      alert("Lỗi kết nối server!");
     } finally {
       setLoading(false);
     }
   };
 
-  // XỬ LÝ THANH TOÁN MOMO
+  // ================= MOMO =======================
   const handleMomoPayment = async () => {
     if (!form.hoTenNhan.trim() || !form.sdtNhan.trim() || !form.diaChiGiao.trim()) {
       alert("Vui lòng điền đầy đủ thông tin giao hàng trước khi thanh toán MoMo!");
@@ -159,13 +141,13 @@ export default function Checkout() {
       sdtNhan: form.sdtNhan.trim(),
       diaChiGiao: form.diaChiGiao.trim(),
       ghiChu: form.ghiChu.trim() || "",
-      phuongThucTT: "ONLINE"
+      phuongThucTT: "ONLINE",
     };
 
     const momoRequest = {
       amount: totalPrice,
       orderInfo: `Thanh toán đơn hàng PerfumeShop - ${new Date().toLocaleString("vi-VN")}`,
-      extraData: safeBtoa(orderDataForMomo) // ĐÃ DÙNG HÀM MỚI - AN TOÀN 100%
+      extraData: safeBtoa(orderDataForMomo),
     };
 
     try {
@@ -173,22 +155,20 @@ export default function Checkout() {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(momoRequest)
+        body: JSON.stringify(momoRequest),
       });
 
       const data = await res.json();
 
       if (data.payUrl) {
-        // Lưu tạm để xử lý khi quay lại từ MoMo
         localStorage.setItem("pendingMomoOrder", momoRequest.extraData);
         window.location.href = data.payUrl;
       } else {
-        alert("Lỗi tạo thanh toán MoMo: " + (data.message || "Không nhận được payUrl"));
+        alert("Lỗi tạo thanh toán MoMo!");
       }
     } catch (err) {
-      console.error(err);
       alert("Không kết nối được đến cổng thanh toán!");
     } finally {
       setLoading(false);
@@ -196,89 +176,55 @@ export default function Checkout() {
   };
 
   const handleConfirmOrder = () => {
-    if (form.phuongThucTT === "COD") {
-      handleCODOrder();
-    } else if (form.phuongThucTT === "ONLINE") {
-      handleMomoPayment();
-    }
+    if (form.phuongThucTT === "COD") handleCODOrder();
+    else handleMomoPayment();
   };
 
   return (
     <div className="container py-5">
       <div className="row">
-        {/* Bên trái - Thông tin giao hàng */}
+
+        {/* ========== BÊN TRÁI: THÔNG TIN GIAO HÀNG ========== */}
         <div className="col-lg-6 mb-4">
           <div className="card border-0 shadow-sm">
             <div className="card-body">
               <h4 className="fw-bold mb-4">Thông tin giao hàng</h4>
+
               <div className="mb-3">
-                <label className="form-label">Họ và tên người nhận *</label>
-                <input type="text" name="hoTenNhan" className="form-control" value={form.hoTenNhan} onChange={handleInputChange} required />
+                <label className="form-label">Họ và tên *</label>
+                <input type="text" name="hoTenNhan" className="form-control"
+                  value={form.hoTenNhan} onChange={handleInputChange} required />
               </div>
+
               <div className="mb-3">
                 <label className="form-label">Số điện thoại *</label>
-                <input type="text" name="sdtNhan" className="form-control" value={form.sdtNhan} onChange={handleInputChange} required />
+                <input type="text" name="sdtNhan" className="form-control"
+                  value={form.sdtNhan} onChange={handleInputChange} required />
               </div>
+
               <div className="mb-3">
                 <label className="form-label">Địa chỉ giao hàng *</label>
-                <input
-                  type="text"
-                  name="diaChiGiao"
-                  className="form-control"
-                  placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành"
-                  value={form.diaChiGiao}
-                  onChange={handleInputChange}
-                  required
-                />
+                <input type="text" name="diaChiGiao" className="form-control"
+                  value={form.diaChiGiao} onChange={handleInputChange}
+                  placeholder="Số nhà, đường, phường/xã, quận/huyện, tỉnh/thành" required />
               </div>
+
               <div className="mb-3">
                 <label className="form-label">Ghi chú (tùy chọn)</label>
-                <textarea name="ghiChu" className="form-control" rows="3" value={form.ghiChu} onChange={handleInputChange} />
-              </div>
-
-              <div className="mt-4">
-                <h5 className="mb-3">Phương thức thanh toán</h5>
-
-                <div className="form-check mb-3">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="phuongThucTT"
-                    id="cod"
-                    value="COD"
-                    checked={form.phuongThucTT === "COD"}
-                    onChange={handleInputChange}
-                  />
-                  <label className="form-check-label d-flex align-items-center" htmlFor="cod">
-                    <span>Thanh toán khi nhận hàng (COD)</span>
-                  </label>
-                </div>
-
-                <div className="form-check">
-                  <input
-                    className="form-check-input"
-                    type="radio"
-                    name="phuongThucTT"
-                    id="online"
-                    value="ONLINE"
-                    checked={form.phuongThucTT === "ONLINE"}
-                    onChange={handleInputChange}
-                  />
-                  <label className="form-check-label d-flex align-items-center" htmlFor="online">
-                    <img src="https://developers.momo.vn/v3/vi/img/logo.svg" alt="MoMo" style={{ width: 40, marginRight: 10 }} />
-                    <span>Thanh toán qua ví MoMo</span>
-                  </label>
-                </div>
+                <textarea name="ghiChu" className="form-control" rows="3"
+                  value={form.ghiChu} onChange={handleInputChange} />
               </div>
             </div>
           </div>
         </div>
 
-        {/* Bên phải - Đơn hàng */}
+        {/* ========== BÊN PHẢI: ĐƠN HÀNG + PHƯƠNG THỨC THANH TOÁN ========== */}
         <div className="col-lg-6">
           <div className="card border-0 shadow-sm">
             <div className="card-body">
+
               <h4 className="fw-bold mb-4">Đơn hàng của bạn</h4>
+
               <table className="table table-borderless">
                 <thead className="text-muted border-bottom">
                   <tr>
@@ -302,11 +248,40 @@ export default function Checkout() {
                 </tbody>
               </table>
 
+              {/* Tổng tiền */}
               <div className="d-flex justify-content-between align-items-center border-top pt-3">
                 <h5 className="fw-bold">Tổng cộng</h5>
                 <h4 className="text-danger fw-bold">{totalPrice.toLocaleString()}đ</h4>
               </div>
 
+              {/* ===== PHƯƠNG THỨC THANH TOÁN — ĐÃ CHUYỂN SANG BÊN PHẢI ===== */}
+              <div className="mt-4 border-top pt-3">
+                <h5 className="mb-3">Phương thức thanh toán</h5>
+
+                <div className="form-check mb-3">
+                  <input className="form-check-input" type="radio"
+                    name="phuongThucTT" id="cod" value="COD"
+                    checked={form.phuongThucTT === "COD"}
+                    onChange={handleInputChange} />
+                  <label className="form-check-label" htmlFor="cod">
+                    Thanh toán khi nhận hàng (COD)
+                  </label>
+                </div>
+
+                <div className="form-check">
+                  <input className="form-check-input" type="radio"
+                    name="phuongThucTT" id="online" value="ONLINE"
+                    checked={form.phuongThucTT === "ONLINE"}
+                    onChange={handleInputChange} />
+                  <label className="form-check-label d-flex align-items-center" htmlFor="online">
+                    <img src="https://developers.momo.vn/v3/vi/img/logo.svg"
+                      alt="MoMo" style={{ width: 40, marginRight: 10 }} />
+                    <span>Thanh toán qua ví MoMo</span>
+                  </label>
+                </div>
+              </div>
+
+              {/* Nút xác nhận */}
               <button
                 className="btn btn-warning btn-lg w-100 mt-4 fw-bold"
                 style={{ borderRadius: "50px" }}
@@ -317,12 +292,13 @@ export default function Checkout() {
                   ? "Đang xử lý..."
                   : form.phuongThucTT === "ONLINE"
                     ? "THANH TOÁN VỚI MOMO"
-                    : "XÁC NHẬN ĐẶT HÀNG"
-                }
+                    : "XÁC NHẬN ĐẶT HÀNG"}
               </button>
+
             </div>
           </div>
         </div>
+
       </div>
     </div>
   );

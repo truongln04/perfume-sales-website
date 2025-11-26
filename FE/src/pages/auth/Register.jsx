@@ -89,16 +89,7 @@ export default function Register() {
       />
     </div>
 
-    <div className="mb-3">
-      <label className="form-label">🖼️ Ảnh đại diện (URL)</label>
-      <input
-        type="text"
-        className="form-control"
-        value={anhDaiDien}
-        onChange={e => setAnhDaiDien(e.target.value)}
-        placeholder="Nhập đường dẫn ảnh"
-      />
-    </div>
+    
           <div className="mb-3">
             <label className="form-label">🔒 Mật khẩu</label>
             <input
