@@ -16,6 +16,7 @@ const PAYMENT_STATUS_LABEL = {
   CHUA_THANH_TOAN: "Chưa thanh toán",
   DA_THANH_TOAN: "Đã thanh toán",
   HOAN_TIEN: "Hoàn tiền",
+  DA_HOAN_TIEN: "Đã hoàn tiền",
 };
 
 export default function OrdersList() {

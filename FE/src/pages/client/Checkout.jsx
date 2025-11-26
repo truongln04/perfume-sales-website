@@ -5,6 +5,7 @@ import { jwtDecode } from "jwt-decode";
 export default function Checkout() {
   const { state } = useLocation();
   const navigate = useNavigate();
+
   const [selectedItems] = useState(state?.selectedItems || []);
   const [totalPrice] = useState(state?.totalPrice || 0);
   const [loading, setLoading] = useState(false);
@@ -17,19 +18,30 @@ export default function Checkout() {
     phuongThucTT: "COD",
   });
 
+  // Thông báo lỗi / thành công giống Brands.jsx
+  const [message, setMessage] = useState({ text: "", type: "" });
+
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 4000);
+  };
+
+  const token = localStorage.getItem("token");
+  const API_URL = "http://localhost:8081";
+
   const safeBtoa = (obj) =>
     btoa(String.fromCharCode(...new TextEncoder().encode(JSON.stringify(obj))));
 
+  // Kiểm tra giỏ hàng & đăng nhập
   useEffect(() => {
     if (!state || selectedItems.length === 0) {
-      alert("Giỏ hàng trống! Vui lòng chọn sản phẩm trước khi thanh toán.");
+      showMessage("Giỏ hàng trống! Vui lòng chọn sản phẩm.", "error");
       navigate("/client/cart");
       return;
     }
 
-    const token = localStorage.getItem("token");
     if (!token) {
-      alert("Vui lòng đăng nhập để thanh toán!");
+      showMessage("Vui lòng đăng nhập để thanh toán!", "error");
       navigate("/login");
       return;
     }
@@ -44,31 +56,55 @@ export default function Checkout() {
         sdtNhan: sdt,
       }));
     } catch (err) {
-      console.error("Token lỗi:", err);
+      showMessage("Token không hợp lệ!", "error");
     }
-  }, [state, selectedItems, navigate]);
+  }, [state, selectedItems, navigate, token]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    // Xóa thông báo khi người dùng bắt đầu nhập lại
+    if (message.text) setMessage({ text: "", type: "" });
   };
 
-  // ================= COD =======================
+  // === VALIDATE FORM – ĐỒNG BỘ 100% VỚI OrdersService ===
+  const validateForm = () => {
+    const hoTen = form.hoTenNhan.trim();
+    const sdt = form.sdtNhan.trim();
+    const diaChi = form.diaChiGiao.trim();
+    const ghiChu = form.ghiChu?.trim() || "";
+
+    if (!hoTen) return showMessage("Vui lòng nhập họ tên người nhận", "error");
+    if (!/^[a-zA-ZÀ-ỹ\s]{3,40}$/.test(hoTen))
+      return showMessage("Họ tên từ 3-40 ký tự, chỉ chứa chữ cái và khoảng trắng", "error");
+
+    if (!sdt) return showMessage("Vui lòng nhập số điện thoại người nhận", "error");
+    if (!/^0[0-9]{9}$/.test(sdt))
+      return showMessage("Số điện thoại phải bắt đầu bằng 0 và đúng 10 chữ số", "error");
+
+    if (!diaChi) return showMessage("Vui lòng nhập địa chỉ giao hàng", "error");
+    if (!/^[a-zA-ZÀ-ỹ0-9 ,./-]{3,40}$/.test(diaChi))
+      return showMessage("Địa chỉ từ 3-40 ký tự, chỉ chứa chữ, số, khoảng trắng và dấu ,./-", "error");
+
+    if (ghiChu && !/^[a-zA-ZÀ-ỹ0-9\s]{8,}$/.test(ghiChu))
+      return showMessage("Ghi chú ít nhất 8 ký tự trở lên", "error");
+
+    return true;
+  };
+
+  // =================== COD =======================
   const handleCODOrder = async () => {
-    if (!form.hoTenNhan.trim() || !form.sdtNhan.trim() || !form.diaChiGiao.trim()) {
-      alert("Vui lòng điền đầy đủ họ tên, số điện thoại và địa chỉ giao hàng!");
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
-    const token = localStorage.getItem("token");
-    let idTaiKhoan = null;
 
+    let idTaiKhoan = null;
     try {
       const decoded = jwtDecode(token);
-      idTaiKhoan = decoded.idTaiKhoan || decoded.id || decoded.userId || null;
+      idTaiKhoan = decoded.idTaiKhoan || decoded.id || decoded.userId;
     } catch (err) {
-      console.error("Token lỗi:", err);
+      setLoading(false);
+      return showMessage("Token không hợp lệ!", "error");
     }
 
     const payload = {
@@ -83,12 +119,12 @@ export default function Checkout() {
       chiTietDonHang: selectedItems.map((item) => ({
         idSanPham: item.idSanPham || item.id,
         soLuong: item.soLuong,
-        donGia: item.donGia,
+        donGia: item.donGia || item.giaBan,
       })),
     };
 
     try {
-      const res = await fetch("http://localhost:8081/orders/create", {
+      const res = await fetch(`${API_URL}/orders/create`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -97,42 +133,37 @@ export default function Checkout() {
         body: JSON.stringify(payload),
       });
 
-      if (res.ok) {
-        const result = await res.json();
-
-        // Xóa từng sản phẩm trong giỏ
-        const deletePromises = selectedItems.map((item) =>
-          fetch(`http://localhost:8081/cart/${item.idGh}`, {
-            method: "DELETE",
-            headers: { Authorization: `Bearer ${token}` },
-          })
-        );
-
-        await Promise.all(deletePromises);
-        window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
-
-        alert(`Đặt hàng thành công! Mã đơn hàng: #${result.id}`);
-        navigate("/client/orderslist");
-      } else {
-        const errorText = await res.text();
-        alert("Đặt hàng thất bại: " + errorText);
+      if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err || "Đặt hàng thất bại");
       }
+
+      const result = await res.json();
+
+      // Xóa giỏ hàng
+      const deletePromises = selectedItems.map((item) =>
+        fetch(`${API_URL}/cart/${item.idGh}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        })
+      );
+      await Promise.all(deletePromises);
+      window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+
+      alert(`Đặt hàng thành công! Mã đơn: #${result.id}`);
+      navigate("/client/orderslist");
     } catch (err) {
-      alert("Lỗi kết nối server!");
+      showMessage(err.message || "Lỗi đặt hàng COD", "error");
     } finally {
       setLoading(false);
     }
   };
 
-  // ================= MOMO =======================
+  // =================== MOMO =======================
   const handleMomoPayment = async () => {
-    if (!form.hoTenNhan.trim() || !form.sdtNhan.trim() || !form.diaChiGiao.trim()) {
-      alert("Vui lòng điền đầy đủ thông tin giao hàng trước khi thanh toán MoMo!");
-      return;
-    }
+    if (!validateForm()) return;
 
     setLoading(true);
-    const token = localStorage.getItem("token");
 
     const orderDataForMomo = {
       selectedItems,
@@ -151,7 +182,7 @@ export default function Checkout() {
     };
 
     try {
-      const res = await fetch("http://localhost:8081/payment/momo", {
+      const res = await fetch(`${API_URL}/payment/momo`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -166,30 +197,49 @@ export default function Checkout() {
         localStorage.setItem("pendingMomoOrder", momoRequest.extraData);
         window.location.href = data.payUrl;
       } else {
-        alert("Lỗi tạo thanh toán MoMo!");
+        throw new Error(data.message || "Không nhận được link thanh toán");
       }
     } catch (err) {
-      alert("Không kết nối được đến cổng thanh toán!");
-    } finally {
+      showMessage(err.message || "Lỗi kết nối MoMo", "error");
       setLoading(false);
     }
   };
 
   const handleConfirmOrder = () => {
-    if (form.phuongThucTT === "COD") handleCODOrder();
-    else handleMomoPayment();
+    if (form.phuongThucTT === "COD") {
+      handleCODOrder();
+    } else {
+      handleMomoPayment();
+    }
   };
 
   return (
     <div className="container py-5">
       <div className="row">
-
+      {message.text && (
+        <div className="col-12 mb-4">
+          <div
+            className={`alert ${
+              message.type === "error" ? "alert-danger" : "alert-success"
+            } alert-dismissible fade show text-center fw-medium`}
+            role="alert"
+            style={{ borderRadius: "12px" }}
+          >
+            {message.text}
+            <button
+              type="button"
+              className="btn-close"
+              onClick={() => setMessage({ text: "", type: "" })}
+            ></button>
+          </div>
+        </div>
+      )}
         {/* ========== BÊN TRÁI: THÔNG TIN GIAO HÀNG ========== */}
         <div className="col-lg-6 mb-4">
           <div className="card border-0 shadow-sm">
             <div className="card-body">
               <h4 className="fw-bold mb-4">Thông tin giao hàng</h4>
-
+              
               <div className="mb-3">
                 <label className="form-label">Họ và tên *</label>
                 <input type="text" name="hoTenNhan" className="form-control"

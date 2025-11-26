@@ -173,7 +173,48 @@ export default function Orders() {
 
                 {/* Trạng thái thanh toán */}
                 <td>
-                  {o.trangThaiTT === "CHUA_THANH_TOAN" ? (
+                 {/* Nếu đơn hàng bị hủy */}
+  {o.trangThai === "HUY" ? (
+
+    /* TRƯỜNG HỢP 1: Thanh toán COD → chỉ hiển thị badge */
+    o.phuongThucTT === "COD" ? (
+      <span
+        className="badge bg-secondary text-white text-center"
+        style={{ width: "120px", fontSize: "0.875rem" }}
+      >
+        Chưa TT
+      </span>
+    ) : (
+
+      /* TRƯỜNG HỢP 2: Thanh toán ONLINE */
+      o.trangThaiTT === "HOAN_TIEN" ? (
+        <span
+          className="badge bg-danger text-white text-center"
+          style={{ width: "120px", fontSize: "0.875rem" }}
+        >
+          Hoàn tiền
+        </span>
+      ) : o.trangThaiTT === "DA_HOAN_TIEN" ? (
+        <span
+          className="badge bg-danger text-white text-center"
+          style={{ width: "120px", fontSize: "0.875rem" }}
+        >
+          Đã hoàn tiền
+        </span>
+      ) : (
+        <select
+          className="form-select form-select-sm border-danger text-danger text-center"
+          style={{ width: "120px", fontSize: "0.875rem" }}
+          value={o.trangThaiTT}
+          onChange={(e) => handlePaymentStatusChange(o.id, e.target.value)}
+        >
+          <option value="HOAN_TIEN">Hoàn tiền</option>
+          <option value="DA_HOAN_TIEN">Đã hoàn tiền</option>
+        </select>
+      )
+    )
+  ) : (
+     o.trangThaiTT === "CHUA_THANH_TOAN" ? (
                     <select
                       className="form-select form-select-sm border-warning text-center"
                       style={{ width: "120px", fontSize: "0.875rem" }}
@@ -211,6 +252,7 @@ export default function Orders() {
                     >
                       Đã hoàn tiền
                     </span>
+                  )
                   )}
                 </td>
 
