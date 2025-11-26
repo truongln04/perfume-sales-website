@@ -3,188 +3,246 @@ package com.example.perfumeshop.service;
 import com.example.perfumeshop.dto.*;
 import com.example.perfumeshop.entity.*;
 import com.example.perfumeshop.repository.*;
-
 import jakarta.persistence.EntityManager;
 import jakarta.persistence.PersistenceContext;
 import jakarta.transaction.Transactional;
-import org.springframework.beans.factory.annotation.Autowired;
+import jakarta.validation.ValidationException;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 import java.math.RoundingMode;
 
 @Service
+@RequiredArgsConstructor
 public class ReceiptService {
 
-    @Autowired
-    private ReceiptRepository receiptRepo;
-    @Autowired
-    private SupplierRepository supplierRepo;
-    @Autowired
-    private ProductRepository productRepo;
-    @Autowired
-    private WarehouseRepository warehouseRepo;
+    private final ReceiptRepository receiptRepo;
+    private final SupplierRepository supplierRepo;
+    private final ProductRepository productRepo;
+    private final WarehouseRepository warehouseRepo;
     @PersistenceContext
     private EntityManager em;
 
-@Transactional
-public ReceiptResponse create(ReceiptRequest request) {
-    Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc()).orElse(null);
+    // ==================== REGEX PATTERNS – CHUẨN NHƯ CÁC SERVICE KHÁC ====================
+    private static final Pattern NOTE_PATTERN = Pattern.compile("^[a-zA-ZÀ-ỹ0-9\\s,.?!-]{0,500}$");
 
-    Receipt receipt = Receipt.builder()
-            .nhaCungCap(nhaCungCap)
-            .ngayNhap(LocalDateTime.now())
-            .ghiChu(request.getGhiChu())
-            .build();
+    // ==================== CREATE RECEIPT ====================
+    @Transactional
+    public ReceiptResponse create(ReceiptRequest request) {
+        validateCreateRequest(request);
 
-    List<ReceiptDetail> chiTietList = new ArrayList<>();
-    BigDecimal tongTien = BigDecimal.ZERO;
+        Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc())
+                .orElseThrow(() -> new ValidationException("Không tìm thấy nhà cung cấp"));
 
-    for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
-        Product sanPham = productRepo.findById(d.getIdSanPham()).orElse(null);
-        if (sanPham == null) continue;
-
-        ReceiptDetail detail = ReceiptDetail.builder()
-                .phieuNhap(receipt)
-                .sanPham(sanPham)
-                .soLuong(d.getSoLuong())
-                .donGia(d.getDonGia())
+        Receipt receipt = Receipt.builder()
+                .nhaCungCap(nhaCungCap)
+                .ngayNhap(LocalDateTime.now())
+                .ghiChu(request.getGhiChu() != null ? request.getGhiChu().trim() : null)
                 .build();
 
-        tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
-        chiTietList.add(detail);
+        List<ReceiptDetail> chiTietList = new ArrayList<>();
+        BigDecimal tongTien = BigDecimal.ZERO;
 
-        // ✅ lấy tồn kho thực tế từ Warehouse
-        Warehouse kho = warehouseRepo.findBySanPham(sanPham);
-        int tonKhoThucTe = (kho != null ? kho.getSoLuongNhap() - kho.getSoLuongBan() : 0);
+        for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
+            Product sanPham = productRepo.findById(d.getIdSanPham())
+                    .orElseThrow(() -> new ValidationException("Không tìm thấy sản phẩm với ID: " + d.getIdSanPham()));
 
-        BigDecimal giaNhapCu = sanPham.getGiaNhap() != null ? sanPham.getGiaNhap() : BigDecimal.ZERO;
-        BigDecimal tongGiaTriCu = giaNhapCu.multiply(BigDecimal.valueOf(tonKhoThucTe));
-        BigDecimal tongGiaTriMoi = d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong()));
-        int tongSoLuong = tonKhoThucTe + d.getSoLuong();
+            if (d.getSoLuong() <= 0) {
+                throw new ValidationException("Số lượng nhập sản phẩm '" + sanPham.getTenSanPham() + "' phải lớn hơn 0");
+            }
+            if (d.getDonGia() == null || d.getDonGia().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ValidationException("Đơn giá sản phẩm '" + sanPham.getTenSanPham() + "' phải lớn hơn 0");
+            }
 
-        if (tongSoLuong > 0) {
-            BigDecimal giaNhapTB = tongGiaTriCu.add(tongGiaTriMoi)
-                    .divide(BigDecimal.valueOf(tongSoLuong), 2, RoundingMode.HALF_UP);
-            sanPham.setGiaNhap(giaNhapTB);
+            ReceiptDetail detail = ReceiptDetail.builder()
+                    .phieuNhap(receipt)
+                    .sanPham(sanPham)
+                    .soLuong(d.getSoLuong())
+                    .donGia(d.getDonGia())
+                    .build();
+
+            tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
+            chiTietList.add(detail);
+
+            // Cập nhật giá nhập trung bình
+            Warehouse kho = warehouseRepo.findBySanPham(sanPham);
+            int tonKhoThucTe = (kho != null ? kho.getSoLuongNhap() - kho.getSoLuongBan() : 0);
+
+            BigDecimal giaNhapCu = sanPham.getGiaNhap() != null ? sanPham.getGiaNhap() : BigDecimal.ZERO;
+            BigDecimal tongGiaTriCu = giaNhapCu.multiply(BigDecimal.valueOf(tonKhoThucTe));
+            BigDecimal tongGiaTriMoi = d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong()));
+            int tongSoLuong = tonKhoThucTe + d.getSoLuong();
+
+            if (tongSoLuong > 0) {
+                BigDecimal giaNhapTB = tongGiaTriCu.add(tongGiaTriMoi)
+                        .divide(BigDecimal.valueOf(tongSoLuong), 2, RoundingMode.HALF_UP);
+                sanPham.setGiaNhap(giaNhapTB);
+            }
+
+            // Cập nhật tồn kho
+            updateSoLuongNhap(sanPham, d.getSoLuong());
+            productRepo.save(sanPham);
         }
 
-        // ✅ cập nhật tồn kho
-        updateSoLuongNhap(sanPham, d.getSoLuong());
-        productRepo.save(sanPham);
+        receipt.setTongTien(tongTien);
+        receipt.setChiTietPhieuNhap(chiTietList);
+
+        Receipt saved = receiptRepo.save(receipt);
+        return toResponse(saved);
     }
 
-    receipt.setTongTien(tongTien);
-    receipt.setChiTietPhieuNhap(chiTietList);
-
-    Receipt saved = receiptRepo.save(receipt);
-    return toResponse(saved);
-}
-
-@Transactional
-public ReceiptResponse update(Integer id, ReceiptRequest request) {
-    Receipt receipt = receiptRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
-
-    // rollback tồn kho cũ
-    for (ReceiptDetail old : receipt.getChiTietPhieuNhap()) {
-        updateSoLuongNhap(old.getSanPham(), -old.getSoLuong());
-    }
-
-    Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc()).orElse(null);
-    receipt.setNhaCungCap(nhaCungCap);
-    receipt.setNgayNhap(LocalDateTime.now());
-    receipt.setGhiChu(request.getGhiChu());
-
-    List<ReceiptDetail> chiTietList = new ArrayList<>();
-    BigDecimal tongTien = BigDecimal.ZERO;
-
-    for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
-        Product sanPham = productRepo.findById(d.getIdSanPham()).orElse(null);
-        if (sanPham == null) continue;
-
-        ReceiptDetail detail = ReceiptDetail.builder()
-                .phieuNhap(receipt)
-                .sanPham(sanPham)
-                .soLuong(d.getSoLuong())
-                .donGia(d.getDonGia())
-                .build();
-
-        tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
-        chiTietList.add(detail);
-
-        // ✅ lấy tồn kho thực tế từ Warehouse (sau khi rollback)
-        Warehouse kho = warehouseRepo.findBySanPham(sanPham);
-        int tonKhoThucTe = (kho != null ? kho.getSoLuongNhap() - kho.getSoLuongBan() : 0);
-
-        BigDecimal giaNhapCu = sanPham.getGiaNhap() != null ? sanPham.getGiaNhap() : BigDecimal.ZERO;
-        BigDecimal tongGiaTriCu = giaNhapCu.multiply(BigDecimal.valueOf(tonKhoThucTe));
-        BigDecimal tongGiaTriMoi = d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong()));
-        int tongSoLuong = tonKhoThucTe + d.getSoLuong();
-
-        if (tongSoLuong > 0) {
-            BigDecimal giaNhapTB = tongGiaTriCu.add(tongGiaTriMoi)
-                    .divide(BigDecimal.valueOf(tongSoLuong), 2, RoundingMode.HALF_UP);
-            sanPham.setGiaNhap(giaNhapTB);
-        }
-
-        // ✅ cập nhật tồn kho
-        updateSoLuongNhap(sanPham, d.getSoLuong());
-        productRepo.save(sanPham);
-    }
-
-    receipt.setTongTien(tongTien);
-    receipt.setChiTietPhieuNhap(chiTietList);
-
-    Receipt updated = receiptRepo.save(receipt);
-    return toResponse(updated);
-}
-
-    public ReceiptResponse getById(Integer id) {
+    // ==================== UPDATE RECEIPT ====================
+    @Transactional
+    public ReceiptResponse update(Integer id, ReceiptRequest request) {
         Receipt receipt = receiptRepo.findById(id)
-                .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
+                .orElseThrow(() -> new ValidationException("Không tìm thấy phiếu nhập với ID: " + id));
 
-        return toResponse(receipt);
+        validateUpdateRequest(request);
+
+        // Rollback tồn kho cũ
+        for (ReceiptDetail old : receipt.getChiTietPhieuNhap()) {
+            updateSoLuongNhap(old.getSanPham(), -old.getSoLuong());
+        }
+
+        Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc())
+                .orElseThrow(() -> new ValidationException("Không tìm thấy nhà cung cấp"));
+
+        receipt.setNhaCungCap(nhaCungCap);
+        receipt.setNgayNhap(LocalDateTime.now());
+        receipt.setGhiChu(request.getGhiChu() != null ? request.getGhiChu().trim() : null);
+
+        List<ReceiptDetail> chiTietList = new ArrayList<>();
+        BigDecimal tongTien = BigDecimal.ZERO;
+
+        for (ReceiptDetailRequest d : request.getChiTietPhieuNhap()) {
+            Product sanPham = productRepo.findById(d.getIdSanPham())
+                    .orElseThrow(() -> new ValidationException("Không tìm thấy sản phẩm với ID: " + d.getIdSanPham()));
+
+            if (d.getSoLuong() <= 0) {
+                throw new ValidationException("Số lượng nhập sản phẩm '" + sanPham.getTenSanPham() + "' phải lớn hơn 0");
+            }
+            if (d.getDonGia() == null || d.getDonGia().compareTo(BigDecimal.ZERO) <= 0) {
+                throw new ValidationException("Đơn giá sản phẩm '" + sanPham.getTenSanPham() + "' phải lớn hơn 0");
+            }
+
+            ReceiptDetail detail = ReceiptDetail.builder()
+                    .phieuNhap(receipt)
+                    .sanPham(sanPham)
+                    .soLuong(d.getSoLuong())
+                    .donGia(d.getDonGia())
+                    .build();
+
+            tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
+            chiTietList.add(detail);
+
+            // Cập nhật giá nhập trung bình
+            Warehouse kho = warehouseRepo.findBySanPham(sanPham);
+            int tonKhoThucTe = (kho != null ? kho.getSoLuongNhap() - kho.getSoLuongBan() : 0);
+
+            BigDecimal giaNhapCu = sanPham.getGiaNhap() != null ? sanPham.getGiaNhap() : BigDecimal.ZERO;
+            BigDecimal tongGiaTriCu = giaNhapCu.multiply(BigDecimal.valueOf(tonKhoThucTe));
+            BigDecimal tongGiaTriMoi = d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong()));
+            int tongSoLuong = tonKhoThucTe + d.getSoLuong();
+
+            if (tongSoLuong > 0) {
+                BigDecimal giaNhapTB = tongGiaTriCu.add(tongGiaTriMoi)
+                        .divide(BigDecimal.valueOf(tongSoLuong), 2, RoundingMode.HALF_UP);
+                sanPham.setGiaNhap(giaNhapTB);
+            }
+
+            updateSoLuongNhap(sanPham, d.getSoLuong());
+            productRepo.save(sanPham);
+        }
+
+        receipt.setTongTien(tongTien);
+        receipt.setChiTietPhieuNhap(chiTietList);
+
+        Receipt updated = receiptRepo.save(receipt);
+        return toResponse(updated);
     }
 
-@Transactional
-public void delete(Integer id) {
-    Receipt receipt = receiptRepo.findById(id)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy phiếu nhập"));
+    // ==================== DELETE ====================
+    @Transactional
+    public void delete(Integer id) {
+        Receipt receipt = receiptRepo.findById(id)
+                .orElseThrow(() -> new ValidationException("Không tìm thấy phiếu nhập với ID: " + id));
 
-    // ✅ Truy vấn kiểm tra sản phẩm trong phiếu nhập đã được bán chưa
-    List<Integer> productIds = receipt.getChiTietPhieuNhap()
-            .stream()
-            .map(d -> d.getSanPham().getIdSanPham())
-            .toList();
+        // Kiểm tra sản phẩm đã bán chưa
+        List<Integer> productIds = receipt.getChiTietPhieuNhap()
+                .stream()
+                .map(d -> d.getSanPham().getIdSanPham())
+                .toList();
 
-    Long count = em.createQuery(
-            "SELECT COUNT(od) FROM OrdersDetail od WHERE od.sanPham.idSanPham IN :ids", Long.class)
-            .setParameter("ids", productIds)
-            .getSingleResult();
+        Long count = em.createQuery(
+                        "SELECT COUNT(od) FROM OrdersDetail od WHERE od.sanPham.idSanPham IN :ids", Long.class)
+                .setParameter("ids", productIds)
+                .getSingleResult();
 
-    if (count > 0) {
-        throw new IllegalStateException("Có sản phẩm trong phiếu nhập đã được bán, không thể xóa!");
+        if (count > 0) {
+            throw new ValidationException("Không thể xóa phiếu nhập vì có sản phẩm đã được bán");
+        }
+
+        // Rollback tồn kho
+        for (ReceiptDetail detail : receipt.getChiTietPhieuNhap()) {
+            updateSoLuongNhap(detail.getSanPham(), -detail.getSoLuong());
+        }
+
+        receiptRepo.delete(receipt);
     }
 
-    // ✅ Nếu qua được kiểm tra thì mới trừ số lượng nhập
-    for (ReceiptDetail detail : receipt.getChiTietPhieuNhap()) {
-        updateSoLuongNhap(detail.getSanPham(), -detail.getSoLuong());
-    }
-
-    receiptRepo.delete(receipt);
-}
-
-
+    // ==================== GET ALL & GET BY ID ====================
     public List<ReceiptResponse> getAll() {
         return receiptRepo.findAll().stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
+    public ReceiptResponse getById(Integer id) {
+        Receipt receipt = receiptRepo.findById(id)
+                .orElseThrow(() -> new ValidationException("Không tìm thấy phiếu nhập với ID: " + id));
+        return toResponse(receipt);
+    }
+
+    // ==================== VALIDATION – GIỐNG PRODUCT & CATEGORY SERVICE ====================
+    private void validateCreateRequest(ReceiptRequest request) {
+        if (request.getIdNcc() == null) {
+            throw new ValidationException("Vui lòng chọn nhà cung cấp");
+        }
+        if (request.getChiTietPhieuNhap() == null || request.getChiTietPhieuNhap().isEmpty()) {
+            throw new ValidationException("Phiếu nhập phải có ít nhất 1 sản phẩm");
+        }
+
+        // Ghi chú (tùy chọn)
+        if (request.getGhiChu() != null && !request.getGhiChu().trim().isEmpty()) {
+            if (!NOTE_PATTERN.matcher(request.getGhiChu().trim()).matches()) {
+                throw new ValidationException("Ghi chú không được vượt quá 500 ký tự và chỉ chứa chữ cái, số, khoảng trắng, dấu câu");
+            }
+        }
+    }
+
+    private void validateUpdateRequest(ReceiptRequest request) {
+        if (request.getIdNcc() == null) {
+            throw new ValidationException("Vui lòng chọn nhà cung cấp");
+        }
+        if (request.getChiTietPhieuNhap() == null || request.getChiTietPhieuNhap().isEmpty()) {
+            throw new ValidationException("Phiếu nhập phải có ít nhất 1 sản phẩm");
+        }
+
+        // Ghi chú (tùy chọn)
+        if (request.getGhiChu() != null && !request.getGhiChu().trim().isEmpty()) {
+            if (!NOTE_PATTERN.matcher(request.getGhiChu().trim()).matches()) {
+                throw new ValidationException("Ghi chú không được vượt quá 500 ký tự");
+            }
+        }
+    }
+
+    // ==================== UTILITY ====================
     private void updateSoLuongNhap(Product sanPham, int delta) {
         Warehouse kho = warehouseRepo.findBySanPham(sanPham);
         if (kho == null && delta > 0) {
@@ -195,12 +253,14 @@ public void delete(Integer id) {
                     .build();
         } else if (kho != null) {
             int newNhap = kho.getSoLuongNhap() + delta;
-            if (newNhap < 0)
-                throw new RuntimeException("Số lượng nhập không hợp lệ");
+            if (newNhap < 0) {
+                throw new ValidationException("Số lượng nhập không hợp lệ (dưới 0)");
+            }
             kho.setSoLuongNhap(newNhap);
         }
-        if (kho != null)
+        if (kho != null) {
             warehouseRepo.save(kho);
+        }
     }
 
     private ReceiptResponse toResponse(Receipt r) {
@@ -210,12 +270,14 @@ public void delete(Integer id) {
                 .tenNhaCungCap(r.getNhaCungCap() != null ? r.getNhaCungCap().getTenNcc() : null)
                 .tongTien(r.getTongTien())
                 .ghiChu(r.getGhiChu())
-                .chiTietPhieuNhap(r.getChiTietPhieuNhap().stream().map(d -> ReceiptDetailResponse.builder()
-                        .idCTPN(d.getIdCTPN())
-                        .tenSanPham(d.getSanPham().getTenSanPham())
-                        .soLuong(d.getSoLuong())
-                        .donGia(d.getDonGia())
-                        .build()).collect(Collectors.toList()))
+                .chiTietPhieuNhap(r.getChiTietPhieuNhap().stream()
+                        .map(d -> ReceiptDetailResponse.builder()
+                                .idCTPN(d.getIdCTPN())
+                                .tenSanPham(d.getSanPham().getTenSanPham())
+                                .soLuong(d.getSoLuong())
+                                .donGia(d.getDonGia())
+                                .build())
+                        .collect(Collectors.toList()))
                 .build();
     }
 }

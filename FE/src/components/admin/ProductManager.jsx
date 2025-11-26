@@ -13,7 +13,8 @@ export default function ProductManager({
   editing,
   handleChange,
   danhMucs,
-  thuongHieus
+  thuongHieus,
+  message
 }) {
   return (
     <div className="card">
@@ -32,6 +33,11 @@ export default function ProductManager({
           </div>
         </div>
       </div>
+      {message.type === "success" && message.text && (
+        <div className="m-3 py-2 px-3 rounded bg-success text-white">
+          {message.text}
+        </div>
+      )}
 
       <div className="card-body p-0">
         <div className="table-responsive">
@@ -131,6 +137,9 @@ export default function ProductManager({
               </div>
 
               <div className="modal-body">
+                {message.type === "error" && message.text && (
+                  <div className="alert alert-danger py-2">{message.text}</div>
+                )}
                 <div className="row g-3">
                   {/* Danh mục */}
                   <div className="col-md-6">

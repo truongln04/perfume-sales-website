@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import ProductManager from "../../components/admin/ProductManager";
 import {
   getProducts,
@@ -9,6 +9,22 @@ import {
   fetchThuongHieus,
 } from "../../services/productService";
 
+function emptyProduct() {
+  return {
+    idSanPham: "",
+    tenSanPham: "",
+    moTa: "",
+    hinhAnh: "",
+    idDanhMuc: "",
+    idthuonghieu: "",
+    giaBan: "",
+    kmPhanTram: "",
+    trangThai: false,
+    giaNhap: 0,
+    soLuongTon: 0,
+  };
+}
+
 export default function Products() {
   const [products, setProducts] = useState([]);
   const [search, setSearch] = useState("");
@@ -17,29 +33,21 @@ export default function Products() {
   const [form, setForm] = useState(emptyProduct());
   const [danhMucs, setDanhMucs] = useState([]);
   const [thuongHieus, setThuongHieus] = useState([]);
-  const [error, setError] = useState(""); // ✅ lưu lỗi
 
-  function emptyProduct() {
-    return {
-      tenSanPham: "",
-      moTa: "",
-      hinhAnh: "",
-      idDanhMuc: "",
-      idthuonghieu: "",
-      giaBan: "",
-      kmPhanTram: "",
-      trangThai: false,
-      giaNhap: 0,
-      soLuongTon: 0,
-    };
-  }
+  // Gộp lỗi + thông báo thành công – giống hệt Brands.jsx
+  const [message, setMessage] = useState({ text: "", type: "" });
+
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  };
 
   const fetchProducts = async () => {
     try {
       const data = await getProducts();
       setProducts(data);
     } catch (err) {
-      console.error("❌ Lỗi không thể tải danh sách", err);
+      showMessage("Lỗi tải danh sách sản phẩm", "error");
     }
   };
 
@@ -52,7 +60,7 @@ export default function Products() {
       setDanhMucs(dmList);
       setThuongHieus(thList);
     } catch (err) {
-      console.error("❌ Failed to fetch metadata", err);
+      showMessage("Lỗi tải danh mục/thương hiệu", "error");
     }
   };
 
@@ -71,79 +79,56 @@ export default function Products() {
       const data = await searchProducts(value);
       setProducts(data);
     } catch (err) {
-      console.error("❌ Search failed", err);
+      showMessage("Lỗi tìm kiếm", "error");
     }
   };
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return products;
-    return products.filter(
-      (p) =>
-        p.tenSanPham?.toLowerCase().includes(q) ||
-        p.tenDanhMuc?.toLowerCase().includes(q) ||
-        p.tenthuonghieu?.toLowerCase().includes(q)
-    );
-  }, [products, search]);
+    return [...products].sort((a, b) => (a.idSanPham || 0) - (b.idSanPham || 0));
+  }, [products]);
 
   const onAdd = () => {
     setEditing(null);
     setForm(emptyProduct());
-    setError("");
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
-  const onEdit = (p) => {
+  const onEdit = (product) => {
+    setEditing(product);
     setForm({
-      ...p,
-      previewImage: p.hinhAnh?.startsWith("data:image")
-        ? p.hinhAnh
-        : p.hinhAnh?.startsWith("http")
-        ? p.hinhAnh
-        : p.hinhAnh
-        ? `/images/${p.hinhAnh}`
-        : "",
+      ...product,
+      giaBan: product.giaBan || "",
+      kmPhanTram: product.kmPhanTram || "",
     });
-    setEditing(p);
-    setError("");
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
-  const onDelete = async (id) => {
-    if (window.confirm("Bạn có chắc muốn xóa sản phẩm này?")) {
-      try {
-        await deleteProduct(id);
-        fetchProducts();
-      } catch (err) {
-        console.error("❌ Delete failed", err);
+  const onDelete = async (idSanPham) => {
+    if (!window.confirm("Xóa sản phẩm này?")) return;
+    try {
+      const res = await deleteProduct(idSanPham);
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Không thể xóa");
       }
+      fetchProducts();
+      showMessage("Xóa sản phẩm thành công!");
+    } catch (err) {
+      showMessage(err.message || "Lỗi khi xóa sản phẩm", "error");
     }
   };
 
+  // GIỐNG HỆT BRANDS.JSX – CHUẨN HOÀN HẢO!
   const onSave = async () => {
-    // ✅ validate cơ bản
-    if (
-      !form.tenSanPham.trim() ||
-      form.idDanhMuc === "" ||
-      form.idthuonghieu === "" ||
-      !form.hinhAnh.trim() ||
-      !form.moTa.trim()
-    ) {
-      setError("Vui lòng nhập đầy đủ Tên sản phẩm, Danh mục, Thương hiệu, Mô tả, Hình ảnh");
-      return;
-    }
-
-    // ✅ kiểm tra giá bán âm
-    if (form.giaBan < 0) {
-      setError("Giá bán không được âm!");
-      return;
-    }
-
-    // ✅ kiểm tra trạng thái
-    if (form.trangThai && (!form.giaBan || form.giaBan <= 0)) {
-      setError("Phải nhập giá bán hợp lệ trước khi chuyển sang trạng thái Đang bán!");
-      return;
-    }
+    // 1. Validate nhanh ở frontend (UX tốt)
+    if (!form.tenSanPham?.trim()) return showMessage("Vui lòng nhập tên sản phẩm", "error");
+    if (!form.moTa?.trim()) return showMessage("Vui lòng nhập mô tả sản phẩm", "error");
+    if (!form.hinhAnh?.trim()) return showMessage("Vui lòng nhập URL hình ảnh sản phẩm", "error");
+    if (!form.idDanhMuc) return showMessage("Vui lòng chọn danh mục", "error");
+    if (!form.idthuonghieu) return showMessage("Vui lòng chọn thương hiệu", "error");
+    
 
     const payload = {
       tenSanPham: form.tenSanPham.trim(),
@@ -151,26 +136,46 @@ export default function Products() {
       hinhAnh: form.hinhAnh.trim(),
       idDanhMuc: Number(form.idDanhMuc),
       idthuonghieu: Number(form.idthuonghieu),
-      giaBan: form.giaBan !== "" && form.giaBan != null ? Number(form.giaBan) : 0,
-      kmPhanTram: form.kmPhanTram !== "" && form.kmPhanTram != null ? Number(form.kmPhanTram) : 0,
+      giaBan: Number(form.giaBan),
+      kmPhanTram: form.kmPhanTram ? Number(form.kmPhanTram) : 0,
       trangThai: Boolean(form.trangThai),
-      giaNhap: form.giaNhap ?? 0,
-      soLuongTon: form.soLuongTon ?? 0,
+      giaNhap: form.giaNhap || 0,
+      soLuongTon: form.soLuongTon || 0,
     };
 
     try {
-      if (editing) {
-        await saveProduct(payload, editing.idSanPham);
-      } else {
-        await saveProduct(payload);
+      const res = await fetch(
+        editing ? `http://localhost:8081/products/${editing.idSanPham}` : "http://localhost:8081/products",
+        {
+          method: editing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${localStorage.getItem("token")}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Lưu sản phẩm thất bại");
       }
 
-      alert(editing ? "✅ Sửa sản phẩm thành công!" : "✅ Thêm sản phẩm thành công!");
+      // Thành công
+      setProducts((prev) =>
+        editing
+          ? prev.map((p) => (p.idSanPham === data.idSanPham ? data : p))
+          : [...prev, data]
+      );
+
       setShowModal(false);
-      setEditing(null);
-      fetchProducts();
+      showMessage(
+        editing ? "Cập nhật sản phẩm thành công!" : "Thêm sản phẩm thành công!"
+      );
     } catch (err) {
-      console.error("❌ Save failed", err.response?.data || err.message);
+      // Lỗi chi tiết từ backend
+      showMessage(err.message || "Lỗi khi lưu sản phẩm", "error");
     }
   };
 
@@ -185,18 +190,8 @@ export default function Products() {
         ? value === "" ? "" : Number(value)
         : value;
 
-    // ✅ kiểm tra giá bán âm khi nhập
-    if (name === "giaBan" && newValue < 0) {
-      console.error("❌ Giá bán không được âm");
-      setError("Giá bán không được âm!");
-      return;
-    }
-
-    setError("");
-    setForm((prev) => ({
-      ...prev,
-      [name]: newValue,
-    }));
+    setForm((prev) => ({ ...prev, [name]: newValue }));
+    if (message.text) setMessage({ text: "", type: "" });
   };
 
   return (
@@ -216,7 +211,7 @@ export default function Products() {
       handleChange={handleChange}
       danhMucs={danhMucs}
       thuongHieus={thuongHieus}
-      error={error} // ✅ truyền lỗi xuống GUI
+      message={message}
     />
   );
 }

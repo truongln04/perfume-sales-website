@@ -1,24 +1,42 @@
 import { useState, useMemo, useEffect } from "react";
 
+function emptyBrand() {
+  return {
+    idthuonghieu: "",
+    tenthuonghieu: "",
+    quocgia: "",
+    logo: "",
+  };
+}
+
 export default function Brands() {
   const [brands, setBrands] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
-  const [form, setForm] = useState({ idthuonghieu: "", tenthuonghieu: "", quocgia: "", logo: "" });
+  const [form, setForm] = useState(emptyBrand());
+
+  // Gộp lỗi + thông báo thành công 
+  const [message, setMessage] = useState({ text: "", type: "" });
 
   const API_URL = "http://localhost:8081/brands";
   const token = localStorage.getItem("token");
 
-  // Load all brands
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  };
+
   const fetchBrands = async () => {
     try {
       const res = await fetch(API_URL, {
-        headers: { Authorization: `Bearer ${token}` },});
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Không thể tải danh sách");
       const data = await res.json();
       setBrands(data);
     } catch (err) {
-      console.error("Failed to fetch brands", err);
+      showMessage("Lỗi tải danh sách thương hiệu", "error");
     }
   };
 
@@ -26,7 +44,6 @@ export default function Brands() {
     fetchBrands();
   }, []);
 
-  // Search brands by name
   const handleSearch = async (value) => {
     setSearch(value);
     if (!value.trim()) {
@@ -35,47 +52,58 @@ export default function Brands() {
     }
     try {
       const res = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(value)}`, {
-        headers: { Authorization: `Bearer ${token}` },});
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Tìm kiếm thất bại");
       const data = await res.json();
       setBrands(data);
     } catch (err) {
-      console.error("Search failed", err);
+      showMessage("Lỗi tìm kiếm", "error");
     }
   };
 
   const filtered = useMemo(() => {
-    return [...brands].sort((a, b) => a.id - b.id);
+    return [...brands].sort((a, b) => a.idthuonghieu - b.idthuonghieu);
   }, [brands]);
 
   const onAdd = () => {
     setEditing(null);
-    setForm({ idthuonghieu: "", tenthuonghieu: "", quocgia: "", logo: "" });
+    setForm(emptyBrand());
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onEdit = (brand) => {
     setEditing(brand);
     setForm({ ...brand });
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onDelete = async (idthuonghieu) => {
-    if (window.confirm("Xóa thương hiệu này?")) {
-      try {
-        await fetch(`${API_URL}/${idthuonghieu}`, { method: "DELETE", headers: { Authorization: `Bearer ${token}` }, });
-        fetchBrands();
-      } catch (err) {
-        console.error("Delete failed", err);
+    if (!window.confirm("Xóa thương hiệu này?")) return;
+    try {
+      const res = await fetch(`${API_URL}/${idthuonghieu}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Không thể xóa");
       }
+      fetchBrands();
+      showMessage("Xóa thương hiệu thành công!");
+    } catch (err) {
+      showMessage(err.message || "Lỗi khi xóa thương hiệu", "error");
     }
   };
 
+  
   const onSave = async () => {
-    if (!form.tenthuonghieu.trim()) {
-      alert("Vui lòng nhập tên thương hiệu");
-      return;
-    }
+    // 1. Validate nhanh ở frontend (UX tốt)
+    if (!form.tenthuonghieu.trim()) return showMessage("Vui lòng nhập tên thương hiệu", "error");
+    if (!form.quocgia.trim()) return showMessage("Vui lòng nhập quốc gia", "error");
+    if (!editing && !form.logo.trim()) return showMessage("Vui lòng nhập logo thương hiệu", "error");
 
     const payload = {
       tenthuonghieu: form.tenthuonghieu.trim(),
@@ -84,30 +112,45 @@ export default function Brands() {
     };
 
     try {
-      if (editing) {
-        await fetch(`${API_URL}/${editing.idthuonghieu}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, },
+      const res = await fetch(
+        editing ? `${API_URL}/${editing.idthuonghieu}` : API_URL,
+        {
+          method: editing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
-        });
-      } else {
-        await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}`, },
-          body: JSON.stringify(payload),
-        });
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Lưu thương hiệu thất bại");
       }
+
+      // Thành công
+      setBrands((prev) =>
+        editing
+          ? prev.map((b) => (b.idthuonghieu === data.idthuonghieu ? data : b))
+          : [...prev, data]
+      );
+
       setShowModal(false);
-      setEditing(null);
-      fetchBrands();
+      showMessage(
+        editing ? "Cập nhật thương hiệu thành công!" : "Thêm thương hiệu thành công!"
+      );
     } catch (err) {
-      console.error("Save failed", err);
+      // Lỗi chi tiết từ backend
+      showMessage(err.message || "Lỗi khi lưu thương hiệu", "error");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (message.text) setMessage({ text: "", type: "" });
   };
 
   return (
@@ -125,6 +168,12 @@ export default function Brands() {
           />
         </div>
       </div>
+
+      {message.type === "success" && message.text && (
+        <div className="m-3 py-2 px-3 rounded bg-success text-white">
+          {message.text}
+        </div>
+      )}
 
       <div className="card-body p-0">
         <table className="table table-striped m-0">
@@ -176,6 +225,9 @@ export default function Brands() {
                 <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
               </div>
               <div className="modal-body">
+                {message.type === "error" && message.text && (
+                  <div className="alert alert-danger py-2">{message.text}</div>
+                )}
                 <div className="mb-3">
                   <label className="form-label">Tên thương hiệu</label>
                   <input className="form-control" name="tenthuonghieu" value={form.tenthuonghieu} placeholder="Nhập tên thương hiệu" onChange={handleChange} />

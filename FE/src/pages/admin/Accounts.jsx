@@ -1,5 +1,6 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
+
 function emptyAccount() {
   return {
     idTaiKhoan: "",
@@ -19,125 +20,149 @@ export default function Accounts() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptyAccount());
-  const navigate = useNavigate();
 
-  const getAuthHeader = () => {
-    const token = localStorage.getItem("token");
-    return { Authorization: `Bearer ${token}` };
+  // Gộp lỗi + thông báo thành công
+  const [message, setMessage] = useState({ text: "", type: "" });
+
+  const navigate = useNavigate();
+  const API_URL = "http://localhost:8081/accounts";
+  const token = localStorage.getItem("token");
+
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
   };
 
   useEffect(() => {
-    const fetchAccounts = async () => {
-      try {
-        const res = await fetch("http://localhost:8081/accounts", {
-          headers: getAuthHeader(),
-        });
-        if (res.status === 401) {
-          alert("Phiên đăng nhập đã hết hạn. Vui lòng đăng nhập lại.");
-          navigate("/login");
-          return;
-        }
-        if (!res.ok) throw new Error("Không thể tải danh sách tài khoản");
-        const data = await res.json();
-        setAccounts(data);
-      } catch (err) {
-        alert("Lỗi khi tải danh sách tài khoản: " + err.message);
-      }
-    };
-
     fetchAccounts();
 
-    // Khi Header cập nhật tài khoản, cập nhật lại danh sách ngay
-    const handleAccountUpdated = () => {
-      fetchAccounts();
-    };
+    const handleUpdate = () => fetchAccounts();
+    window.addEventListener("account-updated", handleUpdate);
+    return () => window.removeEventListener("account-updated", handleUpdate);
+  }, []);
 
-    window.addEventListener("account-updated", handleAccountUpdated);
+  const fetchAccounts = async () => {
+    try {
+      const res = await fetch(API_URL, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    return () => window.removeEventListener("account-updated", handleAccountUpdated);
-  }, [navigate]);
+      if (res.status === 401) {
+        showMessage("Phiên đăng nhập đã hết hạn!", "error");
+        navigate("/login");
+        return;
+      }
+      if (!res.ok) throw new Error("Không thể tải danh sách tài khoản");
+
+      const data = await res.json();
+      setAccounts(data);
+    } catch (err) {
+      showMessage("Lỗi tải danh sách tài khoản", "error");
+    }
+  };
 
   const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    const result = !q
-      ? accounts
-      : accounts.filter(
+    const q = search.toLowerCase().trim();
+    return accounts
+      .filter(
         (a) =>
           a.tenHienThi?.toLowerCase().includes(q) ||
           a.email?.toLowerCase().includes(q)
-      );
-    return [...result].sort((a, b) => a.idTaiKhoan - b.idTaiKhoan);
+      )
+      .sort((a, b) => a.idTaiKhoan - b.idTaiKhoan);
   }, [accounts, search]);
 
   const onAdd = () => {
     setEditing(null);
     setForm(emptyAccount());
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onEdit = (acc) => {
     setEditing(acc);
     setForm({ ...acc, matKhau: "" });
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
-  const onDelete = async (idTaiKhoan) => {
-    if (window.confirm("Bạn có chắc muốn xóa tài khoản này?")) {
-      try {
-        const res = await fetch(`http://localhost:8081/accounts/${idTaiKhoan}`, {
-          method: "DELETE", headers: getAuthHeader(),
-        });
-        if (!res.ok) throw new Error("Không thể xóa tài khoản");
-        setAccounts((prev) => prev.filter((a) => a.idTaiKhoan !== idTaiKhoan));
-        alert("Đã xóa tài khoản thành công!");
-      } catch (err) {
-        alert("Lỗi khi xóa tài khoản: " + err.message);
+  const onDelete = async (id) => {
+    if (!window.confirm("Xóa tài khoản này?")) return;
+
+    try {
+      const res = await fetch(`${API_URL}/${id}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Không thể xóa tài khoản");
       }
+
+      fetchAccounts();
+      showMessage("Xóa tài khoản thành công!");
+    } catch (err) {
+      showMessage(err.message || "Lỗi khi xóa tài khoản", "error");
     }
   };
 
+  // HOÀN HẢO NHƯ BRANDS.JSX – validate nhẹ + bắt lỗi backend
   const onSave = async () => {
-    if (!form.tenHienThi.trim() || !form.email.trim()) {
-      alert("Vui lòng nhập tên hiển thị và email");
-      return;
-    }
+    // 1. Validate nhanh ở frontend (UX mượt)
+    if (!form.tenHienThi?.trim()) return showMessage("Vui lòng nhập tên hiển thị", "error");
+    if (!form.email?.trim()) return showMessage("Vui lòng nhập email", "error");
+    if (!editing && !form.sdt?.trim()) return showMessage("Vui lòng nhập số điện thoại", "error");
+    if (!editing && !form.matKhau?.trim()) return showMessage("Vui lòng nhập mật khẩu", "error");
+
+    const payload = {
+      tenHienThi: form.tenHienThi.trim(),
+      email: form.email.trim().toLowerCase(),
+      sdt: form.sdt?.trim() || null,
+      anhDaiDien: form.anhDaiDien?.trim() || null,
+      matKhau: form.matKhau || undefined, // không gửi nếu để trống khi sửa
+      vaiTro: form.vaiTro,
+    };
 
     try {
-      let res;
-      if (editing) {
-        res = await fetch(`http://localhost:8081/accounts/${form.idTaiKhoan}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json", ...getAuthHeader() },
-          body: JSON.stringify(form),
-        });
-      } else {
-        res = await fetch("http://localhost:8081/accounts", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", ...getAuthHeader() },
-          body: JSON.stringify(form),
-        });
-      }
+      const res = await fetch(
+        editing ? `${API_URL}/${form.idTaiKhoan}` : API_URL,
+        {
+          method: editing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
 
-      if (!res.ok) throw new Error("Không thể lưu tài khoản");
-      const updated = await res.json();
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Lưu tài khoản thất bại");
+      }
 
       setAccounts((prev) =>
         editing
-          ? prev.map((a) => (a.idTaiKhoan === updated.idTaiKhoan ? updated : a))
-          : [...prev, updated]
+          ? prev.map((a) => (a.idTaiKhoan === data.idTaiKhoan ? data : a))
+          : [...prev, data]
       );
 
       setShowModal(false);
-      setEditing(null);
-      alert(editing ? "Cập nhật thành công!" : "Thêm mới thành công!");
+      showMessage(
+        editing ? "Cập nhật tài khoản thành công!" : "Thêm tài khoản thành công!"
+      );
+      window.dispatchEvent(new Event("account-updated"));
     } catch (err) {
-      alert("Lỗi khi lưu tài khoản: " + err.message);
+      showMessage(err.message || "Lỗi khi lưu tài khoản", "error");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    if (message.text) setMessage({ text: "", type: "" });
   };
 
   return (
@@ -159,6 +184,12 @@ export default function Accounts() {
           />
         </div>
       </div>
+
+      {message.type === "success" && message.text && (
+        <div className="m-3 py-2 px-3 rounded bg-success text-white">
+          {message.text}
+        </div>
+      )}
 
       {/* Table */}
       <div className="card-body p-0">
@@ -273,6 +304,9 @@ export default function Accounts() {
 
               {/* Modal body */}
               <div className="modal-body">
+                {message.type === "error" && message.text && (
+                  <div className="alert alert-danger py-2">{message.text}</div>
+                )}
                 <div className="row g-3">
 
                   <div className="col-md-6">
@@ -329,9 +363,10 @@ export default function Accounts() {
                       <select
                         name="vaiTro"
                         className="form-select"
-                        value={form.vaiTro}
+                        value={form.vaiTro || ""}
                         onChange={handleChange}
                       >
+                        <option value="">-- Chọn vai trò --</option>
                         <option value="ADMIN">Admin</option>
                         <option value="NHANVIEN">Nhân viên</option>
                       </select>

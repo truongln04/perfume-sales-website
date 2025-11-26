@@ -10,4 +10,6 @@ import com.example.perfumeshop.entity.Brand;
 public interface BrandRepository extends JpaRepository<Brand, Integer> {
     @Query("SELECT b FROM Brand b WHERE LOWER(b.tenthuonghieu) LIKE LOWER(CONCAT('%', :keyword, '%')) OR LOWER(b.quocgia) LIKE LOWER(CONCAT('%', :keyword, '%'))")
     List<Brand> searchByNameOrCountry(String keyword);
+
+    boolean existsByTenthuonghieuIgnoreCase(String tenThuongHieu);
 }

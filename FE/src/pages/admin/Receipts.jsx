@@ -9,7 +9,19 @@ import {
   fetchSuppliers,
 } from "../../services/receiptService";
 
-export default function Receipt() {
+function emptyReceipt() {
+  return {
+    idPhieuNhap: null,
+    idNcc: "",
+    tenNcc: "",
+    ngayNhap: new Date().toISOString().slice(0, 10),
+    ghiChu: "",
+    details: [{ idSanPham: "", tenSanPham: "", soLuong: 1, donGia: 0 }],
+    tongTien: 0,
+  };
+}
+
+export default function Receipts() {
   const [receipts, setReceipts] = useState([]);
   const [products, setProducts] = useState([]);
   const [suppliers, setSuppliers] = useState([]);
@@ -19,21 +31,12 @@ export default function Receipt() {
   const [form, setForm] = useState(emptyReceipt());
   const [viewing, setViewing] = useState(null);
 
-  function emptyReceipt() {
-    return {
-      idPhieuNhap: null,
-      idNcc: "",
-      tenNcc: "",
-      ngayNhap: new Date().toISOString().slice(0, 10),
-      ghiChu: "",
-      details: [{ idSanPham: "", tenSanPham: "", soLuong: 1, donGia: 0 }],
-      tongTien: 0,
-    };
-  }
+  const [message, setMessage] = useState({ text: "", type: "" });
 
-  function calculateTotal(details) {
-    return details.reduce((sum, d) => sum + d.soLuong * d.donGia, 0);
-  }
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  };
 
   const loadData = async () => {
     try {
@@ -46,7 +49,7 @@ export default function Receipt() {
       setProducts(p);
       setSuppliers(s);
     } catch (err) {
-      console.error("Lỗi khi tải dữ liệu:", err);
+      showMessage("Lỗi tải dữ liệu", "error");
     }
   };
 
@@ -54,133 +57,152 @@ export default function Receipt() {
     loadData();
   }, []);
 
-  useEffect(() => {
-    setForm(prev => ({
-      ...prev,
-      tongTien: calculateTotal(prev.details),
-    }));
-  }, [form.details]);
-
   const filtered = useMemo(() => {
     const q = search.trim().toLowerCase();
     if (!q) return receipts;
     return receipts.filter(
-      r =>
+      (r) =>
         r.idPhieuNhap?.toString().includes(q) ||
-        r.tenNhaCungCap?.toLowerCase().includes(q) ||
-        r.nhaCungCap?.tenNhaCungCap?.toLowerCase().includes(q)
+        r.tenNhaCungCap?.toLowerCase().includes(q)
     );
   }, [receipts, search]);
+
+  const calculateTotal = (details) =>
+    details.reduce((sum, d) => sum + (Number(d.soLuong) || 0) * (Number(d.donGia) || 0), 0);
+
+  // ================== ACTIONS ==================
 
   const onAdd = () => {
     setEditing(null);
     setForm(emptyReceipt());
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
- const onEdit = (receipt) => {
-  const selectedNcc =
-    suppliers.find(s => s.idNcc === receipt.idNcc) ||
-    suppliers.find(s => s.tenNcc === receipt.tenNhaCungCap);
+  const onEdit = (receipt) => {
+    const selectedNcc = suppliers.find(
+      (s) => String(s.idNcc) === String(receipt.idNcc)
+    );
 
-  setEditing(receipt);
-  setForm({
-    idPhieuNhap: receipt.idPhieuNhap,
-    idNcc: selectedNcc?.idNcc || "",
-    tenNcc: selectedNcc?.tenNcc || receipt.tenNhaCungCap || "",
-    ngayNhap: receipt.ngayNhap?.slice(0, 10),
-    ghiChu: receipt.ghiChu || "",
-    details: receipt.chiTietPhieuNhap.map(d => {
-      const selectedProduct =
-        products.find(p => p.idSanPham === d.idSanPham) ||
-        products.find(p => p.tenSanPham === d.tenSanPham);
-      return {
-        idSanPham: selectedProduct?.idSanPham || d.idSanPham,
-        tenSanPham: selectedProduct?.tenSanPham || d.tenSanPham || "",
-        soLuong: d.soLuong,
-        donGia: d.donGia,
-      };
-    }),
-  });
-  setShowModal(true);
-};
+    setEditing(receipt);
+    setForm({
+      idPhieuNhap: receipt.idPhieuNhap,
+      idNcc: selectedNcc?.idNcc || "",
+      tenNcc: selectedNcc?.tenNcc || receipt.tenNhaCungCap || "",
+      ngayNhap: receipt.ngayNhap?.slice(0, 10) || "",
+      ghiChu: receipt.ghiChu || "",
+      details: receipt.chiTietPhieuNhap.map((d) => {
+        const selectedProduct = products.find(
+          (p) => Number(p.idSanPham) === Number(d.idSanPham)
+        );
+        return {
+          idSanPham: selectedProduct?.idSanPham || d.idSanPham || "",
+          tenSanPham: selectedProduct?.tenSanPham || d.tenSanPham || "",
+          soLuong: d.soLuong || 1,
+          donGia: selectedProduct?.giaNhap || d.donGia || 0,
+        };
+      }),
+    });
+    setMessage({ text: "", type: "" });
+    setShowModal(true);
+  };
 
-
-const onDelete = async (id) => {
-  if (!window.confirm("⚠️ Bạn có chắc muốn xóa phiếu nhập này?")) return;
-
-  try {
-    await deleteReceipt(id);
-    alert("✅ Xóa phiếu nhập thành công!");
-    loadData();
-  } catch (err) {
-    console.error("Xóa thất bại:", err);
-    alert(err.message); // ✅ giờ sẽ hiện đúng message từ backend
-  }
-};
+  const onDelete = async (id) => {
+    if (!window.confirm("Bạn có chắc muốn xóa phiếu nhập này?")) return;
+    try {
+      await deleteReceipt(id);
+      loadData();
+      showMessage("Xóa phiếu nhập thành công!");
+    } catch (err) {
+      showMessage(
+        err.response?.data?.message ||
+          "Không thể xóa phiếu nhập (có thể đã bán hàng)",
+        "error"
+      );
+    }
+  };
 
   const onSave = async () => {
-    if (!form.idNcc) {
-      alert("Vui lòng chọn nhà cung cấp");
-      return;
+    // VALIDATE
+    if (!form.idNcc) return showMessage("Vui lòng chọn nhà cung cấp", "error");
+    if (!form.details || form.details.length === 0)
+      return showMessage("Phiếu nhập phải có ít nhất 1 sản phẩm", "error");
+
+    for (let i = 0; i < form.details.length; i++) {
+      const d = form.details[i];
+      if (!d.idSanPham) return showMessage(`Dòng ${i + 1}: Chọn sản phẩm`, "error");
+      if (!d.soLuong || d.soLuong <= 0)
+        return showMessage(`Dòng ${i + 1}: Số lượng phải > 0`, "error");
+      if (!d.donGia || d.donGia <= 0)
+        return showMessage(`Dòng ${i + 1}: Đơn giá phải > 0`, "error");
     }
 
-const payload = {
-  idNcc: Number(form.idNcc),
-  ngayNhap: form.ngayNhap,
-  ghiChu: form.ghiChu.trim(),
-  chiTietPhieuNhap: form.details.map(d => ({
-    idSanPham: Number(d.idSanPham),
-    soLuong: Number(d.soLuong),
-    donGia: parseFloat(d.donGia),   // ✅ ép về số thập phân
-  })),
-};
- // ✅ Thêm log ở đây để kiểm tra payload
-  console.log("📤 Payload gửi lên:", JSON.stringify(payload, null, 2));
+    if (form.ghiChu?.trim().length > 500)
+      return showMessage("Ghi chú không vượt quá 500 ký tự", "error");
+
+    const payload = {
+      idNcc: Number(form.idNcc),
+      ghiChu: form.ghiChu?.trim() || null,
+      chiTietPhieuNhap: form.details.map((d) => ({
+        idSanPham: Number(d.idSanPham),
+        soLuong: Number(d.soLuong),
+        donGia: Number(d.donGia),
+      })),
+    };
+
     try {
-      if (form.idPhieuNhap) {
-        await updateReceipt(form.idPhieuNhap, payload); // sửa
-      } else {
-        await createReceipt(payload); // thêm mới
-      }
+      if (editing) await updateReceipt(editing.idPhieuNhap, payload);
+      else await createReceipt(payload);
 
       setEditing(null);
       setShowModal(false);
       loadData();
+      showMessage(editing ? "Cập nhật phiếu nhập thành công!" : "Thêm phiếu nhập thành công!");
     } catch (err) {
-      console.error("Lưu thất bại:", err);
+      showMessage(err.response?.data?.message || "Lỗi khi lưu phiếu nhập", "error");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    if (name === "idNcc") {
+      const selected = suppliers.find((s) => Number(s.idNcc) === Number(value));
+      setForm((prev) => ({
+        ...prev,
+        idNcc: Number(value),
+        tenNcc: selected?.tenNcc || "",
+      }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
+    if (message.text) setMessage({ text: "", type: "" });
   };
 
   const handleDetailChange = (index, field, value) => {
-    setForm(prev => {
+    setForm((prev) => {
       const updated = [...prev.details];
       updated[index][field] =
-        field === "soLuong" || field === "donGia" ? Number(value) : value;
+        field === "soLuong" || field === "donGia" ? Number(value) || 0 : value;
       return { ...prev, details: updated };
     });
   };
 
   const handleAddDetail = () => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       details: [...prev.details, { idSanPham: "", tenSanPham: "", soLuong: 1, donGia: 0 }],
     }));
   };
 
   const handleRemoveDetail = (index) => {
-    setForm(prev => ({
+    setForm((prev) => ({
       ...prev,
       details: prev.details.filter((_, i) => i !== index),
     }));
   };
 
-   return (
+  // ================== RENDER ==================
+  return (
     <ReceiptManager
       receipts={filtered}
       products={products}
@@ -191,29 +213,36 @@ const payload = {
       onEdit={onEdit}
       onDelete={onDelete}
       showModal={showModal}
+      setShowModal={setShowModal}
       form={form}
+      onSave={onSave}
       editing={editing}
-      onChange={handleChange}
+      handleChange={handleChange}
       onDetailChange={handleDetailChange}
       onAddDetail={handleAddDetail}
       onRemoveDetail={handleRemoveDetail}
-      onSave={onSave}
-      onClose={() => setShowModal(false)}
+      onClose={() => {
+        setShowModal(false);
+        setMessage({ text: "", type: "" });
+      }}
       selectedReceipt={viewing}
       onView={(receipt) => {
         const enriched = {
           ...receipt,
           chiTietPhieuNhap: receipt.chiTietPhieuNhap.map((item) => {
-            const product = products.find(p => p.idSanPham === Number(item.idSanPham));
+            const product = products.find(
+              (p) => Number(p.idSanPham) === Number(item.idSanPham)
+            );
             return {
               ...item,
-              tenSanPham: product?.tenSanPham || item.tenSanPham || "Không rõ tên sản phẩm",
+              tenSanPham: product?.tenSanPham || item.tenSanPham || "Không rõ",
             };
           }),
         };
         setViewing(enriched);
       }}
       onCloseView={() => setViewing(null)}
+      message={message}
     />
   );
 }

@@ -1,4 +1,15 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+
+function emptySupplier() {
+  return {
+    idNcc: "",
+    tenNcc: "",
+    diaChi: "",
+    sdt: "",
+    email: "",
+    ghiChu: "",
+  };
+}
 
 export default function Suppliers() {
   const [suppliers, setSuppliers] = useState([]);
@@ -6,40 +17,34 @@ export default function Suppliers() {
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
   const [form, setForm] = useState(emptySupplier());
-  const [message, setMessage] = useState({ text: "", type: "" }); // ✅ Gộp lỗi & thông báo
+
+  // Gộp lỗi + thông báo thành công – giống hệt Brands.jsx
+  const [message, setMessage] = useState({ text: "", type: "" });
 
   const API_URL = "http://localhost:8081/suppliers";
   const token = localStorage.getItem("token");
 
-  useEffect(() => {
-    fetchSuppliers();
-  }, []);
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  };
 
   const fetchSuppliers = async () => {
     try {
       const res = await fetch(API_URL, {
-        headers: {
-          "Authorization": `Bearer ${token}`, // ✅ Gửi token
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) {
-        throw new Error(`HTTP error ${res.status}`);
-      }
+      if (!res.ok) throw new Error("Không thể tải danh sách");
       const data = await res.json();
-      const mapped = data.map((s) => ({
-        idNcc: s.idNcc,
-        tenNcc: s.tenNcc,
-        diaChi: s.diaChi,
-        sdt: s.sdt,
-        email: s.email,
-        ghiChu: s.ghiChu,
-      }));
-      setSuppliers(mapped);
+      setSuppliers(data);
     } catch (err) {
-      console.error("Failed to fetch suppliers", err);
-      setMessage({ text: "❌ Không thể tải danh sách nhà cung cấp", type: "error" });
+      showMessage("Lỗi tải danh sách nhà cung cấp", "error");
     }
   };
+
+  useEffect(() => {
+    fetchSuppliers();
+  }, []);
 
   const handleSearch = async (value) => {
     setSearch(value);
@@ -49,96 +54,109 @@ export default function Suppliers() {
     }
     try {
       const res = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(value)}`, {
-        headers: { Authorization: `Bearer ${token}` },});
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) throw new Error("Tìm kiếm thất bại");
       const data = await res.json();
       setSuppliers(data);
     } catch (err) {
-      console.error("Search failed", err);
+      showMessage("Lỗi tìm kiếm", "error");
     }
   };
 
   const filtered = useMemo(() => {
-    return [...suppliers].sort((a, b) => a.id - b.id);
+    return [...suppliers].sort((a, b) => a.idNcc - b.idNcc);
   }, [suppliers]);
 
   const onAdd = () => {
     setEditing(null);
     setForm(emptySupplier());
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
-  const onEdit = (s) => {
-    setEditing(s);
-    setForm({ ...s });
+  const onEdit = (supplier) => {
+    setEditing(supplier);
+    setForm({ ...supplier });
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
-  // ✅ Xóa nhà cung cấp (có thông báo backend)
   const onDelete = async (idNcc) => {
-    if (window.confirm("Xóa nhà cung cấp này?")) {
-      try {
-        const res = await fetch(`${API_URL}/${idNcc}`, { method: "DELETE", headers: {
-          "Authorization": `Bearer ${token}`, // ✅ Gửi token
-        }, });
-
-        if (!res.ok) {
-          const errData = await res.json().catch(() => ({}));
-          throw new Error(errData.message || "Lỗi khi xóa nhà cung cấp");
-        }
-
-        fetchSuppliers();
-        setMessage({ text: "✅ Xóa nhà cung cấp thành công!", type: "success" });
-        setTimeout(() => setMessage({ text: "", type: "" }), 2000);
-      } catch (err) {
-        setMessage({ text: "❌ " + err.message, type: "error" });
-        setTimeout(() => setMessage({ text: "", type: "" }), 2000);
+    if (!window.confirm("Xóa nhà cung cấp này?")) return;
+    try {
+      const res = await fetch(`${API_URL}/${idNcc}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Không thể xóa");
       }
+      fetchSuppliers();
+      showMessage("Xóa nhà cung cấp thành công!");
+    } catch (err) {
+      showMessage(err.message || "Lỗi khi xóa nhà cung cấp", "error");
     }
   };
 
-  // ✅ Lưu (thêm/sửa)
+  // GIỐNG HỆT BRANDS.JSX – CHUẨN HOÀN HẢO!
   const onSave = async () => {
+    // 1. Validate nhanh ở frontend (UX tốt)
+    if (!form.tenNcc?.trim()) return showMessage("Vui lòng nhập tên nhà cung cấp", "error");
+    if (!form.diaChi?.trim()) return showMessage("Vui lòng nhập địa chỉ", "error");
+    if (!form.sdt?.trim()) return showMessage("Vui lòng nhập số điện thoại", "error");
+    if (!form.email?.trim()) return showMessage("Vui lòng nhập email", "error");
+    if (!form.ghiChu?.trim()) return showMessage("Vui lòng nhập ghi chú", "error");
+
     const payload = {
       tenNcc: form.tenNcc.trim(),
-      diaChi: form.diaChi?.trim(),
-      sdt: form.sdt?.trim(),
-      email: form.email?.trim(),
-      ghiChu: form.ghiChu?.trim(),
+      diaChi: form.diaChi.trim(),
+      sdt: form.sdt.trim(),
+      email: form.email.trim().toLowerCase(),
+      ghiChu: form.ghiChu.trim(),
     };
 
     try {
-      const res = await fetch(editing ? `${API_URL}/${form.idNcc}` : API_URL, {
-        method: editing ? "PUT" : "POST",
-        headers: { "Content-Type": "application/json",  "Authorization": `Bearer ${token}`, },
-        body: JSON.stringify(payload),
-      });
+      const res = await fetch(
+        editing ? `${API_URL}/${editing.idNcc}` : API_URL,
+        {
+          method: editing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify(payload),
+        }
+      );
+
+      const data = await res.json();
 
       if (!res.ok) {
-        const errData = await res.json().catch(() => ({}));
-        throw new Error(errData.message || "Lỗi khi lưu dữ liệu");
+        throw new Error(data.message || "Lưu nhà cung cấp thất bại");
       }
 
-      setShowModal(false);
-      setEditing(null);
-      fetchSuppliers();
+      // Thành công
+      setSuppliers((prev) =>
+        editing
+          ? prev.map((s) => (s.idNcc === data.idNcc ? data : s))
+          : [...prev, data]
+      );
 
-      setMessage({
-        text: editing
-          ? "✅ Cập nhật nhà cung cấp thành công!"
-          : "✅ Thêm nhà cung cấp thành công!",
-        type: "success",
-      });
-      setTimeout(() => setMessage({ text: "", type: "" }), 2000);
+      setShowModal(false);
+      showMessage(
+        editing ? "Cập nhật nhà cung cấp thành công!" : "Thêm nhà cung cấp thành công!"
+      );
     } catch (err) {
-      setMessage({ text: "❌ " + err.message, type: "error" });
+      // Lỗi chi tiết từ backend
+      showMessage(err.message || "Lỗi khi lưu nhà cung cấp", "error");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    setMessage({ text: "", type: "" }); // Xóa thông báo khi người dùng nhập lại
+    if (message.text) setMessage({ text: "", type: "" });
   };
 
   return (
@@ -307,15 +325,4 @@ export default function Suppliers() {
       )}
     </div>
   );
-}
-
-function emptySupplier() {
-  return {
-      idNcc: "",
-      tenNcc: "",
-      diaChi: "",
-      sdt: "",
-      email: "",
-      ghiChu: "",
-  };
 }

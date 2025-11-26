@@ -6,6 +6,7 @@ export default function ReceiptManager({
   suppliers,
   form,
   editing,
+  handleChange,
   search,
   showModal,
   selectedReceipt,
@@ -21,6 +22,7 @@ export default function ReceiptManager({
   onSearch,
   onView,
   onCloseView,
+  message,
 }) {
   const filtered = receipts.filter(r =>
     r.idPhieuNhap.toString().includes(search.toLowerCase()) ||
@@ -51,6 +53,11 @@ export default function ReceiptManager({
           />
         </div>
       </div>
+      {message.type === "success" && message.text && (
+        <div className="m-3 py-2 px-3 rounded bg-success text-white">
+          {message.text}
+        </div>
+      )}
 
       {/* Table danh sách phiếu nhập */}
       <div className="card-body p-0">
@@ -100,6 +107,9 @@ export default function ReceiptManager({
                 <button type="button" className="btn-close" onClick={onClose}></button>
               </div>
               <div className="modal-body">
+                {message.type === "error" && message.text && (
+                  <div className="alert alert-danger py-2">{message.text}</div>
+                )}
                 {/* Form thông tin phiếu nhập */}
                 <div className="mb-3">
                   <label className="form-label">Nhà cung cấp</label>
@@ -115,7 +125,7 @@ export default function ReceiptManager({
                       className="form-select"
                       name="idNcc"
                       value={form.idNcc}
-                      onChange={onChange}
+                      onChange={handleChange}
                     >
                       <option value="">-- Chọn nhà cung cấp --</option>
                       {suppliers.map(s => (

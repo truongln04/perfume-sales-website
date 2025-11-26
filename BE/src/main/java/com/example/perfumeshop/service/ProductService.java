@@ -2,17 +2,16 @@ package com.example.perfumeshop.service;
 
 import com.example.perfumeshop.dto.ProductRequest;
 import com.example.perfumeshop.dto.ProductResponse;
-import com.example.perfumeshop.entity.Product;
-import com.example.perfumeshop.entity.Warehouse;
-import com.example.perfumeshop.repository.ProductRepository;
-import com.example.perfumeshop.repository.WarehouseRepository;
-import com.example.perfumeshop.repository.CategoryRepository;
-import com.example.perfumeshop.repository.BrandRepository;
+import com.example.perfumeshop.entity.*;
+import com.example.perfumeshop.repository.*;
+import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
+import java.math.BigDecimal;
 import java.util.List;
+import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 @Service
@@ -24,27 +23,26 @@ public class ProductService {
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
 
-    public List<ProductResponse> getAll() {
-        return productRepository.findAll().stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
-    }
+    // ==================== REGEX PATTERNS ====================
+    private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-ZÀ-ỹ0-9\\s\\-&'()]{3,100}$");
+    private static final Pattern DESCRIPTION_PATTERN = Pattern.compile("^.{10,}$");
+    private static final Pattern IMAGE_URL_PATTERN = Pattern.compile("^https?://.+\\.(png|jpe?g|gif|webp|svg)(\\?.*)?$", Pattern.CASE_INSENSITIVE);
 
+    // ==================== CREATE PRODUCT ====================
     public ProductResponse create(ProductRequest request) {
+        validateCreateRequest(request);
+
         Product product = toEntity(request);
 
-        // ✅ Gán danh mục và thương hiệu trước khi lưu
-        if (request.getIdDanhMuc() != null) {
-            product.setDanhMuc(categoryRepository.findById(request.getIdDanhMuc()).orElse(null));
-        }
-
-        if (request.getIdthuonghieu() != null) {
-            product.setThuonghieu(brandRepository.findById(request.getIdthuonghieu()).orElse(null));
-        }
+        // Gán danh mục và thương hiệu
+        product.setDanhMuc(categoryRepository.findById(request.getIdDanhMuc())
+                .orElseThrow(() -> new ValidationException("Không tìm thấy danh mục")));
+        product.setThuonghieu(brandRepository.findById(request.getIdthuonghieu())
+                .orElseThrow(() -> new ValidationException("Không tìm thấy thương hiệu")));
 
         Product savedProduct = productRepository.save(product);
 
-        // ✅ Tạo kho hàng ban đầu
+        // Tạo kho hàng ban đầu
         Warehouse warehouse = new Warehouse();
         warehouse.setSanPham(savedProduct);
         warehouse.setSoLuongNhap(0);
@@ -53,39 +51,138 @@ public class ProductService {
 
         return toResponse(savedProduct);
     }
-    public ProductResponse getById(Integer id) {
-        Product product = productRepository.findById(id)
-            .orElseThrow(() -> new RuntimeException("Không tìm thấy sản phẩm với id: " + id));
-        return toResponse(product);
-    }
 
+    // ==================== UPDATE PRODUCT ====================
     public ProductResponse update(Integer id, ProductRequest request) {
-        Product product = productRepository.findById(id).orElseThrow();
+        Product product = productRepository.findById(id)
+                .orElseThrow(() -> new ValidationException("Không tìm thấy sản phẩm với ID: " + id));
+
+        validateUpdateRequest(request, product.getTenSanPham());
 
         BeanUtils.copyProperties(request, product, "idSanPham", "ngayTao");
 
-        // ✅ Cập nhật danh mục và thương hiệu nếu có
         if (request.getIdDanhMuc() != null) {
-            product.setDanhMuc(categoryRepository.findById(request.getIdDanhMuc()).orElse(null));
+            product.setDanhMuc(categoryRepository.findById(request.getIdDanhMuc())
+                    .orElseThrow(() -> new ValidationException("Không tìm thấy danh mục")));
         }
-
         if (request.getIdthuonghieu() != null) {
-            product.setThuonghieu(brandRepository.findById(request.getIdthuonghieu()).orElse(null));
+            product.setThuonghieu(brandRepository.findById(request.getIdthuonghieu())
+                    .orElseThrow(() -> new ValidationException("Không tìm thấy thương hiệu")));
         }
 
         return toResponse(productRepository.save(product));
     }
 
+    // ==================== DELETE ====================
     public void delete(Integer id) {
+        if (!productRepository.existsById(id)) {
+            throw new ValidationException("Không tìm thấy sản phẩm để xóa");
+        }
         productRepository.deleteById(id);
     }
 
-    public List<ProductResponse> search(String keyword) {
-        return productRepository.findByTenSanPhamContainingIgnoreCase(keyword).stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
+    // ==================== GET ALL & SEARCH ====================
+    public List<ProductResponse> getAll() {
+        return productRepository.findAll().stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
     }
 
+    public List<ProductResponse> search(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new ValidationException("Từ khóa tìm kiếm không được để trống");
+        }
+        return productRepository.findByTenSanPhamContainingIgnoreCase(keyword.trim())
+                .stream()
+                .map(this::toResponse)
+                .collect(Collectors.toList());
+    }
+
+    public ProductResponse getById(Integer id) {
+        return productRepository.findById(id)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ValidationException("Không tìm thấy sản phẩm với ID: " + id));
+    }
+
+    // ==================== VALIDATION – CHỈ DÙNG CÁC FIELD CHẮC CHẮN CÓ ====================
+    private void validateCreateRequest(ProductRequest request) {
+        // 1. Tên sản phẩm
+        if (request.getTenSanPham() == null || request.getTenSanPham().trim().isEmpty()) {
+            throw new ValidationException("Vui lòng nhập tên sản phẩm");
+        }
+        String tenSanPham = request.getTenSanPham().trim();
+        if (!NAME_PATTERN.matcher(tenSanPham).matches()) {
+            throw new ValidationException("Tên sản phẩm phải từ 3-100 ký tự, chỉ chứa chữ cái, số, khoảng trắng và ký tự &-'()");
+        }
+        if (productRepository.existsByTenSanPhamIgnoreCase(tenSanPham)) {
+            throw new ValidationException("Tên sản phẩm '" + tenSanPham + "' đã tồn tại");
+        }
+
+        // 2. Mô tả
+        if (request.getMoTa() == null || request.getMoTa().trim().isEmpty()) {
+    throw new ValidationException("Vui lòng nhập mô tả sản phẩm");
+}
+String moTa = request.getMoTa().trim();
+if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
+    throw new ValidationException("Mô tả sản phẩm phải có ít nhất 10 ký tự");
+}
+
+       
+
+        // 4. Danh mục & thương hiệu (bắt buộc)
+        if (request.getIdDanhMuc() == null) {
+            throw new ValidationException("Vui lòng chọn danh mục");
+        }
+        if (request.getIdthuonghieu() == null) {
+            throw new ValidationException("Vui lòng chọn thương hiệu");
+        }
+
+        // 5. Hình ảnh (bắt buộc)
+        if (request.getHinhAnh() == null || request.getHinhAnh().trim().isEmpty()) {
+            throw new ValidationException("Vui lòng nhập URL hình ảnh sản phẩm");
+        }
+        if (!IMAGE_URL_PATTERN.matcher(request.getHinhAnh().trim()).matches()) {
+            throw new ValidationException("URL hình ảnh không hợp lệ (png, jpg, jpeg, gif, webp, svg)");
+        }
+    }
+
+    private void validateUpdateRequest(ProductRequest request, String currentTenSanPham) {
+        // 1. Tên sản phẩm
+        if (request.getTenSanPham() == null || request.getTenSanPham().trim().isEmpty()) {
+            throw new ValidationException("Vui lòng nhập tên sản phẩm");
+        }
+        String tenSanPham = request.getTenSanPham().trim();
+        if (!NAME_PATTERN.matcher(tenSanPham).matches()) {
+            throw new ValidationException("Tên sản phẩm phải từ 3-100 ký tự, chỉ chứa chữ cái, số, khoảng trắng và ký tự &-'()");
+        }
+        if (!tenSanPham.equalsIgnoreCase(currentTenSanPham)
+                && productRepository.existsByTenSanPhamIgnoreCase(tenSanPham)) {
+            throw new ValidationException("Tên sản phẩm '" + tenSanPham + "' đã được sử dụng");
+        }
+
+        // 2. Mô tả
+        if (request.getMoTa() == null || request.getMoTa().trim().isEmpty()) {
+    throw new ValidationException("Vui lòng nhập mô tả sản phẩm");
+}
+String moTa = request.getMoTa().trim();
+if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
+    throw new ValidationException("Mô tả sản phẩm phải có ít nhất 10 ký tự");
+}
+
+        // 3. Giá bán
+        if (request.getGiaBan() != null && request.getGiaBan().compareTo(BigDecimal.ZERO) <= 0) {
+            throw new ValidationException("Giá bán phải lớn hơn 0");
+        }
+
+        // 4. Hình ảnh (tùy chọn khi sửa)
+        if (request.getHinhAnh() != null && !request.getHinhAnh().trim().isEmpty()) {
+            if (!IMAGE_URL_PATTERN.matcher(request.getHinhAnh().trim()).matches()) {
+                throw new ValidationException("URL hình ảnh không hợp lệ");
+            }
+        }
+    }
+
+    // ==================== UTILITY ====================
     private Product toEntity(ProductRequest request) {
         Product product = new Product();
         BeanUtils.copyProperties(request, product);
@@ -96,44 +193,36 @@ public class ProductService {
         ProductResponse response = new ProductResponse();
         BeanUtils.copyProperties(product, response);
 
-        // ✅ Gán tên danh mục và thương hiệu
         if (product.getDanhMuc() != null) {
             response.setIdDanhMuc(product.getDanhMuc().getIdDanhMuc());
             response.setTenDanhMuc(product.getDanhMuc().getTenDanhMuc());
         }
-
         if (product.getThuonghieu() != null) {
             response.setIdthuonghieu(product.getThuonghieu().getIdthuonghieu());
             response.setTenthuonghieu(product.getThuonghieu().getTenthuonghieu());
         }
 
-        // ✅ Gán số lượng tồn từ kho
         Warehouse warehouse = warehouseRepository.findBySanPham(product);
         response.setSoLuongTon(warehouse != null
-            ? warehouse.getSoLuongNhap() - warehouse.getSoLuongBan()
-            : 0);
+                ? warehouse.getSoLuongNhap() - warehouse.getSoLuongBan()
+                : 0);
 
         return response;
     }
 
+    // Các method khác giữ nguyên...
     public List<ProductResponse> getProductsByBrandId(Integer brandId) {
-    return productRepository.findByThuonghieu_IdthuonghieuAndTrangThai(brandId, true).stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
-}
+        return productRepository.findByThuonghieu_IdthuonghieuAndTrangThai(brandId, true)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
 
-public List<ProductResponse> getProductsByCategoryId(Integer categoryId) {
-    return productRepository.findByDanhMuc_IdDanhMucAndTrangThai(categoryId, true).stream()
-            .map(this::toResponse)
-            .collect(Collectors.toList());
-}
-
+    public List<ProductResponse> getProductsByCategoryId(Integer categoryId) {
+        return productRepository.findByDanhMuc_IdDanhMucAndTrangThai(categoryId, true)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
 
     public List<ProductResponse> getActiveProducts() {
-    List<Product> products = productRepository.findByTrangThai(true); // true = đang bán
-    return products.stream()
-                   .map(this::toResponse)
-                   .collect(Collectors.toList());
-}
-
+        return productRepository.findByTrangThai(true)
+                .stream().map(this::toResponse).collect(Collectors.toList());
+    }
 }

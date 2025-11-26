@@ -8,4 +8,6 @@ import com.example.perfumeshop.entity.Category;
 
 public interface CategoryRepository extends JpaRepository<Category, Integer> {
     List<Category> findByTenDanhMucContainingIgnoreCase(String keyword);
+
+    boolean existsByTenDanhMucIgnoreCase(String tenDanhMuc);
 }

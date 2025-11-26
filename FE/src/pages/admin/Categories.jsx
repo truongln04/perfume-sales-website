@@ -1,30 +1,41 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
+
+function emptyCategory() {
+  return {
+    idDanhMuc: "",
+    tenDanhMuc: "",
+    moTa: "",
+  };
+}
 
 export default function Categories() {
   const [categories, setCategories] = useState([]);
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
-  const [form, setForm] = useState({ idDanhMuc: "", tenDanhMuc: "", moTa: "" });
   const [editing, setEditing] = useState(null);
+  const [form, setForm] = useState(emptyCategory());
+
+  // Gộp lỗi + thông báo thành công 
+  const [message, setMessage] = useState({ text: "", type: "" });
 
   const API_URL = "http://localhost:8081/categories";
   const token = localStorage.getItem("token");
 
-  // Load all categories
+  const showMessage = (text, type = "success") => {
+    setMessage({ text, type });
+    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  };
+
   const fetchCategories = async () => {
     try {
       const res = await fetch(API_URL, {
-        headers: {
-          "Authorization": `Bearer ${token}`, // ✅ gửi token
-        },
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) {
-        throw new Error(`HTTP error ${res.status}`);
-      }
+      if (!res.ok) throw new Error("Không thể tải danh sách");
       const data = await res.json();
       setCategories(data);
     } catch (err) {
-      console.error("Failed to fetch categories", err);
+      showMessage("Lỗi tải danh sách danh mục", "error");
     }
   };
 
@@ -32,7 +43,6 @@ export default function Categories() {
     fetchCategories();
   }, []);
 
-  // Search categories by name
   const handleSearch = async (value) => {
     setSearch(value);
     if (!value.trim()) {
@@ -40,16 +50,14 @@ export default function Categories() {
       return;
     }
     try {
-     const res = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(value)}`, {
-        headers: {
-          "Authorization": `Bearer ${token}`, // ✅ gửi token
-        },
+      const res = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(value)}`, {
+        headers: { Authorization: `Bearer ${token}` },
       });
-      if (!res.ok) throw new Error(`HTTP error ${res.status}`);
+      if (!res.ok) throw new Error("Tìm kiếm thất bại");
       const data = await res.json();
       setCategories(data);
     } catch (err) {
-      console.error("Search failed", err);
+      showMessage("Lỗi tìm kiếm", "error");
     }
   };
 
@@ -59,72 +67,87 @@ export default function Categories() {
 
   const onAdd = () => {
     setEditing(null);
-    setForm({  idDanhMuc: "", tenDanhMuc: "", moTa: ""});
+    setForm(emptyCategory());
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onEdit = (category) => {
     setEditing(category);
     setForm({ ...category });
+    setMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onDelete = async (idDanhMuc) => {
-    if (window.confirm("Xóa danh mục này?")) {
-      try {
-        await fetch(`${API_URL}/${idDanhMuc}`, {
-          method: "DELETE",
-          headers: {
-            "Authorization": `Bearer ${token}`, // ✅ gửi token
-          },
-        });
-        fetchCategories();
-      } catch (err) {
-        console.error("Delete failed", err);
+    if (!window.confirm("Xóa danh mục này?")) return;
+    try {
+      const res = await fetch(`${API_URL}/${idDanhMuc}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(err.message || "Không thể xóa");
       }
+      fetchCategories();
+      showMessage("Xóa danh mục thành công!");
+    } catch (err) {
+      showMessage(err.message || "Lỗi khi xóa danh mục", "error");
     }
   };
 
+
   const onSave = async () => {
-    if (!form.tenDanhMuc.trim()) {
-      alert("Vui lòng nhập tên danh mục");
-      return;
-    }
+    // 1. Validate nhanh ở frontend (UX tốt)
+    if (!form.tenDanhMuc.trim()) return showMessage("Vui lòng nhập tên danh mục", "error");
+    if (!form.moTa.trim()) return showMessage("Vui lòng nhập mô tả", "error");
 
     const payload = {
       tenDanhMuc: form.tenDanhMuc.trim(),
-      moTa: form.moTa.trim() || "Chưa có mô tả",
+      moTa: form.moTa.trim(),
     };
 
     try {
-      if (editing) {
-        await fetch(`${API_URL}/${editing.idDanhMuc}`, {
-          method: "PUT",
-          headers: { "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`, // ✅ gửi token
-           },
+      const res = await fetch(
+        editing ? `${API_URL}/${editing.idDanhMuc}` : API_URL,
+        {
+          method: editing ? "PUT" : "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
           body: JSON.stringify(payload),
-        });
-      } else {
-        await fetch(API_URL, {
-          method: "POST",
-          headers: { "Content-Type": "application/json",
-            "Authorization": `Bearer ${token}`, // ✅ gửi token
-           },
-          body: JSON.stringify(payload),
-        });
+        }
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Lưu danh mục thất bại");
       }
+
+      // Thành công
+      setCategories((prev) =>
+        editing
+          ? prev.map((c) => (c.idDanhMuc === data.idDanhMuc ? data : c))
+          : [...prev, data]
+      );
+
       setShowModal(false);
-      setEditing(null);
-      fetchCategories();
+      showMessage(
+        editing ? "Cập nhật danh mục thành công!" : "Thêm danh mục thành công!"
+      );
     } catch (err) {
-      console.error("Save failed", err);
+      // Lỗi chi tiết từ backend
+      showMessage(err.message || "Lỗi khi lưu danh mục", "error");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setForm(prev => ({ ...prev, [name]: value }));
+    setForm((prev) => ({ ...prev, [name]: value }));
+    if (message.text) setMessage({ text: "", type: "" });
   };
 
   return (
@@ -144,6 +167,12 @@ export default function Categories() {
           </div>
         </div>
       </div>
+
+      {message.type === "success" && message.text && (
+        <div className="m-3 py-2 px-3 rounded bg-success text-white">
+          {message.text}
+        </div>
+      )}
 
       <div className="card-body p-0">
         <table className="table table-hover table-striped m-0">
@@ -187,6 +216,9 @@ export default function Categories() {
                 <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
               </div>
               <div className="modal-body">
+                {message.type === "error" && message.text && (
+                  <div className="alert alert-danger py-2">{message.text}</div>
+                )}
                 <div className="mb-3">
                   <label className="form-label">Tên danh mục</label>
                   <input

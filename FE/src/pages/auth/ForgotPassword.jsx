@@ -6,18 +6,33 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [isSending, setIsSending] = useState(false); // 🟢 Thêm state cho trạng thái gửi
+  const [isSending, setIsSending] = useState(false);
+
+  // Thêm state cho thông báo giao diện
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
   const navigate = useNavigate();
+
+  const showError = (msg) => {
+    setError(msg);
+    setSuccess("");
+    setTimeout(() => setError(""), 8000);
+  };
+
+  const showSuccess = (msg) => {
+    setSuccess(msg);
+    setError("");
+    setTimeout(() => setSuccess(""), 8000);
+  };
 
   // Bước 1: gửi mã xác thực
   const handleSendResetLink = async () => {
-    if (!email.trim()) {
-      alert("Vui lòng nhập email!");
-      return;
-    }
+    if (!email.trim()) return showError("Vui lòng nhập email!");
 
     try {
-      setIsSending(true); // 🟡 Bắt đầu gửi
+      setIsSending(true);
+
       const res = await fetch("http://localhost:8081/auth/send-reset-code", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -25,25 +40,24 @@ export default function ForgotPassword() {
       });
 
       const msg = await res.text();
+
       if (!res.ok) {
-        alert("❌ " + msg);
-        return;
+        return showError(msg);
       }
 
-      alert("✅ Mã xác thực đã được gửi đến email của bạn.");
+      showSuccess("Mã xác thực đã được gửi đến email của bạn!");
       setStep(2);
     } catch (err) {
-      alert("⚠️ Lỗi kết nối máy chủ: " + err.message);
+      showError("Lỗi kết nối máy chủ. Vui lòng thử lại sau.");
     } finally {
-      setIsSending(false); // 🔵 Dừng trạng thái gửi
+      setIsSending(false);
     }
   };
 
   // Bước 2: đặt lại mật khẩu
   const handleResetPassword = async () => {
     if (!code.trim() || !newPassword.trim()) {
-      alert("Vui lòng nhập đầy đủ thông tin!");
-      return;
+      return showError("Vui lòng nhập đầy đủ thông tin!");
     }
 
     try {
@@ -54,25 +68,40 @@ export default function ForgotPassword() {
       });
 
       const msg = await res.text();
+
       if (!res.ok) {
-        alert("❌ " + msg);
-        return;
+        return showError(msg);
       }
 
-      alert("✅ Mật khẩu đã được đặt lại thành công!");
-      navigate("/login");
+      showSuccess("Mật khẩu đã được đặt lại thành công!");
+      setTimeout(() => navigate("/login"), 1500);
     } catch (err) {
-      alert("⚠️ Lỗi kết nối máy chủ: " + err.message);
+      showError("Lỗi kết nối máy chủ. Vui lòng thử lại sau.");
     }
   };
 
   return (
-    <div
+     <div
       className="d-flex justify-content-center align-items-center"
-      style={{ minHeight: "100vh" }}
+      style={{ minHeight: "100vh", background: "linear-gradient(to right, #f8f9fa, #e3f2fd)" }}
     >
       <div className="card p-4" style={{ maxWidth: 480, width: "100%" }}>
         <h3 className="text-center mb-4">🔐 Quên mật khẩu</h3>
+
+        {/* Hiển thị lỗi */}
+        {error && (
+          <div className="alert alert-danger mb-3">
+            <strong>Lỗi:</strong> {error}
+          </div>
+        )}
+
+        {/* Hiển thị thông báo thành công */}
+        {success && (
+          <div className="alert alert-success mb-3">
+            {success}
+          </div>
+        )}
+
 
         {step === 1 && (
           <>
@@ -84,7 +113,7 @@ export default function ForgotPassword() {
               onChange={(e) => setEmail(e.target.value)}
             />
             <button
-              className="btn btn-success w-100"
+              className="btn btn-primary w-100"
               onClick={handleSendResetLink}
               disabled={isSending} // 🟠 Vô hiệu khi đang gửi
             >
@@ -109,7 +138,7 @@ export default function ForgotPassword() {
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
             />
-            <button className="btn btn-success w-100" onClick={handleResetPassword}>
+            <button className="btn btn-primary w-100" onClick={handleResetPassword}>
               🔑 Đặt lại mật khẩu
             </button>
           </>

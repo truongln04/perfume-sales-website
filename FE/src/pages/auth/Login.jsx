@@ -6,88 +6,96 @@ export default function Login({ onLogin }) {
   const [email, setEmail] = useState("");
   const [matKhau, setMatKhau] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [error, setError] = useState(""); // State để hiển thị lỗi đẹp
   const navigate = useNavigate();
 
-  // 🔸 Đăng nhập bằng tài khoản thông thường
-  const handleLogin = async () => {
+  // Hàm hiển thị lỗi (có thể thay bằng toastify sau)
+  const showError = (message) => {
+    setError(message);
+    setTimeout(() => setError(""), 5000); // Tự mất sau 5 giây
+  };
+
+  // Đăng nhập bằng email + mật khẩu
+  const handleLogin = async (e) => {
+    e.preventDefault();
+    setError("");
+
+    if (!email.trim()) return showError("Vui lòng nhập email");
+    if (!matKhau) return showError("Vui lòng nhập mật khẩu");
+
     try {
       const res = await fetch("http://localhost:8081/auth/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password: matKhau }),
+        body: JSON.stringify({ email: email.trim(), password: matKhau }),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err.message || "Sai tài khoản hoặc mật khẩu!");
+        // Backend trả lỗi chuẩn: { message: "...", status: 400 }
+        const errorMsg = data.message || "Đăng nhập thất bại. Vui lòng thử lại!";
+        showError(errorMsg);
         return;
       }
 
-      const user = await res.json();
-      const role = user.vaiTro?.toUpperCase();
+      // Thành công
+      localStorage.setItem("user", JSON.stringify(data));
+      localStorage.setItem("token", data.token);
 
-      // ✅ Lưu user
-      localStorage.setItem("user", JSON.stringify(user));
-      localStorage.setItem("token", user.token); // ✅ lưu token để dùng cho các API sau
+      if (onLogin) onLogin(data);
 
-      // ✅ Cập nhật state user ở App.jsx để component render lại ngay
-      if (onLogin) onLogin(user);
-
-      // ✅ Điều hướng theo vai trò
+      const role = data.vaiTro?.toUpperCase();
       if (role === "ADMIN" || role === "NHANVIEN") {
         alert("Đăng nhập quản trị thành công!");
-        navigate("/");
-      } else if (role === "KHACHHANG") {
-        alert("Đăng nhập khách hàng thành công!");
-        navigate("/");
       } else {
-        alert("Không xác định quyền truy cập!");
+        alert("Đăng nhập thành công!");
       }
+      navigate("/");
     } catch (err) {
-      alert("Lỗi kết nối máy chủ: " + err.message);
+      showError("Lỗi kết nối đến máy chủ. Vui lòng thử lại sau.");
+      console.error("Login error:", err);
     }
   };
 
-  // 🔸 Đăng nhập Google thật
+  // Đăng nhập Google
   const handleGoogleLogin = async (credentialResponse) => {
-  try {
-    // ✅ Lấy token Google do SDK trả về
-    const credential = credentialResponse.credential;
+    setError("");
+    try {
+      const credential = credentialResponse.credential;
+      if (!credential) {
+        showError("Không nhận được thông tin từ Google");
+        return;
+      }
 
-    console.log("Google Credential:", credential);
+      const res = await fetch("http://localhost:8081/auth/google", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ credential }),
+      });
 
-    // ✅ Gửi token Google lên backend để xác minh và xử lý user
-    const res = await fetch("http://localhost:8081/auth/google", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ credential }), // Gửi thô credential
-    });
+      const data = await res.json();
 
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || "Không thể đăng nhập với Google");
+      if (!res.ok) {
+        const errorMsg = data.message || "Đăng nhập Google thất bại";
+        showError(errorMsg);
+        return;
+      }
+
+      // Thành công
+      localStorage.setItem("user", JSON.stringify(data));
+      localStorage.setItem("token", data.token);
+
+      if (onLogin) onLogin(data);
+
+      alert("Đăng nhập với Google thành công!");
+      navigate("/");
+      window.dispatchEvent(new Event("account-updated"));
+    } catch (err) {
+      showError("Lỗi khi kết nối với máy chủ Google");
+      console.error("Google login error:", err);
     }
-
-    const savedUser = await res.json();
-
-    // ✅ Lưu user và token (nếu backend trả token JWT)
-    localStorage.setItem("user", JSON.stringify(savedUser));
-    localStorage.setItem("token", savedUser.token);
-
-    // ✅ Cập nhật state / context
-    if (onLogin) onLogin(savedUser);
-
-    // ✅ Thông báo và điều hướng
-    alert("Đăng nhập Google thành công!");
-    navigate("/");
-
-    // ✅ Kích hoạt sự kiện để component khác reload
-    window.dispatchEvent(new Event("account-updated"));
-  } catch (err) {
-    alert("Lỗi khi đăng nhập Google: " + err.message);
-    console.error("Lỗi đăng nhập Google:", err);
-  }
-};
+  };
 
   return (
     <div
@@ -98,6 +106,7 @@ export default function Login({ onLogin }) {
         {/* Đăng nhập */}
         <div className="col-md-6 p-5">
           <h3 className="mb-4 text-center text-primary fw-bold">Đăng nhập</h3>
+          {error && <div className="alert alert-danger">{error}</div>}
           <div className="mb-3">
             <label className="form-label">📧 Email</label>
             <input
@@ -138,13 +147,13 @@ export default function Login({ onLogin }) {
               🔑 Đăng nhập
             </button>
             <GoogleLogin
-            onSuccess={handleGoogleLogin}
-            onError={() => alert("Đăng nhập Google thất bại")} 
-            shape="pill"
-             style={{ width: "100%" }}
-            text="signin_with"
-            locale="vi"
-          />
+              onSuccess={handleGoogleLogin}
+              onError={() => alert("Đăng nhập Google thất bại")}
+              shape="pill"
+              style={{ width: "100%" }}
+              text="signin_with"
+              locale="vi"
+            />
           </div>
         </div>
 

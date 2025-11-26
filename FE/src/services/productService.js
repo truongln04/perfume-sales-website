@@ -9,9 +9,11 @@ export const searchProducts = (keyword) =>
 export const deleteProduct = (id) => apiDelete(`/products/${id}`);
 
 export const saveProduct = (product, editingId) => {
+  const url = editingId ? `/products/${editingId}` : "/products";
+
   return editingId
-    ? apiPut(`/products/${editingId}`, product)
-    : apiPost("/products", product);
+    ? apiPut(url, product, true)  // gửi kèm token
+    : apiPost(url, product, true); // gửi kèm token
 };
 
 export const fetchDanhMucs = () => apiGet("/categories");

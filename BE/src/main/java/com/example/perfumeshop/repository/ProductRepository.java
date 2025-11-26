@@ -20,4 +20,6 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
     // Lấy theo categoryId và trạng thái
     List<Product> findByDanhMuc_IdDanhMucAndTrangThai(Integer categoryId, Boolean trangThai);
 
+    boolean existsByTenSanPhamIgnoreCase(String tenSanPham);
+
 }

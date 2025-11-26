@@ -5,30 +5,55 @@ export default function Register() {
   const [tenHienThi, setTenHienThi] = useState("");
   const [email, setEmail] = useState("");
   const [matKhau, setMatKhau] = useState("");
+  const [nhapLai, setNhapLai] = useState("");
   const [sdt, setSdt] = useState("");
   const [anhDaiDien, setAnhDaiDien] = useState("");
-  const [nhapLai, setNhapLai] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-  const handleRegister = async () => {
-    if (!tenHienThi.trim() || !email.trim() || !matKhau.trim()) {
-      alert("⚠️ Vui lòng nhập đầy đủ thông tin!");
-      return;
-    }
+  // Hiển thị lỗi (tự mất sau 5s)
+  const showError = (msg) => {
+    setError(msg);
+    setTimeout(() => setError(""), 5000);
+  };
 
-    if (matKhau !== nhapLai) {
-      alert("❌ Mật khẩu không khớp!");
-      return;
-    }
+  const handleRegister = async (e) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
 
+    // === Client-side validation cơ bản ===
+    if (!tenHienThi.trim()) return showError("Vui lòng nhập tên hiển thị");
+    if (tenHienThi.trim().length < 3 || tenHienThi.trim().length > 33)
+      return showError("Tên hiển thị phải từ 3 đến 33 ký tự");
+
+    // Email: dùng đúng regex backend (hỗ trợ +, _, ., -)
+    if (!email.trim()) return showError("Vui lòng nhập email");
+    if (!/^[A-Za-z0-9+_.-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/.test(email.trim()))
+      return showError("Email không hợp lệ");
+
+    // Số điện thoại: dùng đúng PHONE_PATTERN backend + bắt buộc nhập
+    if (!sdt.trim()) return showError("Vui lòng nhập số điện thoại");
+    if (!/^0[3|5|7|8|9]\d{8}$/.test(sdt.trim()))
+      return showError("Số điện thoại không hợp lệ. Phải bắt đầu bằng 0 và đúng 10 số");
+
+    // Mật khẩu: dùng đúng PASSWORD_PATTERN backend
+    if (!matKhau) return showError("Vui lòng nhập mật khẩu");
+    if (!/^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d@$!%*?&]{8,}$/.test(matKhau))
+      return showError("Mật khẩu phải có ít nhất 8 ký tự, bao gồm chữ cái và số (có thể có ký tự đặc biệt)");
+
+    if (matKhau !== nhapLai) return showError("Mật khẩu nhập lại không khớp");
+
+    // === Gửi request ===
     const newUser = {
-  tenHienThi: tenHienThi,   
-  email: email,
-  matKhau: matKhau,
-  sdt: sdt,                 
-  anhDaiDien: anhDaiDien,   
-  vaiTro: "KHACHHANG",
-};
+      tenHienThi: tenHienThi.trim(),
+      email: email.trim().toLowerCase(),
+      matKhau,
+      sdt: sdt.trim(),
+      anhDaiDien: anhDaiDien || null,
+      vaiTro: "KHACHHANG",
+    };
 
     try {
       const res = await fetch("http://localhost:8081/auth/register", {
@@ -37,16 +62,23 @@ export default function Register() {
         body: JSON.stringify(newUser),
       });
 
+      const data = await res.json();
+
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        alert(err.message || "❌ Đăng ký thất bại!");
+        // Backend trả lỗi chuẩn: { message: "..." }
+        const msg = data.message || "Đăng ký thất bại. Vui lòng thử lại!";
+        showError(msg);
         return;
       }
 
-      alert("✅ Đăng ký thành công!");
+      // Thành công
+      alert("Đăng ký thành công! Vui lòng đăng nhập.");
       navigate("/login");
     } catch (err) {
-      alert("⚠️ Lỗi kết nối máy chủ: " + err.message);
+      showError("Lỗi kết nối máy chủ. Vui lòng thử lại sau.");
+      console.error("Register error:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -59,6 +91,11 @@ export default function Register() {
         {/* Đăng ký */}
         <div className="col-md-6 p-5">
           <h3 className="mb-4 text-center text-primary fw-bold">Đăng kí</h3>
+          {/* Hiển thị lỗi */}
+          {error && (
+            <div className="alert alert-danger alert-dismissible fade show mb-4" role="alert"> {error}
+            </div>
+          )}
           <div className="mb-3">
             <label className="form-label">👤 Họ và tên</label>
             <input
@@ -79,17 +116,16 @@ export default function Register() {
             />
           </div>
           <div className="mb-3">
-      <label className="form-label">📱 Số điện thoại</label>
-      <input
-        type="text"
-        className="form-control"
-        value={sdt}
-        onChange={e => setSdt(e.target.value)}
-        placeholder="Nhập số điện thoại"
-      />
-    </div>
+            <label className="form-label">📱 Số điện thoại</label>
+            <input
+              type="text"
+              className="form-control"
+              value={sdt}
+              onChange={e => setSdt(e.target.value.replace(/\D/g, ""))}
+              placeholder="Nhập số điện thoại"
+            />
+          </div>
 
-    
           <div className="mb-3">
             <label className="form-label">🔒 Mật khẩu</label>
             <input

@@ -8,4 +8,8 @@ public interface AccountRepository extends JpaRepository<Account, Integer> {
     Optional<Account> findByEmail(String email);
     List<Account> findByTenHienThiContainingIgnoreCase(String tenHienThi);
     List<Account> findByVaiTro(String vaiTro);
+    boolean existsByEmail(String trim);
+    boolean existsByEmailIgnoreCase(String email);
+    boolean existsBySdt(String sdt);
+    Optional<Account> findBySdt(String sdt);
 }
