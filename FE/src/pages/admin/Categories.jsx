@@ -87,13 +87,16 @@ export default function Categories() {
         headers: { Authorization: `Bearer ${token}` },
       });
       if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Không thể xóa");
+        const errData = await res.json().catch(() => ({}));
+      const message =
+        errData.message || errData.error || "Không thể xóa danh mục";
+      throw new Error(message);
       }
       fetchCategories();
-      showMessage("Xóa danh mục thành công!");
+      showMessage("Xóa danh mục thành công!", "success");
     } catch (err) {
-      showMessage(err.message || "Lỗi khi xóa danh mục", "error");
+      console.error("Delete category error:", err);
+    showMessage(err.message || "Lỗi khi xóa danh mục", "error");
     }
   };
 
@@ -173,6 +176,9 @@ export default function Categories() {
           {message.text}
         </div>
       )}
+      {message.type === "error" && message.text && (
+                  <div className="alert alert-danger py-2">{message.text}</div>
+                )}
 
       <div className="card-body p-0">
         <table className="table table-hover table-striped m-0">

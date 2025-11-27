@@ -33,4 +33,6 @@ public interface OrdersRepository extends JpaRepository<Orders, Integer> {
         """)
     List<Orders> searchOrders(@Param("hoTenNhan") String hoTenNhan,
                               @Param("sdtNhan") String sdtNhan);
+
+    boolean existsByTaiKhoan_IdTaiKhoan(Integer idTaiKhoan);
 }

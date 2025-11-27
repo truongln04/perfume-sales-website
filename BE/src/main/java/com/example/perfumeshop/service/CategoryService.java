@@ -3,7 +3,9 @@ package com.example.perfumeshop.service;
 import com.example.perfumeshop.dto.CategoryRequest;
 import com.example.perfumeshop.dto.CategoryResponse;
 import com.example.perfumeshop.entity.Category;
-import com.example.perfumeshop.repository.CategoryRepository;
+import com.example.perfumeshop.repository.*;
+
+import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +19,7 @@ import java.util.stream.Collectors;
 public class CategoryService {
 
     private final CategoryRepository repository;
+    private final ProductRepository productRepository;
 
     // ==================== REGEX PATTERNS – CHUẨN NHƯ BRAND SERVICE
     // ====================
@@ -50,12 +53,20 @@ public class CategoryService {
     }
 
     // ==================== DELETE ====================
-    public void deleteCategory(Integer id) {
-        if (!repository.existsById(id)) {
-            throw new ValidationException("Không tìm thấy danh mục để xóa");
-        }
-        repository.deleteById(id);
+    @Transactional
+public void deleteCategory(Integer id) {
+    if (!repository.existsById(id)) {
+        throw new ValidationException("Không tìm thấy danh mục để xóa");
     }
+
+    boolean existsProduct = productRepository.existsByDanhMuc_IdDanhMuc(id);
+    if (existsProduct) {
+        throw new ValidationException("Không thể xóa danh mục vì đang có sản phẩm tham chiếu");
+    }
+
+    repository.deleteById(id);
+}
+
 
     // ==================== GET ALL & SEARCH ====================
     public List<CategoryResponse> getAllCategories() {

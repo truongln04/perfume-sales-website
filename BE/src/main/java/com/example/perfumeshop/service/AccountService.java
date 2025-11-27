@@ -4,7 +4,10 @@ import com.example.perfumeshop.config.JwtUtil;
 import com.example.perfumeshop.dto.AccountRequest;
 import com.example.perfumeshop.dto.AccountResponse;
 import com.example.perfumeshop.entity.Account;
-import com.example.perfumeshop.repository.AccountRepository;
+import com.example.perfumeshop.entity.Account.VaiTro;
+import com.example.perfumeshop.repository.*;
+
+import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -23,6 +26,7 @@ public class AccountService {
     private final JwtUtil jwtUtil;
     private final PasswordEncoder passwordEncoder;
     private final MailService mailService;
+    private final OrdersRepository ordersRepository;
 
     // Regex patterns
     private static final Pattern EMAIL_PATTERN = Pattern.compile("^[A-Za-z0-9+_.-]+@([A-Za-z0-9.-]+\\.[A-Za-z]{2,})$");
@@ -326,12 +330,21 @@ public class AccountService {
     }
 
     // Các method còn lại giữ nguyên (getAll, search, delete, v.v.)
-    public void deleteAccount(Integer id) {
-        if (!repository.existsById(id)) {
-            throw new ValidationException("Tài khoản không tồn tại");
-        }
-        repository.deleteById(id);
+    @Transactional
+public void deleteAccount(Integer id) {
+    Account account = repository.findById(id)
+            .orElseThrow(() -> new ValidationException("Tài khoản không tồn tại"));
+
+    // Kiểm tra nếu vai trò là KHACHHANG và đã có đơn hàng
+    if (account.getVaiTro() == VaiTro.KHACHHANG
+            && ordersRepository.existsByTaiKhoan_IdTaiKhoan(id)) {
+        throw new ValidationException("Không thể xóa tài khoản khách hàng vì đã có đơn hàng");
     }
+
+    repository.delete(account);
+}
+
+
 
     public List<AccountResponse> getAllAccounts() {
         return repository.findAll().stream()

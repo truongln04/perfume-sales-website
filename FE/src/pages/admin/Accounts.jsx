@@ -175,6 +175,15 @@ export default function Accounts() {
           <button className="btn btn-primary" onClick={onAdd}>
             Thêm mới
           </button>
+          {message.type === "error" && message.text && (
+                  <div className="alert alert-danger py-2">{message.text}</div>
+                )}
+
+      {message.type === "success" && message.text && (
+        <div className="m-3 py-2 px-3 rounded bg-success text-white">
+          {message.text}
+        </div>
+      )}
           <input
             className="form-control"
             placeholder="Tìm theo tên hoặc email..."
@@ -184,6 +193,9 @@ export default function Accounts() {
           />
         </div>
       </div>
+      {message.type === "error" && message.text && (
+                  <div className="alert alert-danger py-2">{message.text}</div>
+                )}
 
       {message.type === "success" && message.text && (
         <div className="m-3 py-2 px-3 rounded bg-success text-white">
@@ -384,16 +396,6 @@ export default function Accounts() {
                     />
                   </div>
 
-                  <div className="col-md-6">
-                    <label className="form-label">Google ID</label>
-                    <input
-                      type="text"
-                      name="googleId"
-                      className="form-control"
-                      value={form.googleId || ""}
-                      readOnly
-                    />
-                  </div>
 
                   <div className="col-md-12">
                     <label className="form-label">Ảnh đại diện (URL)</label>

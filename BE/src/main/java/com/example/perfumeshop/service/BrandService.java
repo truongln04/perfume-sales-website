@@ -4,6 +4,9 @@ import com.example.perfumeshop.dto.BrandRequest;
 import com.example.perfumeshop.dto.BrandResponse;
 import com.example.perfumeshop.entity.Brand;
 import com.example.perfumeshop.repository.BrandRepository;
+import com.example.perfumeshop.repository.ProductRepository;
+
+import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -17,6 +20,7 @@ import java.util.stream.Collectors;
 public class BrandService {
 
     private final BrandRepository repository;
+    private final ProductRepository productRepository;
 
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-ZÀ-ỹ0-9\\s]{3,40}$");
     private static final Pattern COUNTRY_PATTERN = Pattern.compile("^[a-zA-ZÀ-ỹ]{3,40}$");
@@ -51,9 +55,14 @@ public class BrandService {
     }
 
     // ==================== DELETE ====================
+    @Transactional
     public void deleteBrand(Integer id) {
         if (!repository.existsById(id)) {
             throw new ValidationException("Không tìm thấy thương hiệu để xóa");
+        }
+        boolean existsProduct = productRepository.existsByThuonghieu_Idthuonghieu(id);
+        if (existsProduct) {
+            throw new ValidationException("Không thể xóa thương hiệu vì đang có sản phẩm tham chiếu");
         }
         repository.deleteById(id);
     }

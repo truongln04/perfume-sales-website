@@ -168,6 +168,9 @@ export default function Brands() {
           />
         </div>
       </div>
+      {message.type === "error" && message.text && (
+                  <div className="alert alert-danger py-2">{message.text}</div>
+                )}
 
       {message.type === "success" && message.text && (
         <div className="m-3 py-2 px-3 rounded bg-success text-white">

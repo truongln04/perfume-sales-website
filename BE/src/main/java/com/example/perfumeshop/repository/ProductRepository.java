@@ -22,4 +22,8 @@ public interface ProductRepository extends JpaRepository<Product, Integer> {
 
     boolean existsByTenSanPhamIgnoreCase(String tenSanPham);
 
+    boolean existsByDanhMuc_IdDanhMuc(Integer idDanhMuc);
+
+    boolean existsByThuonghieu_Idthuonghieu(Integer idthuonghieu);
+
 }
