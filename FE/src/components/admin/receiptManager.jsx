@@ -84,7 +84,7 @@ export default function ReceiptManager({
                   <td>{r.tenNhaCungCap}</td>
                   <td>{new Date(r.ngayNhap).toLocaleDateString("vi-VN")}</td>
                   <td>{r.tongTien.toLocaleString("vi-VN")} đ</td>
-                  <td>{r.ghiChu}</td>
+                  <td>{r.ghiChu || "Không có ghi chú"}</td>
                   <td className="d-flex gap-2">
                     <button className="btn btn-sm btn-outline-info" onClick={() => onView(r)}>Xem chi tiết</button>
                     {/* <button className="btn btn-sm btn-outline-primary" onClick={() => onEdit(r)}>Sửa</button> */}
@@ -145,7 +145,7 @@ export default function ReceiptManager({
                     className="form-control"
                     name="ngayNhap"
                     value={form.ngayNhap}
-                    onChange={onChange}
+                    onChange={handleChange}
                   />
                 </div>
 
@@ -155,8 +155,8 @@ export default function ReceiptManager({
                     className="form-control"
                     name="ghiChu"
                     rows={3}
-                    value={form.ghiChu}
-                    onChange={onChange}
+                    value={form.ghiChu ?? "Không có ghi chú"}
+                    onChange={handleChange}
                   />
                 </div>
 
@@ -187,24 +187,24 @@ export default function ReceiptManager({
                               />
                             ) : (
                               <select
-  className="form-select"
-  value={d.idSanPham}
-  onChange={e => {
-    const id = parseInt(e.target.value); // ✔ convert string → number
-    onDetailChange(i, "idSanPham", id);
+                                className="form-select"
+                                value={d.idSanPham}
+                                onChange={e => {
+                                  const id = parseInt(e.target.value); // ✔ convert string → number
+                                  onDetailChange(i, "idSanPham", id);
 
-    const selected = products.find(p => p.idSanPham === id); // ✔ tìm đúng
-    if (selected) {
-      onDetailChange(i, "donGia", selected.giaBan || 0);      // ✔ lấy giá nhập
-      onDetailChange(i, "tenSanPham", selected.tenSanPham);    // ✔ lấy tên
-    }
-  }}
->
+                                  const selected = products.find(p => p.idSanPham === id); // ✔ tìm đúng
+                                  if (selected) {
+                                    onDetailChange(i, "donGia", selected.giaBan || 0);      // ✔ lấy giá nhập
+                                    onDetailChange(i, "tenSanPham", selected.tenSanPham);    // ✔ lấy tên
+                                  }
+                                }}
+                              >
 
                                 <option value="">-- Chọn sản phẩm --</option>
                                 {products.map(p => (
                                   <option key={p.idSanPham} value={p.idSanPham}>
-                                  {p.idSanPham} - {p.tenSanPham}
+                                    {p.idSanPham} - {p.tenSanPham}
                                   </option>
                                 ))}
                               </select>
@@ -261,36 +261,36 @@ export default function ReceiptManager({
                 <button type="button" className="btn-close" onClick={onCloseView}></button>
               </div>
               <div className="modal-body">
-              <p><strong>Nhà cung cấp:</strong> {selectedReceipt.tenNhaCungCap || selectedReceipt.nhaCungCap?.tenNhaCungCap}</p>
-              <p><strong>Ngày nhập:</strong> {new Date(selectedReceipt.ngayNhap).toLocaleDateString("vi-VN")}</p>
-              <p><strong>Ghi chú:</strong> {selectedReceipt.ghiChu}</p>
-              <p><strong>Tổng tiền:</strong> {selectedReceipt.tongTien.toLocaleString("vi-VN")} đ</p>
+                <p><strong>Nhà cung cấp:</strong> {selectedReceipt.tenNhaCungCap || selectedReceipt.nhaCungCap?.tenNhaCungCap}</p>
+                <p><strong>Ngày nhập:</strong> {new Date(selectedReceipt.ngayNhap).toLocaleDateString("vi-VN")}</p>
+                <p><strong>Ghi chú:</strong> {selectedReceipt.ghiChu ?? "Không có ghi chú"}</p>
+                <p><strong>Tổng tiền:</strong> {selectedReceipt.tongTien.toLocaleString("vi-VN")} đ</p>
 
-              <h6 className="mt-3">Chi tiết sản phẩm:</h6>
-              <table className="table table-bordered">
-                <thead>
-                  <tr>
-                    <th>Sản phẩm</th>
-                    <th>Số lượng</th>
-                    <th>Đơn giá</th>
-                    <th>Thành tiền</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {selectedReceipt.chiTietPhieuNhap?.map((item, idx) => (
-                    <tr key={idx}>
-                      <td>{item.tenSanPham}</td>
-                      <td>{item.soLuong}</td>
-                      <td>{item.donGia.toLocaleString("vi-VN")} đ</td>
-                      <td>{(item.soLuong * item.donGia).toLocaleString("vi-VN")} đ</td>
+                <h6 className="mt-3">Chi tiết sản phẩm:</h6>
+                <table className="table table-bordered">
+                  <thead>
+                    <tr>
+                      <th>Sản phẩm</th>
+                      <th>Số lượng</th>
+                      <th>Đơn giá</th>
+                      <th>Thành tiền</th>
                     </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            <div className="modal-footer">
-              <button className="btn btn-secondary" onClick={onCloseView}>Đóng</button>
-            </div>
+                  </thead>
+                  <tbody>
+                    {selectedReceipt.chiTietPhieuNhap?.map((item, idx) => (
+                      <tr key={idx}>
+                        <td>{item.tenSanPham}</td>
+                        <td>{item.soLuong}</td>
+                        <td>{item.donGia.toLocaleString("vi-VN")} đ</td>
+                        <td>{(item.soLuong * item.donGia).toLocaleString("vi-VN")} đ</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+              <div className="modal-footer">
+                <button className="btn btn-secondary" onClick={onCloseView}>Đóng</button>
+              </div>
             </div>
           </div>
         </div>

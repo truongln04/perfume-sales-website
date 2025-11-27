@@ -47,7 +47,7 @@ export default function Sidebar({ collapsed, setCollapsed }) {
     { to: "/admin/products", label: "Quản lý sản phẩm", icon: <FaBox />, roles: ["ADMIN", "NHANVIEN"] },
     { to: "/admin/suppliers", label: "Quản lý nhà cung cấp", icon: <FaTruck />, roles: ["ADMIN", "NHANVIEN"] },
     { to: "/admin/receipts", label: "Quản lý phiếu nhập", icon: <FaClipboardList />, roles: ["ADMIN", "NHANVIEN"] },
-    { to: "/admin/warehouse", label: "Quản lý kho", icon: <FaWarehouse />, roles: ["ADMIN", "NHANVIEN"] },
+    { to: "/admin/warehouse", label: "Quản lý tồn kho", icon: <FaWarehouse />, roles: ["ADMIN", "NHANVIEN"] },
     { to: "/admin/orders", label: "Quản lý đơn hàng", icon: <FaShoppingCart />, roles: ["ADMIN", "NHANVIEN"] },
 
     { to: "/admin/reports", label: "Thống kê & báo cáo", icon: <FaChartBar />, roles: ["ADMIN"] },
