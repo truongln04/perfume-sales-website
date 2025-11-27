@@ -367,11 +367,19 @@ export default function Orders() {
                 <button type="button" className="btn-close" onClick={handleCloseDetail}></button>
               </div>
               <div className="modal-body">
-                <h6>Danh sách sản phẩm:</h6>
+         
+                <p><strong>Người nhận:</strong> {selectedOrder.hoTenNhan}</p>
+                <p><strong>Số điện thoại:</strong> {selectedOrder.sdtNhan}</p>
+                <p><strong>Địa chỉ giao:</strong> {selectedOrder.diaChiGiao}</p>
+                <p><strong>Ngày đặt:</strong> {new Date(selectedOrder.ngayDat).toLocaleString("vi-VN")}</p>
+                <p><strong>Ghi chú:</strong> {selectedOrder.ghiChu || "Không có"}</p> 
+          
+                <h6 className="mt-3">Danh sách sản phẩm:</h6>
                 <table className="table table-bordered">
                   <thead>
                     <tr>
                       <th>Tên SP</th>
+                      <th>Hình ảnh</th>
                       <th>Số lượng</th>
                       <th>Đơn giá</th>
                       <th>Thành tiền</th>
@@ -381,9 +389,19 @@ export default function Orders() {
                     {selectedOrder.chiTietDonHang?.map((d, i) => (
                       <tr key={i}>
                         <td>{d.tenSanPham}</td>
+                        <img
+            src={d.hinhAnh}
+            alt={d.tenSanPham}
+            style={{
+              width: "60px",
+              height: "60px",
+              objectFit: "cover",
+              borderRadius: "8px"
+            }}
+          />
                         <td>{d.soLuong}</td>
                         <td>{d.donGia?.toLocaleString("vi-VN")} đ</td>
-                        <td>{d.thanhTien?.toLocaleString("vi-VN")} đ</td>
+                        <td>{(d.soLuong * d.donGia)?.toLocaleString("vi-VN")} đ</td>
                       </tr>
                     ))}
                   </tbody>

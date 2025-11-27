@@ -96,6 +96,7 @@ public class AccountService {
         }
 
         String token = jwtUtil.generateToken(account);
+        System.out.println("JWT Token: " + token);
         AccountResponse response = toResponse(account);
         response.setToken(token);
         return response;

@@ -212,6 +212,7 @@ export default function OrdersList() {
                   <thead className="table-light">
                     <tr>
                       <th>Tên SP</th>
+                      <th>Hình ảnh</th>
                       <th className="text-end">Số lượng</th>
                       <th className="text-end">Đơn giá</th>
                       <th className="text-end">Thành tiền</th>
@@ -221,6 +222,16 @@ export default function OrdersList() {
                     {selectedOrder.chiTietDonHang.map((d, i) => (
                       <tr key={i}>
                         <td className="fw-semibold">{d.tenSanPham}</td>
+                        <img
+            src={d.hinhAnh}
+            alt={d.tenSanPham}
+            style={{
+              width: "60px",
+              height: "60px",
+              objectFit: "cover",
+              borderRadius: "8px"
+            }}
+          />
                         <td className="text-end">{d.soLuong}</td>
                         <td className="text-end">{(d.donGia ?? 0).toLocaleString("vi-VN")} đ</td>
                         <td className="text-end">{(d.thanhTien ?? d.soLuong * d.donGia).toLocaleString("vi-VN")} đ</td>
@@ -229,7 +240,7 @@ export default function OrdersList() {
                   </tbody>
                   <tfoot>
                     <tr>
-                      <td colSpan={3} className="text-end fw-semibold">Tổng tiền</td>
+                      <td colSpan={4} className="text-end fw-semibold">Tổng tiền</td>
                       <td className="text-end fw-semibold">
                         {(selectedOrder.tongTien ?? 0).toLocaleString("vi-VN")} đ
                       </td>

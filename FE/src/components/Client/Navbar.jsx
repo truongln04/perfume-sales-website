@@ -295,12 +295,20 @@ useEffect(() => {
         <div className="container d-flex align-items-center position-relative justify-content-center">
           {scrollIndex > 0 && (
             <button
-              className="btn btn-outline-secondary position-absolute start-0"
-              style={{ top: "50%", transform: "translateY(-50%)" }}
-              onClick={scrollLeft}
-            >
-              &#60;
-            </button>
+    className="btn position-absolute start-0"
+    style={{
+      top: "50%",
+      transform: "translateY(-50%)",
+      border: "none",
+      background: "transparent",
+      fontSize: "1.5rem",
+      color: "#333",
+      padding: 0,
+    }}
+    onClick={scrollLeft}
+  >
+    &#60;
+  </button>
           )}
 
           <ul className="nav flex-nowrap">
@@ -320,12 +328,20 @@ useEffect(() => {
 
           {scrollIndex + visibleCount < categories.length && (
             <button
-              className="btn btn-outline-secondary position-absolute end-0"
-              style={{ top: "50%", transform: "translateY(-50%)" }}
-              onClick={scrollRight}
-            >
-              &#62;
-            </button>
+    className="btn position-absolute end-0"
+    style={{
+      top: "50%",
+      transform: "translateY(-50%)",
+      border: "none",
+      background: "transparent",
+      fontSize: "1.5rem",
+      color: "#333",
+      padding: 0,
+    }}
+    onClick={scrollRight}
+  >
+    &#62;
+  </button>
           )}
         </div>
       </nav>

@@ -130,11 +130,11 @@ export default function Receipts() {
 
     for (let i = 0; i < form.details.length; i++) {
       const d = form.details[i];
-      if (!d.idSanPham) return showMessage(`Dòng ${i + 1}: Chọn sản phẩm`, "error");
+      if (!d.idSanPham) return showMessage(`Vui lòng chọn sản phẩm`, "error");
       if (!d.soLuong || d.soLuong <= 0)
-        return showMessage(`Dòng ${i + 1}: Số lượng phải > 0`, "error");
+        return showMessage(`Số lượng phải > 0`, "error");
       if (!d.donGia || d.donGia <= 0)
-        return showMessage(`Dòng ${i + 1}: Đơn giá phải > 0`, "error");
+        return showMessage(`Đơn giá phải > 0`, "error");
     }
 
     if (form.ghiChu?.trim().length > 500)

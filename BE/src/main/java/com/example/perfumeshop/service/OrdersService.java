@@ -264,6 +264,7 @@ public class OrdersService {
                 .map(detail -> OrdersDetailResponse.builder()
                         .idDonHang(detail.getDonHang().getId())
                         .idSanPham(detail.getSanPham() != null ? detail.getSanPham().getIdSanPham() : null)
+                        .hinhAnh(detail.getSanPham() != null ? detail.getSanPham().getHinhAnh() : null)
                         .tenSanPham(detail.getSanPham() != null ? detail.getSanPham().getTenSanPham() : null)
                         .soLuong(detail.getSoLuong())
                         .donGia(detail.getDonGia())
