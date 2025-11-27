@@ -1,3 +1,4 @@
+
 export default function ProductManager({
   products,
   search,
@@ -16,6 +17,8 @@ export default function ProductManager({
   thuongHieus,
   message
 }) {
+
+  
   return (
     <div className="card">
       <div className="card-header bg-white">
@@ -126,6 +129,7 @@ export default function ProductManager({
             </tbody>
           </table>
         </div>
+        
       </div>
       {showModal && (
         <div className="modal d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,.5)" }}>

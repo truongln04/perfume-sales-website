@@ -58,7 +58,11 @@ export default function ReceiptManager({
           {message.text}
         </div>
       )}
-
+      {message.type === "error" && message.text && (
+        <div className="m-3 py-2 px-3 rounded bg-danger text-white">
+          {message.text}
+        </div>
+      )}
       {/* Table danh sách phiếu nhập */}
       <div className="card-body p-0">
         <table className="table table-striped m-0">

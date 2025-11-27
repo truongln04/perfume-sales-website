@@ -26,7 +26,9 @@ public class ProductService {
     // ==================== REGEX PATTERNS ====================
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-ZÀ-ỹ0-9\\s\\-&'()]{3,100}$");
     private static final Pattern DESCRIPTION_PATTERN = Pattern.compile("^.{10,}$");
-    private static final Pattern IMAGE_URL_PATTERN = Pattern.compile("^https?://.+\\.(png|jpe?g|gif|webp|svg)(\\?.*)?$", Pattern.CASE_INSENSITIVE);
+    private static final Pattern IMAGE_PATTERN = Pattern.compile(
+            "^(https?://.+\\.(png|jpe?g|gif|webp|svg)(\\?.*)?$|data:image/(png|jpe?g|gif|webp|svg);base64,[A-Za-z0-9+/=]+)$",
+            Pattern.CASE_INSENSITIVE);
 
     // ==================== CREATE PRODUCT ====================
     public ProductResponse create(ProductRequest request) {
@@ -104,7 +106,8 @@ public class ProductService {
                 .orElseThrow(() -> new ValidationException("Không tìm thấy sản phẩm với ID: " + id));
     }
 
-    // ==================== VALIDATION – CHỈ DÙNG CÁC FIELD CHẮC CHẮN CÓ ====================
+    // ==================== VALIDATION – CHỈ DÙNG CÁC FIELD CHẮC CHẮN CÓ
+    // ====================
     private void validateCreateRequest(ProductRequest request) {
         // 1. Tên sản phẩm
         if (request.getTenSanPham() == null || request.getTenSanPham().trim().isEmpty()) {
@@ -112,7 +115,8 @@ public class ProductService {
         }
         String tenSanPham = request.getTenSanPham().trim();
         if (!NAME_PATTERN.matcher(tenSanPham).matches()) {
-            throw new ValidationException("Tên sản phẩm phải từ 3-100 ký tự, chỉ chứa chữ cái, số, khoảng trắng và ký tự &-'()");
+            throw new ValidationException(
+                    "Tên sản phẩm phải từ 3-100 ký tự, chỉ chứa chữ cái, số, khoảng trắng và ký tự &-'()");
         }
         if (productRepository.existsByTenSanPhamIgnoreCase(tenSanPham)) {
             throw new ValidationException("Tên sản phẩm '" + tenSanPham + "' đã tồn tại");
@@ -120,14 +124,12 @@ public class ProductService {
 
         // 2. Mô tả
         if (request.getMoTa() == null || request.getMoTa().trim().isEmpty()) {
-    throw new ValidationException("Vui lòng nhập mô tả sản phẩm");
-}
-String moTa = request.getMoTa().trim();
-if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
-    throw new ValidationException("Mô tả sản phẩm phải có ít nhất 10 ký tự");
-}
-
-       
+            throw new ValidationException("Vui lòng nhập mô tả sản phẩm");
+        }
+        String moTa = request.getMoTa().trim();
+        if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
+            throw new ValidationException("Mô tả sản phẩm phải có ít nhất 10 ký tự");
+        }
 
         // 4. Danh mục & thương hiệu (bắt buộc)
         if (request.getIdDanhMuc() == null) {
@@ -141,7 +143,7 @@ if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
         if (request.getHinhAnh() == null || request.getHinhAnh().trim().isEmpty()) {
             throw new ValidationException("Vui lòng nhập URL hình ảnh sản phẩm");
         }
-        if (!IMAGE_URL_PATTERN.matcher(request.getHinhAnh().trim()).matches()) {
+        if (!IMAGE_PATTERN.matcher(request.getHinhAnh().trim()).matches()) {
             throw new ValidationException("URL hình ảnh không hợp lệ (png, jpg, jpeg, gif, webp, svg)");
         }
     }
@@ -153,7 +155,8 @@ if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
         }
         String tenSanPham = request.getTenSanPham().trim();
         if (!NAME_PATTERN.matcher(tenSanPham).matches()) {
-            throw new ValidationException("Tên sản phẩm phải từ 3-100 ký tự, chỉ chứa chữ cái, số, khoảng trắng và ký tự &-'()");
+            throw new ValidationException(
+                    "Tên sản phẩm phải từ 3-100 ký tự, chỉ chứa chữ cái, số, khoảng trắng và ký tự &-'()");
         }
         if (!tenSanPham.equalsIgnoreCase(currentTenSanPham)
                 && productRepository.existsByTenSanPhamIgnoreCase(tenSanPham)) {
@@ -162,12 +165,12 @@ if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
 
         // 2. Mô tả
         if (request.getMoTa() == null || request.getMoTa().trim().isEmpty()) {
-    throw new ValidationException("Vui lòng nhập mô tả sản phẩm");
-}
-String moTa = request.getMoTa().trim();
-if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
-    throw new ValidationException("Mô tả sản phẩm phải có ít nhất 10 ký tự");
-}
+            throw new ValidationException("Vui lòng nhập mô tả sản phẩm");
+        }
+        String moTa = request.getMoTa().trim();
+        if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
+            throw new ValidationException("Mô tả sản phẩm phải có ít nhất 10 ký tự");
+        }
 
         // 3. Giá bán
         if (request.getGiaBan() != null && request.getGiaBan().compareTo(BigDecimal.ZERO) <= 0) {
@@ -176,7 +179,7 @@ if (!DESCRIPTION_PATTERN.matcher(moTa).matches()) {
 
         // 4. Hình ảnh (tùy chọn khi sửa)
         if (request.getHinhAnh() != null && !request.getHinhAnh().trim().isEmpty()) {
-            if (!IMAGE_URL_PATTERN.matcher(request.getHinhAnh().trim()).matches()) {
+            if (!IMAGE_PATTERN.matcher(request.getHinhAnh().trim()).matches()) {
                 throw new ValidationException("URL hình ảnh không hợp lệ");
             }
         }

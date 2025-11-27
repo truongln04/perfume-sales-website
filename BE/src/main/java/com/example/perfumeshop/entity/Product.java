@@ -27,7 +27,7 @@ public class Product {
     @Column(name = "mo_ta", columnDefinition = "TEXT")
     private String moTa;
 
-    @Column(name = "hinh_anh", columnDefinition = "TEXT")
+    @Column(name = "hinh_anh", columnDefinition = "MEDIUMTEXT")
     private String hinhAnh;
 
     @ManyToOne

@@ -1,7 +1,10 @@
 import { useState, useMemo } from "react";
+import Pagination from "../Common/Pagination"; // import component phân trang
 
 export default function WarehouseManager({ items }) {
   const [search, setSearch] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20; // số sản phẩm mỗi trang
 
   const filteredItems = useMemo(() => {
     const q = search.trim().toLowerCase();
@@ -15,6 +18,15 @@ export default function WarehouseManager({ items }) {
     return [...result].sort((a, b) => a.idSanPham - b.idSanPham);
   }, [items, search]);
 
+  // Tổng số trang
+  const totalPages = Math.ceil(filteredItems.length / pageSize);
+
+  // Cắt dữ liệu theo trang
+  const paginatedItems = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredItems.slice(start, start + pageSize);
+  }, [filteredItems, currentPage]);
+
   return (
     <div className="card">
       <div className="card-header d-flex justify-content-between align-items-center">
@@ -23,7 +35,10 @@ export default function WarehouseManager({ items }) {
           className="form-control"
           placeholder="Tìm kiếm sản phẩm..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={e => {
+            setSearch(e.target.value);
+            setCurrentPage(1); // reset về trang 1 khi tìm kiếm
+          }}
           style={{ width: 260 }}
         />
       </div>
@@ -39,14 +54,14 @@ export default function WarehouseManager({ items }) {
             </tr>
           </thead>
           <tbody>
-            {filteredItems.length === 0 ? (
+            {paginatedItems.length === 0 ? (
               <tr>
                 <td colSpan="5" className="text-center py-4">
                   Không tìm thấy sản phẩm
                 </td>
               </tr>
             ) : (
-              filteredItems.map(i => (
+              paginatedItems.map(i => (
                 <tr key={i.idSanPham}>
                   <td>{i.idSanPham}</td>
                   <td>{i.tenSanPham}</td>
@@ -59,6 +74,14 @@ export default function WarehouseManager({ items }) {
           </tbody>
         </table>
       </div>
+
+      {/* Thêm phân trang */}
+      <Pagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        variant="admin" // hoặc "client" tùy giao diện
+      />
     </div>
   );
 }

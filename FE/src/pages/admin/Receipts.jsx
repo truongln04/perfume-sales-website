@@ -107,20 +107,25 @@ export default function Receipts() {
     setShowModal(true);
   };
 
-  const onDelete = async (id) => {
-    if (!window.confirm("Bạn có chắc muốn xóa phiếu nhập này?")) return;
-    try {
-      await deleteReceipt(id);
-      loadData();
-      showMessage("Xóa phiếu nhập thành công!");
-    } catch (err) {
-      showMessage(
-        err.response?.data?.message ||
-          "Không thể xóa phiếu nhập (có thể đã bán hàng)",
-        "error"
-      );
-    }
-  };
+const onDelete = async (id) => {
+  if (!window.confirm("Bạn có chắc muốn xóa phiếu nhập này?")) return;
+
+  try {
+    await deleteReceipt(id);
+    loadData();
+    showMessage("Xóa phiếu nhập thành công!", "success");
+  } catch (err) {
+    console.error("Delete error:", err); // log ra console để kiểm tra
+
+    // lấy message từ backend nếu có
+    const errorMsg =
+      err.response?.data?.message ||
+      err.message ||
+      "Không thể xóa phiếu nhập (có thể đã bán hàng)";
+
+    showMessage(errorMsg, "error");
+  }
+};
 
   const onSave = async () => {
     // VALIDATE

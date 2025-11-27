@@ -10,6 +10,7 @@ import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
@@ -168,33 +169,40 @@ public class ReceiptService {
     }
 
     // ==================== DELETE ====================
-    @Transactional
-    public void delete(Integer id) {
-        Receipt receipt = receiptRepo.findById(id)
-                .orElseThrow(() -> new ValidationException("Không tìm thấy phiếu nhập với ID: " + id));
+ @Transactional
+public void delete(Integer id) {
+    Receipt receipt = receiptRepo.findById(id)
+            .orElseThrow(() -> new ValidationException("Không tìm thấy phiếu nhập với ID: " + id));
 
-        // Kiểm tra sản phẩm đã bán chưa
-        List<Integer> productIds = receipt.getChiTietPhieuNhap()
-                .stream()
-                .map(d -> d.getSanPham().getIdSanPham())
-                .toList();
+    for (ReceiptDetail detail : receipt.getChiTietPhieuNhap()) {
+        Product sp = detail.getSanPham();
+        Warehouse wh = warehouseRepo.findById(sp.getIdSanPham())
+                .orElseThrow(() -> new ValidationException("Không tìm thấy kho cho sản phẩm: " + sp.getTenSanPham()));
 
-        Long count = em.createQuery(
-                        "SELECT COUNT(od) FROM OrdersDetail od WHERE od.sanPham.idSanPham IN :ids", Long.class)
-                .setParameter("ids", productIds)
-                .getSingleResult();
+        int soLuongNhapBanDau = detail.getSoLuong();
+        int tonKhoThucTe = wh.getSoLuongNhap() - wh.getSoLuongBan();
 
-        if (count > 0) {
-            throw new ValidationException("Không thể xóa phiếu nhập vì có sản phẩm đã được bán");
+        if (tonKhoThucTe < soLuongNhapBanDau) {
+            throw new ValidationException(
+                "Không thể xóa phiếu nhập vì sản phẩm " + sp.getTenSanPham() +
+                " đã được bán bớt (tồn kho thực tế: " + tonKhoThucTe +
+                ", số lượng nhập từ phiếu: " + soLuongNhapBanDau + ")"
+            );
         }
-
-        // Rollback tồn kho
-        for (ReceiptDetail detail : receipt.getChiTietPhieuNhap()) {
-            updateSoLuongNhap(detail.getSanPham(), -detail.getSoLuong());
-        }
-
-        receiptRepo.delete(receipt);
     }
+
+    // Rollback tồn kho
+    for (ReceiptDetail detail : receipt.getChiTietPhieuNhap()) {
+        Product sp = detail.getSanPham();
+        Warehouse wh = warehouseRepo.findById(sp.getIdSanPham())
+                .orElseThrow();
+        wh.setSoLuongNhap(wh.getSoLuongNhap() - detail.getSoLuong());
+        warehouseRepo.save(wh);
+    }
+
+    receiptRepo.delete(receipt);
+}
+
 
     // ==================== GET ALL & GET BY ID ====================
     public List<ReceiptResponse> getAll() {

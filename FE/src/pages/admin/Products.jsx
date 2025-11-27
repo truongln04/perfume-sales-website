@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import ProductManager from "../../components/admin/ProductManager";
+import Pagination from "../../components/Common/Pagination"; // import phân trang
 import {
   getProducts,
   searchProducts,
@@ -33,6 +34,9 @@ export default function Products() {
   const [form, setForm] = useState(emptyProduct());
   const [danhMucs, setDanhMucs] = useState([]);
   const [thuongHieus, setThuongHieus] = useState([]);
+  // Phân trang
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 20;
 
   // Gộp lỗi + thông báo thành công – giống hệt Brands.jsx
   const [message, setMessage] = useState({ text: "", type: "" });
@@ -71,6 +75,7 @@ export default function Products() {
 
   const handleSearch = async (value) => {
     setSearch(value);
+    setCurrentPage(1); // reset về trang 1 khi tìm kiếm
     if (!value.trim()) {
       fetchProducts();
       return;
@@ -194,9 +199,20 @@ export default function Products() {
     if (message.text) setMessage({ text: "", type: "" });
   };
 
+   // tính tổng số trang
+  const totalPages = Math.ceil(filtered.length / pageSize);
+
+  // cắt dữ liệu theo trang
+  const paginatedProducts = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filtered.slice(start, start + pageSize);
+  }, [filtered, currentPage]);
+
   return (
+      <>
     <ProductManager
-      products={filtered}
+      // products={filtered}
+      products={paginatedProducts} // chỉ truyền dữ liệu theo trang
       search={search}
       onSearch={handleSearch}
       onAdd={onAdd}
@@ -213,5 +229,13 @@ export default function Products() {
       thuongHieus={thuongHieus}
       message={message}
     />
+
+    <Pagination
+      currentPage={currentPage}
+      totalPages={totalPages}
+      onPageChange={setCurrentPage}
+      variant="admin"
+    />
+  </>
   );
 }
