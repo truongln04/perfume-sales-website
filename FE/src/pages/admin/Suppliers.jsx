@@ -19,15 +19,21 @@ export default function Suppliers() {
   const [form, setForm] = useState(emptySupplier());
 
   // Gộp lỗi + thông báo thành công – giống hệt Brands.jsx
-  const [message, setMessage] = useState({ text: "", type: "" });
+  const [listMessage, setListMessage] = useState({ text: "", type: "" });
+const [modalMessage, setModalMessage] = useState({ text: "", type: "" });
 
   const API_URL = "http://localhost:8081/suppliers";
   const token = localStorage.getItem("token");
 
-  const showMessage = (text, type = "success") => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
-  };
+  const showListMessage = (text, type = "success") => {
+  setListMessage({ text, type });
+  setTimeout(() => setListMessage({ text: "", type: "" }), 3000);
+};
+
+const showModalMessage = (text, type = "error") => {
+  setModalMessage({ text, type });
+  setTimeout(() => setModalMessage({ text: "", type: "" }), 3000);
+};
 
   const fetchSuppliers = async () => {
     try {
@@ -38,7 +44,7 @@ export default function Suppliers() {
       const data = await res.json();
       setSuppliers(data);
     } catch (err) {
-      showMessage("Lỗi tải danh sách nhà cung cấp", "error");
+      showListMessage("Lỗi tải danh sách nhà cung cấp", "error");
     }
   };
 
@@ -60,7 +66,7 @@ export default function Suppliers() {
       const data = await res.json();
       setSuppliers(data);
     } catch (err) {
-      showMessage("Lỗi tìm kiếm", "error");
+      showListMessage("Lỗi tìm kiếm", "error");
     }
   };
 
@@ -71,14 +77,14 @@ export default function Suppliers() {
   const onAdd = () => {
     setEditing(null);
     setForm(emptySupplier());
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onEdit = (supplier) => {
     setEditing(supplier);
     setForm({ ...supplier });
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
@@ -94,20 +100,20 @@ export default function Suppliers() {
         throw new Error(err.message || "Không thể xóa");
       }
       fetchSuppliers();
-      showMessage("Xóa nhà cung cấp thành công!");
+      showListMessage("Xóa nhà cung cấp thành công!");
     } catch (err) {
-      showMessage(err.message || "Lỗi khi xóa nhà cung cấp", "error");
+      showListMessage(err.message || "Lỗi khi xóa nhà cung cấp", "error");
     }
   };
 
   // GIỐNG HỆT BRANDS.JSX – CHUẨN HOÀN HẢO!
   const onSave = async () => {
     // 1. Validate nhanh ở frontend (UX tốt)
-    if (!form.tenNcc?.trim()) return showMessage("Vui lòng nhập tên nhà cung cấp", "error");
-    if (!form.diaChi?.trim()) return showMessage("Vui lòng nhập địa chỉ", "error");
-    if (!form.sdt?.trim()) return showMessage("Vui lòng nhập số điện thoại", "error");
-    if (!form.email?.trim()) return showMessage("Vui lòng nhập email", "error");
-    if (!form.ghiChu?.trim()) return showMessage("Vui lòng nhập ghi chú", "error");
+    if (!form.tenNcc?.trim()) return showModalMessage("Vui lòng nhập tên nhà cung cấp", "error");
+    if (!form.diaChi?.trim()) return showModalMessage("Vui lòng nhập địa chỉ", "error");
+    if (!form.sdt?.trim()) return showModalMessage("Vui lòng nhập số điện thoại", "error");
+    if (!form.email?.trim()) return showModalMessage("Vui lòng nhập email", "error");
+    if (!form.ghiChu?.trim()) return showModalMessage("Vui lòng nhập ghi chú", "error");
 
     const payload = {
       tenNcc: form.tenNcc.trim(),
@@ -144,19 +150,19 @@ export default function Suppliers() {
       );
 
       setShowModal(false);
-      showMessage(
+      showListMessage(
         editing ? "Cập nhật nhà cung cấp thành công!" : "Thêm nhà cung cấp thành công!"
       );
     } catch (err) {
       // Lỗi chi tiết từ backend
-      showMessage(err.message || "Lỗi khi lưu nhà cung cấp", "error");
+      showModalMessage(err.message || "Lỗi khi lưu nhà cung cấp", "error");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (message.text) setMessage({ text: "", type: "" });
+    if (message.text) setModalMessage({ text: "", type: "" });
   };
 
   return (
@@ -178,11 +184,15 @@ export default function Suppliers() {
       </div>
 
       {/* ✅ Chỉ hiển thị thông báo thành công */}
-      {message.type === "success" && message.text && (
-        <div className="m-3 py-2 px-3 rounded bg-success text-white">
-          {message.text}
-        </div>
-      )}
+       {listMessage.type === "error" && listMessage.text && (
+  <div className="alert alert-danger py-2">{listMessage.text}</div>
+)}
+{listMessage.type === "success" && listMessage.text && (
+  <div className="m-3 py-2 px-3 rounded bg-success text-white">
+    {listMessage.text}
+  </div>
+)}
+
 
 
       <div className="card-body p-0">
@@ -256,9 +266,10 @@ export default function Suppliers() {
               </div>
 
               <div className="modal-body">
-                {message.type === "error" && message.text && (
-                  <div className="alert alert-danger py-2">{message.text}</div>
-                )}
+                {modalMessage.type === "error" && modalMessage.text && (
+  <div className="alert alert-danger py-2">{modalMessage.text}</div>
+)}
+
                 <div className="row g-3">
                   <div className="col-md-6">
                     <label className="form-label">Tên nhà cung cấp</label>

@@ -39,19 +39,25 @@ export default function Products() {
   const pageSize = 20;
 
   // Gộp lỗi + thông báo thành công – giống hệt Brands.jsx
-  const [message, setMessage] = useState({ text: "", type: "" });
+  const [listMessage, setListMessage] = useState({ text: "", type: "" });
+const [modalMessage, setModalMessage] = useState({ text: "", type: "" });
 
-  const showMessage = (text, type = "success") => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
-  };
+    const showListMessage = (text, type = "success") => {
+  setListMessage({ text, type });
+  setTimeout(() => setListMessage({ text: "", type: "" }), 3000);
+};
+
+const showModalMessage = (text, type = "error") => {
+  setModalMessage({ text, type });
+  setTimeout(() => setModalMessage({ text: "", type: "" }), 3000);
+};
 
   const fetchProducts = async () => {
     try {
       const data = await getProducts();
       setProducts(data);
     } catch (err) {
-      showMessage("Lỗi tải danh sách sản phẩm", "error");
+      showListMessage("Lỗi tải danh sách sản phẩm", "error");
     }
   };
 
@@ -64,7 +70,7 @@ export default function Products() {
       setDanhMucs(dmList);
       setThuongHieus(thList);
     } catch (err) {
-      showMessage("Lỗi tải danh mục/thương hiệu", "error");
+      showListMessage("Lỗi tải danh mục/thương hiệu", "error");
     }
   };
 
@@ -84,7 +90,7 @@ export default function Products() {
       const data = await searchProducts(value);
       setProducts(data);
     } catch (err) {
-      showMessage("Lỗi tìm kiếm", "error");
+      showListMessage("Lỗi tìm kiếm", "error");
     }
   };
 
@@ -95,7 +101,7 @@ export default function Products() {
   const onAdd = () => {
     setEditing(null);
     setForm(emptyProduct());
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
@@ -106,7 +112,7 @@ export default function Products() {
       giaBan: product.giaBan || "",
       kmPhanTram: product.kmPhanTram || "",
     });
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
@@ -116,7 +122,7 @@ export default function Products() {
   try {
     await deleteProduct(idSanPham);
     fetchProducts();
-    showMessage("Xóa sản phẩm thành công!", "success");
+    showListMessage("Xóa sản phẩm thành công!", "success");
   } catch (err) {
     console.error("Delete product error:", err);
 
@@ -127,7 +133,7 @@ export default function Products() {
       err.message ||
       "Không thể xóa sản phẩm (có thể đã liên quan đến đơn hàng)";
 
-    showMessage(errorMsg, "error");
+    showListMessage(errorMsg, "error");
   }
 };
 
@@ -135,11 +141,11 @@ export default function Products() {
   // GIỐNG HỆT BRANDS.JSX – CHUẨN HOÀN HẢO!
   const onSave = async () => {
     // 1. Validate nhanh ở frontend (UX tốt)
-    if (!form.tenSanPham?.trim()) return showMessage("Vui lòng nhập tên sản phẩm", "error");
-    if (!form.moTa?.trim()) return showMessage("Vui lòng nhập mô tả sản phẩm", "error");
-    if (!form.hinhAnh?.trim()) return showMessage("Vui lòng nhập URL hình ảnh sản phẩm", "error");
-    if (!form.idDanhMuc) return showMessage("Vui lòng chọn danh mục", "error");
-    if (!form.idthuonghieu) return showMessage("Vui lòng chọn thương hiệu", "error");
+    if (!form.tenSanPham?.trim()) return showModalMessage("Vui lòng nhập tên sản phẩm", "error");
+    if (!form.moTa?.trim()) return showModalMessage("Vui lòng nhập mô tả sản phẩm", "error");
+    if (!form.hinhAnh?.trim()) return showModalMessage("Vui lòng nhập URL hình ảnh sản phẩm", "error");
+    if (!form.idDanhMuc) return showModalMessage("Vui lòng chọn danh mục", "error");
+    if (!form.idthuonghieu) return showModalMessage("Vui lòng chọn thương hiệu", "error");
     
 
     const payload = {
@@ -182,12 +188,12 @@ export default function Products() {
       );
 
       setShowModal(false);
-      showMessage(
+      showListMessage(
         editing ? "Cập nhật sản phẩm thành công!" : "Thêm sản phẩm thành công!"
       );
     } catch (err) {
       // Lỗi chi tiết từ backend
-      showMessage(err.message || "Lỗi khi lưu sản phẩm", "error");
+      showModalMessage(err.message || "Lỗi khi lưu sản phẩm", "error");
     }
   };
 
@@ -203,7 +209,7 @@ export default function Products() {
         : value;
 
     setForm((prev) => ({ ...prev, [name]: newValue }));
-    if (message.text) setMessage({ text: "", type: "" });
+    if (message.text) setModalMessage({ text: "", type: "" });
   };
 
    // tính tổng số trang
@@ -234,7 +240,8 @@ export default function Products() {
       handleChange={handleChange}
       danhMucs={danhMucs}
       thuongHieus={thuongHieus}
-      message={message}
+      listMessage={listMessage}
+      modalMessage={modalMessage}
     />
 
     <Pagination

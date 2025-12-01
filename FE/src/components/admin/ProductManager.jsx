@@ -15,7 +15,8 @@ export default function ProductManager({
   handleChange,
   danhMucs,
   thuongHieus,
-  message
+  listMessage,
+  modalMessage,
 }) {
 
   
@@ -36,17 +37,14 @@ export default function ProductManager({
           </div>
         </div>
       </div>
-      {message.type === "success" && message.text && (
-        <div className="m-3 py-2 px-3 rounded bg-success text-white">
-          {message.text}
-        </div>
-      )}
-
-       {message.type === "error" && message.text && (
-        <div className="m-3 py-2 px-3 rounded bg-danger text-white">
-          {message.text}
-        </div> 
-      )}
+       {listMessage.type === "error" && listMessage.text && (
+  <div className="alert alert-danger py-2">{listMessage.text}</div>
+)}
+{listMessage.type === "success" && listMessage.text && (
+  <div className="m-3 py-2 px-3 rounded bg-success text-white">
+    {listMessage.text}
+  </div>
+)}
 
       <div className="card-body p-0">
         <div className="table-responsive">
@@ -147,9 +145,9 @@ export default function ProductManager({
               </div>
 
               <div className="modal-body">
-                {message.type === "error" && message.text && (
-                  <div className="alert alert-danger py-2">{message.text}</div>
-                )}
+                {modalMessage.type === "error" && modalMessage.text && (
+  <div className="alert alert-danger py-2">{modalMessage.text}</div>
+)}
                 <div className="row g-3">
                   {/* Danh mục */}
                   <div className="col-md-6">
