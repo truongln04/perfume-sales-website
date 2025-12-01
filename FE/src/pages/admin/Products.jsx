@@ -111,19 +111,26 @@ export default function Products() {
   };
 
   const onDelete = async (idSanPham) => {
-    if (!window.confirm("Xóa sản phẩm này?")) return;
-    try {
-      const res = await deleteProduct(idSanPham);
-      if (!res.ok) {
-        const err = await res.json().catch(() => ({}));
-        throw new Error(err.message || "Không thể xóa");
-      }
-      fetchProducts();
-      showMessage("Xóa sản phẩm thành công!");
-    } catch (err) {
-      showMessage(err.message || "Lỗi khi xóa sản phẩm", "error");
-    }
-  };
+  if (!window.confirm("Xóa sản phẩm này?")) return;
+
+  try {
+    await deleteProduct(idSanPham);
+    fetchProducts();
+    showMessage("Xóa sản phẩm thành công!", "success");
+  } catch (err) {
+    console.error("Delete product error:", err);
+
+    // lấy message từ backend nếu có
+    const errorMsg =
+      err.response?.data?.message ||
+      err.response?.data?.error   || // phòng trường hợp backend trả về error
+      err.message ||
+      "Không thể xóa sản phẩm (có thể đã liên quan đến đơn hàng)";
+
+    showMessage(errorMsg, "error");
+  }
+};
+
 
   // GIỐNG HỆT BRANDS.JSX – CHUẨN HOÀN HẢO!
   const onSave = async () => {

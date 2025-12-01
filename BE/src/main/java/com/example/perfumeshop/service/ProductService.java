@@ -4,6 +4,8 @@ import com.example.perfumeshop.dto.ProductRequest;
 import com.example.perfumeshop.dto.ProductResponse;
 import com.example.perfumeshop.entity.*;
 import com.example.perfumeshop.repository.*;
+
+import jakarta.transaction.Transactional;
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import org.springframework.beans.BeanUtils;
@@ -18,6 +20,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class ProductService {
 
+     private final OrdersDetailRepository orderDetailRepo;
     private final ProductRepository productRepository;
     private final WarehouseRepository warehouseRepository;
     private final CategoryRepository categoryRepository;
@@ -76,12 +79,23 @@ public class ProductService {
     }
 
     // ==================== DELETE ====================
-    public void delete(Integer id) {
-        if (!productRepository.existsById(id)) {
-            throw new ValidationException("Không tìm thấy sản phẩm để xóa");
-        }
-        productRepository.deleteById(id);
+    @Transactional
+public void deleteProduct(Integer id) {
+    Product sp = productRepository.findById(id)
+            .orElseThrow(() -> new ValidationException("Không tìm thấy sản phẩm với ID: " + id));
+
+    // Kiểm tra sản phẩm có liên quan đến đơn hàng không
+    boolean hasOrders = orderDetailRepo.existsBySanPham(sp);
+    if (hasOrders) {
+        throw new ValidationException(
+            "Không thể xóa sản phẩm " + sp.getTenSanPham() +
+            " vì đã có đơn hàng liên quan"
+        );
     }
+
+    productRepository.delete(sp);
+}
+
 
     // ==================== GET ALL & SEARCH ====================
     public List<ProductResponse> getAll() {
@@ -141,7 +155,7 @@ public class ProductService {
 
         // 5. Hình ảnh (bắt buộc)
         if (request.getHinhAnh() == null || request.getHinhAnh().trim().isEmpty()) {
-            throw new ValidationException("Vui lòng nhập URL hình ảnh sản phẩm");
+            throw new ValidationException("Vui lòng nhập hình ảnh sản phẩm");
         }
         if (!IMAGE_PATTERN.matcher(request.getHinhAnh().trim()).matches()) {
             throw new ValidationException("URL hình ảnh không hợp lệ (png, jpg, jpeg, gif, webp, svg)");

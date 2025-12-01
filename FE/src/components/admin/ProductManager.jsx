@@ -42,6 +42,12 @@ export default function ProductManager({
         </div>
       )}
 
+       {message.type === "error" && message.text && (
+        <div className="m-3 py-2 px-3 rounded bg-danger text-white">
+          {message.text}
+        </div> 
+      )}
+
       <div className="card-body p-0">
         <div className="table-responsive">
           <table className="table table-hover table-striped m-0">

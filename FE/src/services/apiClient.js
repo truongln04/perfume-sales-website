@@ -49,6 +49,15 @@ export const apiDelete = async (path) => {
       ...getAuthHeader(),
     },
   });
-  if (!res.ok) throw new Error(`DELETE ${path} failed: ${res.status}`);
-  return res;
+
+  if (!res.ok) {
+    // cố gắng đọc body JSON từ backend
+    const err = await res.json().catch(() => ({}));
+    // ném object giống axios error để dễ xử lý ở onDelete
+    throw { response: { data: err } };
+  }
+
+  // nếu backend trả về body thì parse, nếu không thì return {}
+  return res.json().catch(() => ({}));
 };
+
