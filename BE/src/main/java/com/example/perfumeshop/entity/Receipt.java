@@ -22,10 +22,6 @@ public class Receipt {
     @Column(name = "ngay_nhap", nullable = false)
     private LocalDateTime ngayNhap;
 
-    @ManyToOne
-    @JoinColumn(name = "id_ncc", referencedColumnName = "id_ncc")
-    private Supplier nhaCungCap;
-
     @Column(name = "tong_tien", nullable = false)
     private BigDecimal tongTien;
 

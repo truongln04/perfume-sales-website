@@ -3,6 +3,9 @@ package com.example.perfumeshop.entity;
 import jakarta.persistence.*;
 import lombok.*;
 
+import lombok.AllArgsConstructor;
+import lombok.Data;
+import lombok.NoArgsConstructor;
 @Entity
 @Table(name = "nha_cung_cap")
 @Data
@@ -15,6 +18,7 @@ public class Supplier {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id_ncc")
     private Integer idNcc;
+
 
     @Column(name = "ten_ncc", nullable = false, length = 150)
     private String tenNcc;

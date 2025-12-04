@@ -38,11 +38,8 @@ public class ReceiptService {
     public ReceiptResponse create(ReceiptRequest request) {
         validateCreateRequest(request);
 
-        Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc())
-                .orElseThrow(() -> new ValidationException("Không tìm thấy nhà cung cấp"));
 
         Receipt receipt = Receipt.builder()
-                .nhaCungCap(nhaCungCap)
                 .ngayNhap(LocalDateTime.now())
                 .ghiChu(request.getGhiChu() != null ? request.getGhiChu().trim() : null)
                 .build();
@@ -111,10 +108,6 @@ public class ReceiptService {
             updateSoLuongNhap(old.getSanPham(), -old.getSoLuong());
         }
 
-        Supplier nhaCungCap = supplierRepo.findById(request.getIdNcc())
-                .orElseThrow(() -> new ValidationException("Không tìm thấy nhà cung cấp"));
-
-        receipt.setNhaCungCap(nhaCungCap);
         receipt.setNgayNhap(LocalDateTime.now());
         receipt.setGhiChu(request.getGhiChu() != null ? request.getGhiChu().trim() : null);
 
@@ -219,9 +212,7 @@ public void delete(Integer id) {
 
     // ==================== VALIDATION – GIỐNG PRODUCT & CATEGORY SERVICE ====================
     private void validateCreateRequest(ReceiptRequest request) {
-        if (request.getIdNcc() == null) {
-            throw new ValidationException("Vui lòng chọn nhà cung cấp");
-        }
+        
         if (request.getChiTietPhieuNhap() == null || request.getChiTietPhieuNhap().isEmpty()) {
             throw new ValidationException("Phiếu nhập phải có ít nhất 1 sản phẩm");
         }
@@ -235,9 +226,7 @@ public void delete(Integer id) {
     }
 
     private void validateUpdateRequest(ReceiptRequest request) {
-        if (request.getIdNcc() == null) {
-            throw new ValidationException("Vui lòng chọn nhà cung cấp");
-        }
+        
         if (request.getChiTietPhieuNhap() == null || request.getChiTietPhieuNhap().isEmpty()) {
             throw new ValidationException("Phiếu nhập phải có ít nhất 1 sản phẩm");
         }
@@ -275,7 +264,6 @@ public void delete(Integer id) {
         return ReceiptResponse.builder()
                 .idPhieuNhap(r.getIdPhieuNhap())
                 .ngayNhap(r.getNgayNhap())
-                .tenNhaCungCap(r.getNhaCungCap() != null ? r.getNhaCungCap().getTenNcc() : null)
                 .tongTien(r.getTongTien())
                 .ghiChu(r.getGhiChu())
                 .chiTietPhieuNhap(r.getChiTietPhieuNhap().stream()

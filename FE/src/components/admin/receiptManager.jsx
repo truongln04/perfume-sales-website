@@ -35,6 +35,11 @@ export default function ReceiptManager({
     return sum + sl * dg;
   }, 0);
 
+  const filteredProducts = form.idNcc
+  ? products.filter(p => String(p.idNcc) === String(form.idNcc))
+  : products;
+
+
   const getProductInfo = id => products.find(p => p.idSanPham === parseInt(id));
 
   return (
@@ -69,7 +74,6 @@ export default function ReceiptManager({
           <thead className="table-light">
             <tr>
               <th>Mã PN</th>
-              <th>Nhà cung cấp</th>
               <th>Ngày nhập</th>
               <th>Tổng tiền</th>
               <th>Ghi chú</th>
@@ -85,7 +89,6 @@ export default function ReceiptManager({
               filtered.map(r => (
                 <tr key={r.idPhieuNhap}>
                   <td>{r.idPhieuNhap}</td>
-                  <td>{r.tenNhaCungCap}</td>
                   <td>{new Date(r.ngayNhap).toLocaleDateString("vi-VN")}</td>
                   <td>{r.tongTien.toLocaleString("vi-VN")} đ</td>
                   <td>{r.ghiChu || "Không có ghi chú"}</td>
@@ -206,11 +209,12 @@ export default function ReceiptManager({
                               >
 
                                 <option value="">-- Chọn sản phẩm --</option>
-                                {products.map(p => (
-                                  <option key={p.idSanPham} value={p.idSanPham}>
-                                    {p.idSanPham} - {p.tenSanPham}
-                                  </option>
-                                ))}
+                                {filteredProducts.map(p => (
+  <option key={p.idSanPham} value={p.idSanPham}>
+    {p.idSanPham} - {p.tenSanPham}
+  </option>
+))}
+
                               </select>
                             )}
 
@@ -265,7 +269,6 @@ export default function ReceiptManager({
                 <button type="button" className="btn-close" onClick={onCloseView}></button>
               </div>
               <div className="modal-body">
-                <p><strong>Nhà cung cấp:</strong> {selectedReceipt.tenNhaCungCap || selectedReceipt.nhaCungCap?.tenNhaCungCap}</p>
                 <p><strong>Ngày nhập:</strong> {new Date(selectedReceipt.ngayNhap).toLocaleDateString("vi-VN")}</p>
                 <p><strong>Ghi chú:</strong> {selectedReceipt.ghiChu ?? "Không có ghi chú"}</p>
                 <p><strong>Tổng tiền:</strong> {selectedReceipt.tongTien.toLocaleString("vi-VN")} đ</p>

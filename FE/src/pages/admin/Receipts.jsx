@@ -129,7 +129,6 @@ const onDelete = async (id) => {
 
   const onSave = async () => {
     // VALIDATE
-    if (!form.idNcc) return showMessage("Vui lòng chọn nhà cung cấp", "error");
     if (!form.details || form.details.length === 0)
       return showMessage("Phiếu nhập phải có ít nhất 1 sản phẩm", "error");
 

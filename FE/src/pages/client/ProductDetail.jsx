@@ -67,56 +67,75 @@ export default function ProductDetail() {
 }, [product]);
 
 
-  const handleAddToCart = async () => {
-    const token = localStorage.getItem("token");
-    if (!token) {
-      alert("Bạn cần đăng nhập để thêm giỏ hàng");
+const handleAddToCart = async () => {
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("Bạn cần đăng nhập để thêm giỏ hàng");
+    return;
+  }
+  if (!product || product.soLuongTon === 0) {
+    alert("Sản phẩm đã hết hàng, không thể thêm vào giỏ.");
+    return;
+  }
+
+  try {
+    const userRes = await fetch("http://localhost:8081/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const user = await userRes.json();
+
+    // Lấy giỏ hàng hiện tại
+    const cartRes = await fetch(`http://localhost:8081/cart/${user.idTaiKhoan}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const cart = await cartRes.json();
+
+    // Tìm sản phẩm trong giỏ
+    const existingItem = cart.find(
+      (item) => item.idSanPham === product.idSanPham
+    );
+
+    const currentQty = existingItem ? existingItem.soLuong : 0;
+    const totalQty = currentQty + quantity;
+
+    if (totalQty > product.soLuongTon) {
+      alert(
+        `Số lượng vượt quá tồn kho (${product.soLuongTon}). ` +
+        `Trong giỏ đã có ${currentQty}, bạn chỉ có thể thêm tối đa ${product.soLuongTon - currentQty}.`
+      );
       return;
     }
-    if (!product || product.soLuongTon === 0) {
-      alert("Sản phẩm đã hết hàng, không thể thêm vào giỏ.");
-      return;
-    }
-    if (quantity > product.soLuongTon) {
-      alert(`Số lượng vượt quá tồn kho (${product.soLuongTon}).`);
-      return;
-    }
 
-    try {
-      const userRes = await fetch("http://localhost:8081/auth/me", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      const user = await userRes.json();
+    const finalPrice =
+      product.kmPhanTram > 0
+        ? Math.round(product.giaBan * (1 - product.kmPhanTram / 100))
+        : product.giaBan;
 
-      const finalPrice =
-        product.kmPhanTram > 0
-          ? Math.round(product.giaBan * (1 - product.kmPhanTram / 100))
-          : product.giaBan;
+    const res = await fetch("http://localhost:8081/cart/add", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${token}`,
+      },
+      body: JSON.stringify({
+        idTaiKhoan: user.idTaiKhoan,
+        idSanPham: product.idSanPham,
+        soLuong: quantity,
+        donGia: finalPrice,
+      }),
+    });
 
-      const res = await fetch("http://localhost:8081/cart/add", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          idTaiKhoan: user.idTaiKhoan,
-          idSanPham: product.idSanPham,
-          soLuong: quantity,
-          donGia: finalPrice,
-        }),
-      });
+    if (!res.ok) throw new Error("Thêm giỏ hàng thất bại");
+    await res.json();
 
-      if (!res.ok) throw new Error("Thêm giỏ hàng thất bại");
-      await res.json();
+    alert("Đã thêm vào giỏ hàng thành công!");
+    window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+  } catch (err) {
+    console.error("Lỗi khi thêm giỏ hàng:", err);
+    alert("Có lỗi xảy ra khi thêm giỏ hàng");
+  }
+};
 
-      alert("Đã thêm vào giỏ hàng thành công!");
-      window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
-    } catch (err) {
-      console.error("Lỗi khi thêm giỏ hàng:", err);
-      alert("Có lỗi xảy ra khi thêm giỏ hàng");
-    }
-  };
 
   if (!product) {
     return <div className="container py-5">Không tìm thấy sản phẩm.</div>;

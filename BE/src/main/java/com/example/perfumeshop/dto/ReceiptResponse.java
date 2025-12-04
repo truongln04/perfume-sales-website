@@ -13,8 +13,6 @@ public class ReceiptResponse {
 
     private Integer idPhieuNhap;
 
-    private String tenNhaCungCap;
-
     private LocalDateTime ngayNhap;
 
     private BigDecimal tongTien;

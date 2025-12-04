@@ -9,7 +9,6 @@ import java.util.List;
 @NoArgsConstructor
 @AllArgsConstructor
 public class ReceiptRequest {
-    private Integer idNcc;
     private LocalDate ngayNhap;
     private String ghiChu;
     

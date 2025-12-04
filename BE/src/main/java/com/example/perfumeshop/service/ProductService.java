@@ -21,10 +21,12 @@ import java.util.stream.Collectors;
 public class ProductService {
 
      private final OrdersDetailRepository orderDetailRepo;
+     private final ReceiptDetailRepository receiptDetailRepo;
     private final ProductRepository productRepository;
     private final WarehouseRepository warehouseRepository;
     private final CategoryRepository categoryRepository;
     private final BrandRepository brandRepository;
+    private final SupplierRepository supplierRepository;
 
     // ==================== REGEX PATTERNS ====================
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-ZÀ-ỹ0-9\\s\\-&'()]{3,100}$");
@@ -42,8 +44,12 @@ public class ProductService {
         // Gán danh mục và thương hiệu
         product.setDanhMuc(categoryRepository.findById(request.getIdDanhMuc())
                 .orElseThrow(() -> new ValidationException("Không tìm thấy danh mục")));
+                
         product.setThuonghieu(brandRepository.findById(request.getIdthuonghieu())
                 .orElseThrow(() -> new ValidationException("Không tìm thấy thương hiệu")));
+
+        product.setNhaCungCap(supplierRepository.findById(request.getIdNcc())
+                .orElseThrow(() -> new ValidationException("Không tìm thấy nhà cung cấp")));
 
         Product savedProduct = productRepository.save(product);
 
@@ -75,11 +81,16 @@ public class ProductService {
                     .orElseThrow(() -> new ValidationException("Không tìm thấy thương hiệu")));
         }
 
+        if (request.getIdNcc() != null) {
+            product.setNhaCungCap(supplierRepository.findById(request.getIdNcc())
+                    .orElseThrow(() -> new ValidationException("Không tìm thấy nhà cung cấp")));
+        }
+
         return toResponse(productRepository.save(product));
     }
 
     // ==================== DELETE ====================
-    @Transactional
+@Transactional
 public void deleteProduct(Integer id) {
     Product sp = productRepository.findById(id)
             .orElseThrow(() -> new ValidationException("Không tìm thấy sản phẩm với ID: " + id));
@@ -93,8 +104,18 @@ public void deleteProduct(Integer id) {
         );
     }
 
+    // Kiểm tra sản phẩm có liên quan đến phiếu nhập không
+    boolean hasReceipts = receiptDetailRepo.existsBySanPham(sp);
+    if (hasReceipts) {
+        throw new ValidationException(
+            "Không thể xóa sản phẩm " + sp.getTenSanPham() +
+            " vì đã có phiếu nhập liên quan"
+        );
+    }
+
     productRepository.delete(sp);
 }
+
 
 
     // ==================== GET ALL & SEARCH ====================
@@ -151,6 +172,10 @@ public void deleteProduct(Integer id) {
         }
         if (request.getIdthuonghieu() == null) {
             throw new ValidationException("Vui lòng chọn thương hiệu");
+        }
+
+        if (request.getIdNcc() == null) {
+            throw new ValidationException("Vui lòng chọn nhà cung cấp");
         }
 
         // 5. Hình ảnh (bắt buộc)
@@ -217,6 +242,10 @@ public void deleteProduct(Integer id) {
         if (product.getThuonghieu() != null) {
             response.setIdthuonghieu(product.getThuonghieu().getIdthuonghieu());
             response.setTenthuonghieu(product.getThuonghieu().getTenthuonghieu());
+        }
+        if (product.getNhaCungCap() != null) {
+            response.setIdNcc(product.getNhaCungCap().getIdNcc());
+            response.setTenNcc(product.getNhaCungCap().getTenNcc());
         }
 
         Warehouse warehouse = warehouseRepository.findBySanPham(product);

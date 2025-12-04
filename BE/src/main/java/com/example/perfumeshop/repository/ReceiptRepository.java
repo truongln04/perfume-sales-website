@@ -7,7 +7,5 @@ import com.example.perfumeshop.entity.Receipt;
 
 @Repository
 public interface ReceiptRepository extends JpaRepository<Receipt, Integer> {
-
-    boolean existsByNhaCungCap_IdNcc(Integer idNcc);
     
 }

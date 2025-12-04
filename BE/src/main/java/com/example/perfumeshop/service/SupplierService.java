@@ -3,7 +3,7 @@ package com.example.perfumeshop.service;
 import com.example.perfumeshop.dto.SupplierRequest;
 import com.example.perfumeshop.dto.SupplierResponse;
 import com.example.perfumeshop.entity.Supplier;
-import com.example.perfumeshop.repository.ReceiptRepository;
+// import com.example.perfumeshop.repository.*;
 import com.example.perfumeshop.repository.SupplierRepository;
 
 import jakarta.transaction.Transactional;
@@ -20,7 +20,7 @@ import java.util.stream.Collectors;
 public class SupplierService {
 
     private final SupplierRepository repository;
-    private final ReceiptRepository receiptRepository;
+    // private final ReceiptRepository receiptRepository;
 
     // ==================== REGEX PATTERNS – CHUẨN NHƯ CÁC SERVICE KHÁC ====================
     private static final Pattern NAME_PATTERN = Pattern.compile("^[a-zA-ZÀ-ỹ0-9\\s]{3,40}$");
@@ -66,11 +66,11 @@ public class SupplierService {
         if (!repository.existsById(id)) {
             throw new ValidationException("Không tìm thấy nhà cung cấp để xóa");
         }
-        boolean existsReceipt = receiptRepository.existsByNhaCungCap_IdNcc(id);
-    if (existsReceipt) {
-        throw new ValidationException("Không thể xóa nhà cung cấp vì đang có phiếu nhập tham chiếu");
-    }
-        repository.deleteById(id);
+    //     boolean existsReceipt = receiptRepository.existsByNhaCungCap_IdNcc(id);
+    // if (existsReceipt) {
+    //     throw new ValidationException("Không thể xóa nhà cung cấp vì đang có phiếu nhập tham chiếu");
+    // }
+    //     repository.deleteById(id);
     }
 
     // ==================== GET ALL & SEARCH ====================
