@@ -38,6 +38,10 @@ public class Product {
     @JoinColumn(name = "id_thuong_hieu")
     private Brand thuonghieu;
 
+    @ManyToOne
+    @JoinColumn(name = "id_ncc")
+    private Supplier nhaCungCap;
+
     @Column(name = "gia_nhap", precision = 12, scale = 0)
     private BigDecimal giaNhap;
 

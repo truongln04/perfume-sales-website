@@ -15,11 +15,12 @@ export default function ProductManager({
   handleChange,
   danhMucs,
   thuongHieus,
+  nhaCungCaps,
   listMessage,
   modalMessage,
 }) {
 
-  
+
   return (
     <div className="card">
       <div className="card-header bg-white">
@@ -37,14 +38,14 @@ export default function ProductManager({
           </div>
         </div>
       </div>
-       {listMessage.type === "error" && listMessage.text && (
-  <div className="alert alert-danger py-2">{listMessage.text}</div>
-)}
-{listMessage.type === "success" && listMessage.text && (
-  <div className="m-3 py-2 px-3 rounded bg-success text-white">
-    {listMessage.text}
-  </div>
-)}
+      {listMessage.type === "error" && listMessage.text && (
+        <div className="alert alert-danger py-2">{listMessage.text}</div>
+      )}
+      {listMessage.type === "success" && listMessage.text && (
+        <div className="m-3 py-2 px-3 rounded bg-success text-white">
+          {listMessage.text}
+        </div>
+      )}
 
       <div className="card-body p-0">
         <div className="table-responsive">
@@ -54,6 +55,7 @@ export default function ProductManager({
                 <th>Mã SP</th>
                 <th>Mã DM</th>
                 <th>Mã TH</th>
+                <th>Mã NCC</th>
                 <th>Tên SP</th>
                 <th>Hình ảnh</th>
                 <th>Mô tả</th>
@@ -68,7 +70,7 @@ export default function ProductManager({
             <tbody>
               {products.length === 0 ? (
                 <tr>
-                  <td colSpan="11" className="text-center py-4">Không có dữ liệu</td>
+                  <td colSpan="13" className="text-center py-4">Không có dữ liệu</td>
                 </tr>
               ) : (
                 products.map(p => (
@@ -76,6 +78,7 @@ export default function ProductManager({
                     <td>{p.idSanPham}</td>
                     <td>{p.idDanhMuc}</td>
                     <td>{p.idthuonghieu}</td>
+                    <td>{p.idNcc}</td>
                     <td>{p.tenSanPham}</td>
                     <td>
                       <img
@@ -133,7 +136,7 @@ export default function ProductManager({
             </tbody>
           </table>
         </div>
-        
+
       </div>
       {showModal && (
         <div className="modal d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,.5)" }}>
@@ -146,8 +149,8 @@ export default function ProductManager({
 
               <div className="modal-body">
                 {modalMessage.type === "error" && modalMessage.text && (
-  <div className="alert alert-danger py-2">{modalMessage.text}</div>
-)}
+                  <div className="alert alert-danger py-2">{modalMessage.text}</div>
+                )}
                 <div className="row g-3">
                   {/* Danh mục */}
                   <div className="col-md-6">
@@ -197,6 +200,33 @@ export default function ProductManager({
                         {thuongHieus.map(th => (
                           <option key={th.idthuonghieu} value={th.idthuonghieu}>
                             {th.tenthuonghieu}
+                          </option>
+                        ))}
+                      </select>
+                    )}
+                  </div>
+
+                  {/* Nhà cung cấp */}
+                  <div className="col-md-6">
+                    <label className="form-label">Nhà Cung Cấp</label>
+                    {editing ? (
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={form.tenNcc || ""}
+                        disabled
+                      />
+                    ) : (
+                      <select
+                        className="form-select"
+                        name="idNcc"
+                        value={form.idNcc}
+                        onChange={handleChange}
+                      >
+                        <option value="">-- Chọn nhà cung cấp --</option>
+                        {nhaCungCaps.map(ncc => (
+                          <option key={ncc.idNcc} value={ncc.idNcc}>
+                            {ncc.tenNcc}
                           </option>
                         ))}
                       </select>

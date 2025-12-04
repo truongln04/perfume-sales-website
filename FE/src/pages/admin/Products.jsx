@@ -8,6 +8,7 @@ import {
   saveProduct,
   fetchDanhMucs,
   fetchThuongHieus,
+  fetchNhaCungCaps,
 } from "../../services/productService";
 
 function emptyProduct() {
@@ -18,6 +19,7 @@ function emptyProduct() {
     hinhAnh: "",
     idDanhMuc: "",
     idthuonghieu: "",
+    idNcc: "",
     giaBan: "",
     kmPhanTram: "",
     trangThai: false,
@@ -34,6 +36,7 @@ export default function Products() {
   const [form, setForm] = useState(emptyProduct());
   const [danhMucs, setDanhMucs] = useState([]);
   const [thuongHieus, setThuongHieus] = useState([]);
+  const [nhaCungCaps, setNhaCungCaps] = useState([]);
   // Phân trang
   const [currentPage, setCurrentPage] = useState(1);
   const pageSize = 20;
@@ -63,14 +66,16 @@ const showModalMessage = (text, type = "error") => {
 
   const loadMeta = async () => {
     try {
-      const [dmList, thList] = await Promise.all([
+      const [dmList, thList, nccList] = await Promise.all([
         fetchDanhMucs(),
         fetchThuongHieus(),
+        fetchNhaCungCaps(),
       ]);
       setDanhMucs(dmList);
       setThuongHieus(thList);
+      setNhaCungCaps(nccList);
     } catch (err) {
-      showListMessage("Lỗi tải danh mục/thương hiệu", "error");
+      showListMessage("Lỗi tải danh mục/thương hiệu/nhà cung cấp", "error");
     }
   };
 
@@ -146,6 +151,7 @@ const showModalMessage = (text, type = "error") => {
     if (!form.hinhAnh?.trim()) return showModalMessage("Vui lòng nhập URL hình ảnh sản phẩm", "error");
     if (!form.idDanhMuc) return showModalMessage("Vui lòng chọn danh mục", "error");
     if (!form.idthuonghieu) return showModalMessage("Vui lòng chọn thương hiệu", "error");
+    if (!form.idNcc) return showModalMessage("Vui lòng chọn nhà cung cấp", "error");
     
 
     const payload = {
@@ -154,13 +160,14 @@ const showModalMessage = (text, type = "error") => {
       hinhAnh: form.hinhAnh.trim(),
       idDanhMuc: Number(form.idDanhMuc),
       idthuonghieu: Number(form.idthuonghieu),
+      idNcc: Number(form.idNcc),
       giaBan: Number(form.giaBan),
       kmPhanTram: form.kmPhanTram ? Number(form.kmPhanTram) : 0,
       trangThai: Boolean(form.trangThai),
       giaNhap: form.giaNhap || 0,
       soLuongTon: form.soLuongTon || 0,
     };
-
+//  console.log("Payload gửi lên:", payload);
     try {
       const res = await fetch(
         editing ? `http://localhost:8081/products/${editing.idSanPham}` : "http://localhost:8081/products",
@@ -198,19 +205,22 @@ const showModalMessage = (text, type = "error") => {
   };
 
   const handleChange = (e) => {
-    const { name, value, type, checked } = e.target;
-    const numericFields = ["giaBan", "kmPhanTram", "giaNhap", "soLuongTon"];
+  const { name, value, type, checked } = e.target;
+  const numericFields = ["giaBan", "kmPhanTram", "giaNhap", "soLuongTon"];
 
-    let newValue =
-      type === "checkbox"
-        ? checked
-        : numericFields.includes(name)
-        ? value === "" ? "" : Number(value)
-        : value;
+  let newValue =
+    type === "checkbox"
+      ? checked
+      : numericFields.includes(name)
+      ? value === "" ? "" : Number(value)
+      : value;
 
-    setForm((prev) => ({ ...prev, [name]: newValue }));
-    if (message.text) setModalMessage({ text: "", type: "" });
-  };
+  setForm((prev) => ({ ...prev, [name]: newValue }));
+
+  // reset thông báo lỗi trong modal khi người dùng thay đổi input
+  if (modalMessage.text) setModalMessage({ text: "", type: "" });
+};
+
 
    // tính tổng số trang
   const totalPages = Math.ceil(filtered.length / pageSize);
@@ -240,6 +250,7 @@ const showModalMessage = (text, type = "error") => {
       handleChange={handleChange}
       danhMucs={danhMucs}
       thuongHieus={thuongHieus}
+      nhaCungCaps={nhaCungCaps}
       listMessage={listMessage}
       modalMessage={modalMessage}
     />

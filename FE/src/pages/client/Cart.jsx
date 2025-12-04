@@ -55,10 +55,30 @@ export default function Cart() {
   // Cập nhật số lượng
   const updateQuantity = async (idGh, newQuantity) => {
     try {
-      const res = await fetch(`http://localhost:8081/cart/${idGh}?soLuong=${newQuantity}`, {
-        method: "PUT",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      const item = cartItems.find(i => i.idGh === idGh);
+      if (!item) return;
+
+      // gọi API sản phẩm để lấy tồn kho
+      const resSp = await fetch(`http://localhost:8081/products/${item.idSanPham}`);
+      const sp = await resSp.json();
+
+      if (newQuantity > sp.soLuongTon) {
+        alert(`Số lượng vượt quá tồn kho (${sp.soLuongTon}).`);
+        return;
+      }
+      if (newQuantity < 1) {
+        alert("Số lượng phải lớn hơn 0.");
+        return;
+      }
+
+      const res = await fetch(
+        `http://localhost:8081/cart/${idGh}?soLuong=${newQuantity}`,
+        {
+          method: "PUT",
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
       if (res.ok) {
         const updated = await res.json();
         setCartItems(
@@ -75,31 +95,32 @@ export default function Cart() {
     }
   };
 
+
   // Tính tổng tiền theo sản phẩm đã chọn
   const totalPrice = cartItems
     .filter((item) => selectedItems.includes(item.idGh))
     .reduce((sum, item) => sum + item.donGia * item.soLuong, 0);
 
   const removeItem = async (idGh) => {
-  try {
-    const res = await fetch(`http://localhost:8081/cart/${idGh}`, {
-      method: "DELETE",
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    if (res.ok) {
-      // cập nhật lại state giỏ hàng
-      setCartItems(cartItems.filter((item) => item.idGh !== idGh));
-      setSelectedItems(selectedItems.filter((id) => id !== idGh));
-      setSelectAll(false);
+    try {
+      const res = await fetch(`http://localhost:8081/cart/${idGh}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (res.ok) {
+        // cập nhật lại state giỏ hàng
+        setCartItems(cartItems.filter((item) => item.idGh !== idGh));
+        setSelectedItems(selectedItems.filter((id) => id !== idGh));
+        setSelectAll(false);
 
-      window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
-      alert("Xóa sản phẩm thành công!");
+        window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+        alert("Xóa sản phẩm thành công!");
+      }
+    } catch (err) {
+      console.error("Lỗi khi xóa sản phẩm:", err);
+      alert("Có lỗi xảy ra khi xóa sản phẩm!");
     }
-  } catch (err) {
-    console.error("Lỗi khi xóa sản phẩm:", err);
-    alert("Có lỗi xảy ra khi xóa sản phẩm!");
-  }
-};
+  };
 
 
   // Đặt hàng
@@ -129,30 +150,30 @@ export default function Cart() {
     });
   };
 
-const removeSelectedItems = async () => {
-  if (selectedItems.length === 0) {
-    alert("Không có sản phẩm nào được chọn để xóa!");
-    return;
-  }
-  try {
-    for (const idGh of selectedItems) {
-      await fetch(`http://localhost:8081/cart/${idGh}`, {
-        method: "DELETE",
-        headers: { Authorization: `Bearer ${token}` },
-      });
+  const removeSelectedItems = async () => {
+    if (selectedItems.length === 0) {
+      alert("Không có sản phẩm nào được chọn để xóa!");
+      return;
     }
-    // reset lại giỏ hàng và lựa chọn
-    setCartItems(cartItems.filter((item) => !selectedItems.includes(item.idGh)));
-    setSelectedItems([]);
-    setSelectAll(false);
+    try {
+      for (const idGh of selectedItems) {
+        await fetch(`http://localhost:8081/cart/${idGh}`, {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        });
+      }
+      // reset lại giỏ hàng và lựa chọn
+      setCartItems(cartItems.filter((item) => !selectedItems.includes(item.idGh)));
+      setSelectedItems([]);
+      setSelectAll(false);
 
-    window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
-    alert("Đã xóa các sản phẩm đã chọn!");
-  } catch (err) {
-    console.error("Lỗi khi xóa sản phẩm:", err);
-    alert("Có lỗi xảy ra khi xóa sản phẩm!");
-  }
-};
+      window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+      alert("Đã xóa các sản phẩm đã chọn!");
+    } catch (err) {
+      console.error("Lỗi khi xóa sản phẩm:", err);
+      alert("Có lỗi xảy ra khi xóa sản phẩm!");
+    }
+  };
 
 
   return (
@@ -224,22 +245,22 @@ const removeSelectedItems = async () => {
                       {(item.donGia * item.soLuong).toLocaleString()} ₫
                     </td>
                     <td>
-                    
-  <button
-    className="btn btn-sm btn-outline-danger"
-    onClick={() => {
-      if (selectAll) {
-        // nếu chọn tất cả thì xóa toàn bộ
-        removeSelectedItems();
-      } else {
-        // nếu chỉ chọn 1 thì xóa sản phẩm đó
-        removeItem(item.idGh);
-      }
-    }}
-    aria-label={`Xóa ${item.tenSanPham}`}
-  >
-    Xóa
-  </button>
+
+                      <button
+                        className="btn btn-sm btn-outline-danger"
+                        onClick={() => {
+                          if (selectAll) {
+                            // nếu chọn tất cả thì xóa toàn bộ
+                            removeSelectedItems();
+                          } else {
+                            // nếu chỉ chọn 1 thì xóa sản phẩm đó
+                            removeItem(item.idGh);
+                          }
+                        }}
+                        aria-label={`Xóa ${item.tenSanPham}`}
+                      >
+                        Xóa
+                      </button>
 
 
                     </td>
@@ -258,17 +279,17 @@ const removeSelectedItems = async () => {
             </h4>
             <div className="d-flex justify-content-between align-items-center mt-4">
 
-  <div>
-    <button
-      className="btn btn-primary btn-lg px-2 fw-bold rounded-pill shadow-sm"
-      disabled={selectedItems.length === 0}
-      onClick={handleOrder}
-      aria-label="Tiến hành đặt hàng ngay"
-    >
-      🛒 Đặt hàng
-    </button>
-  </div>
-</div>
+              <div>
+                <button
+                  className="btn btn-primary btn-lg px-2 fw-bold rounded-pill shadow-sm"
+                  disabled={selectedItems.length === 0}
+                  onClick={handleOrder}
+                  aria-label="Tiến hành đặt hàng ngay"
+                >
+                  🛒 Đặt hàng
+                </button>
+              </div>
+            </div>
 
           </div>
         </>

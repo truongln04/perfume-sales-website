@@ -19,3 +19,5 @@ export const saveProduct = (product, editingId) => {
 export const fetchDanhMucs = () => apiGet("/categories");
 
 export const fetchThuongHieus = () => apiGet("/brands");
+
+export const fetchNhaCungCaps = () => apiGet("/suppliers");

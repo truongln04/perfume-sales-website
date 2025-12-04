@@ -14,6 +14,7 @@ public class ProductRequest {
     private String hinhAnh;
     private Integer idDanhMuc;
     private Integer idthuonghieu;
+    private Integer idNcc;
     private BigDecimal giaBan;
     private BigDecimal kmPhanTram;
     private Boolean trangThai;

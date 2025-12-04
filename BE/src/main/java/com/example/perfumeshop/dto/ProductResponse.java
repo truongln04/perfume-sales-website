@@ -18,6 +18,8 @@ public class ProductResponse {
     private String tenDanhMuc;       
     private Integer idthuonghieu;
     private String tenthuonghieu;
+    private Integer idNcc;
+    private String tenNcc;
     private BigDecimal giaNhap;
     private BigDecimal giaBan;
     private BigDecimal kmPhanTram;
