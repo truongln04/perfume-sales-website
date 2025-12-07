@@ -122,7 +122,14 @@ const handleAddToCart = async () => {
     await res.json();
 
     alert("Đã thêm vào giỏ hàng thành công!");
-    window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+    const isNewProduct = !existingItem;
+const newTotalItems =
+  (cart.chiTietGioHang?.length || 0) + (isNewProduct ? 1 : 0);
+
+// Gửi lên navbar
+window.dispatchEvent(
+  new CustomEvent("cart-updated", { detail: newTotalItems })
+);
   } catch (err) {
     console.error("Lỗi khi thêm giỏ hàng:", err);
     alert("Có lỗi xảy ra khi thêm giỏ hàng");
