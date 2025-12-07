@@ -142,7 +142,7 @@ export default function Checkout() {
 
       // Xóa giỏ hàng
       const deletePromises = selectedItems.map((item) =>
-        fetch(`${API_URL}/cart/${item.idGh}`, {
+        fetch(`${API_URL}/cart/${item.idCtgh}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         })
@@ -286,7 +286,7 @@ export default function Checkout() {
                 </thead>
                 <tbody>
                   {selectedItems.map((item) => (
-                    <tr key={item.idGh}>
+                    <tr key={item.idCtgh}>
                       <td className="fw-medium">{item.tenSanPham}</td>
                       <td className="text-center">{item.donGia.toLocaleString()}đ</td>
                       <td className="text-center">x{item.soLuong}</td>

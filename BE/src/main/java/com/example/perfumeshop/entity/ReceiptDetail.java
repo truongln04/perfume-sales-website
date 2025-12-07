@@ -3,7 +3,6 @@ package com.example.perfumeshop.entity;
 import jakarta.persistence.*;
 import lombok.*;
 import java.math.BigDecimal;
-;
 @Entity
 @Table(name = "chi_tiet_phieu_nhap")
 @Data

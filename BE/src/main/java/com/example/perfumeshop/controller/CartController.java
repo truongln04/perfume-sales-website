@@ -17,7 +17,7 @@ public class CartController {
 
     // Lấy giỏ hàng theo tài khoản
     @GetMapping("/{idTaiKhoan}")
-    public List<CartResponse> getCart(@PathVariable Integer idTaiKhoan) {
+    public CartResponse getCart(@PathVariable Integer idTaiKhoan) {
         return cartService.getCartByUser(idTaiKhoan);
     }
 
@@ -27,17 +27,17 @@ public class CartController {
         return cartService.addToCart(request);
     }
 
-    // Cập nhật số lượng sản phẩm trong giỏ
-    @PutMapping("/{idGh}")
-    public CartResponse updateCart(@PathVariable Integer idGh,
-            @RequestParam Integer soLuong) {
-        return cartService.updateQuantity(idGh, soLuong);
+   // Cập nhật số lượng sản phẩm trong giỏ (theo id chi tiết giỏ hàng)
+    @PutMapping("/{idCtgh}")
+    public CartResponse updateCart(@PathVariable Integer idCtgh,
+                                   @RequestParam Integer soLuong) {
+        return cartService.updateQuantity(idCtgh, soLuong);
     }
 
-    // Xóa sản phẩm khỏi giỏ
-    @DeleteMapping("/{idGh}")
-    public void removeItem(@PathVariable Integer idGh) {
-        cartService.removeItem(idGh);
+    // Xóa sản phẩm khỏi giỏ (theo id chi tiết giỏ hàng)
+    @DeleteMapping("/{idCtgh}")
+    public void removeItem(@PathVariable Integer idCtgh) {
+        cartService.removeItem(idCtgh);
     }
 
     // Xóa toàn bộ giỏ hàng của user
@@ -47,9 +47,9 @@ public class CartController {
     }
 
     // Cập nhật số lượng theo user + sản phẩm
-    @PutMapping("/update")
-    public CartResponse updateCartByUserAndProduct(@RequestBody CartRequest request) {
-        return cartService.updateByUserAndProduct(request);
-    }
+    //@PutMapping("/update")
+    //public CartResponse updateCartByUserAndProduct(@RequestBody CartRequest request) {
+        //return cartService.updateByUserAndProduct(request);
+    //}
 
 }

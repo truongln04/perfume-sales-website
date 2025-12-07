@@ -32,7 +32,7 @@ export default function ProductDetail() {
           })
         )
         .then((res) => res.json())
-        .then((cart) => setCartCount(cart.length))
+        .then((cart) => setCartCount(cart.chiTietGioHang?.length || 0))
         .catch(() => setCartCount(0));
     }
   }, [id]);
@@ -51,18 +51,7 @@ export default function ProductDetail() {
           p.tenthuonghieu === product.tenthuonghieu
       );
 
-      // Nếu danh sách quá ít, fallback theo danh mục
-      let finalList = relatedProducts;
-      if (finalList.length < 1) {
-        finalList = allProducts.filter(
-          (p) =>
-            p.idSanPham !== product.idSanPham &&
-            p.idDanhMuc === product.idDanhMuc&&
-            p.tenthuonghieu === product.tenthuonghieu
-        );
-      }
-
-      setRelated(finalList);
+      setRelated(relatedProducts);
     });
 }, [product]);
 
@@ -91,7 +80,7 @@ const handleAddToCart = async () => {
     const cart = await cartRes.json();
 
     // Tìm sản phẩm trong giỏ
-    const existingItem = cart.find(
+    const existingItem = cart.chiTietGioHang?.find(
       (item) => item.idSanPham === product.idSanPham
     );
 
@@ -119,9 +108,13 @@ const handleAddToCart = async () => {
       },
       body: JSON.stringify({
         idTaiKhoan: user.idTaiKhoan,
-        idSanPham: product.idSanPham,
-        soLuong: quantity,
-        donGia: finalPrice,
+        chiTietGioHang: [
+            {
+              idSanPham: product.idSanPham,
+              soLuong: quantity,
+              donGia: finalPrice,
+            },
+          ],
       }),
     });
 

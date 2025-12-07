@@ -21,10 +21,10 @@ export default function Cart() {
           headers: { Authorization: `Bearer ${token}` },
         });
         const data = await cartRes.json();
-        setCartItems(data);
+        setCartItems(data.chiTietGioHang || []);
 
         // ✅ phát sự kiện với số sản phẩm (length)
-        window.dispatchEvent(new CustomEvent("cart-updated", { detail: data.length }));
+        window.dispatchEvent(new CustomEvent("cart-updated", { detail: (data.chiTietGioHang || []).length }));
       } catch (err) {
         console.error("Lỗi khi lấy giỏ hàng:", err);
       }
@@ -38,24 +38,24 @@ export default function Cart() {
     if (selectAll) {
       setSelectedItems([]);
     } else {
-      setSelectedItems(cartItems.map((item) => item.idGh));
+      setSelectedItems(cartItems.map((item) => item.idCtgh));
     }
     setSelectAll(!selectAll);
   };
 
   // Chọn từng sản phẩm
-  const handleSelectItem = (idGh) => {
-    if (selectedItems.includes(idGh)) {
-      setSelectedItems(selectedItems.filter((id) => id !== idGh));
+  const handleSelectItem = (idCtgh) => {
+    if (selectedItems.includes(idCtgh)) {
+      setSelectedItems(selectedItems.filter((id) => id !== idCtgh));
     } else {
-      setSelectedItems([...selectedItems, idGh]);
+      setSelectedItems([...selectedItems, idCtgh]);
     }
   };
 
   // Cập nhật số lượng
-  const updateQuantity = async (idGh, newQuantity) => {
+  const updateQuantity = async (idCtgh, newQuantity) => {
     try {
-      const item = cartItems.find(i => i.idGh === idGh);
+      const item = cartItems.find(i => i.idCtgh === idCtgh);
       if (!item) return;
 
       // gọi API sản phẩm để lấy tồn kho
@@ -72,7 +72,7 @@ export default function Cart() {
       }
 
       const res = await fetch(
-        `http://localhost:8081/cart/${idGh}?soLuong=${newQuantity}`,
+        `http://localhost:8081/cart/${idCtgh}?soLuong=${newQuantity}`,
         {
           method: "PUT",
           headers: { Authorization: `Bearer ${token}` },
@@ -80,11 +80,13 @@ export default function Cart() {
       );
 
       if (res.ok) {
-        const updated = await res.json();
-        setCartItems(
-          cartItems.map((item) =>
-            item.idGh === idGh ? { ...item, soLuong: updated.soLuong } : item
-          )
+        const updatedCart = await res.json();
+        setCartItems(updatedCart.chiTietGioHang);
+
+        window.dispatchEvent(
+          new CustomEvent("cart-updated", {
+            detail: updatedCart.chiTietGioHang.length,
+          })
         );
       } else {
         alert("Cập nhật số lượng thất bại!");
@@ -98,22 +100,22 @@ export default function Cart() {
 
   // Tính tổng tiền theo sản phẩm đã chọn
   const totalPrice = cartItems
-    .filter((item) => selectedItems.includes(item.idGh))
+    .filter((item) => selectedItems.includes(item.idCtgh))
     .reduce((sum, item) => sum + item.donGia * item.soLuong, 0);
 
-  const removeItem = async (idGh) => {
+  const removeItem = async (idCtgh) => {
     try {
-      const res = await fetch(`http://localhost:8081/cart/${idGh}`, {
+      const res = await fetch(`http://localhost:8081/cart/${idCtgh}`, {
         method: "DELETE",
         headers: { Authorization: `Bearer ${token}` },
       });
       if (res.ok) {
         // cập nhật lại state giỏ hàng
-        setCartItems(cartItems.filter((item) => item.idGh !== idGh));
-        setSelectedItems(selectedItems.filter((id) => id !== idGh));
+        setCartItems(cartItems.filter((item) => item.idCtgh !== idCtgh));
+        setSelectedItems(selectedItems.filter((id) => id !== idCtgh));
         setSelectAll(false);
 
-        window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+        window.dispatchEvent(new CustomEvent("cart-updated", { detail: cartItems.length - 1 }));
         alert("Xóa sản phẩm thành công!");
       }
     } catch (err) {
@@ -131,9 +133,9 @@ export default function Cart() {
     }
 
     const itemsToCheckout = cartItems
-      .filter((item) => selectedItems.includes(item.idGh))
+      .filter((item) => selectedItems.includes(item.idCtgh))
       .map((item) => ({
-        idGh: item.idGh,
+        idCtgh: item.idCtgh,
         idSanPham: item.idSanPham,
         tenSanPham: item.tenSanPham,
         donGia: item.donGia,
@@ -156,24 +158,62 @@ export default function Cart() {
       return;
     }
     try {
-      for (const idGh of selectedItems) {
-        await fetch(`http://localhost:8081/cart/${idGh}`, {
+      for (const idCtgh of selectedItems) {
+        await fetch(`http://localhost:8081/cart/${idCtgh}`, {
           method: "DELETE",
           headers: { Authorization: `Bearer ${token}` },
         });
       }
       // reset lại giỏ hàng và lựa chọn
-      setCartItems(cartItems.filter((item) => !selectedItems.includes(item.idGh)));
+      setCartItems(cartItems.filter((item) => !selectedItems.includes(item.idCtgh)));
       setSelectedItems([]);
       setSelectAll(false);
 
-      window.dispatchEvent(new CustomEvent("cart-updated", { detail: "refresh" }));
+      window.dispatchEvent(new CustomEvent("cart-updated", { detail: cartItems.length - selectedItems.length }));
       alert("Đã xóa các sản phẩm đã chọn!");
     } catch (err) {
       console.error("Lỗi khi xóa sản phẩm:", err);
       alert("Có lỗi xảy ra khi xóa sản phẩm!");
     }
   };
+  
+
+  const clearCart = async () => {
+  try {
+    const resMe = await fetch("http://localhost:8081/auth/me", {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const user = await resMe.json();
+
+    console.log("User ID:", user.idTaiKhoan);
+    const res = await fetch(
+      `http://localhost:8081/cart/clear/${user.idTaiKhoan}`,
+      {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      }
+    );
+
+    if (res.ok) {
+      setCartItems([]);       // Xóa toàn bộ trên UI
+      setSelectedItems([]);   // Reset lựa chọn
+      setSelectAll(false);
+
+      // Cập nhật Navbar
+      window.dispatchEvent(
+        new CustomEvent("cart-updated", { detail: 0 })
+      );
+
+      alert("Đã xóa toàn bộ giỏ hàng!");
+    } else {
+      alert("Xóa giỏ hàng thất bại!");
+    }
+  } catch (err) {
+    console.error("Lỗi khi xóa giỏ hàng:", err);
+    alert("Có lỗi xảy ra khi xóa giỏ hàng!");
+  }
+};
+
 
 
   return (
@@ -209,8 +249,8 @@ export default function Cart() {
                     <td>
                       <input
                         type="checkbox"
-                        checked={selectedItems.includes(item.idGh)}
-                        onChange={() => handleSelectItem(item.idGh)}
+                        checked={selectedItems.includes(item.idCtgh)}
+                        onChange={() => handleSelectItem(item.idCtgh)}
                         aria-label={`Chọn sản phẩm ${item.tenSanPham}`}
                       />
                     </td>
@@ -233,7 +273,7 @@ export default function Cart() {
                         min="1"
                         value={item.soLuong}
                         onChange={(e) =>
-                          updateQuantity(item.idGh, parseInt(e.target.value))
+                          updateQuantity(item.idCtgh, parseInt(e.target.value))
                         }
                         className="form-control form-control-sm text-center mx-auto"
                         style={{ width: 70 }}
@@ -254,7 +294,7 @@ export default function Cart() {
                             removeSelectedItems();
                           } else {
                             // nếu chỉ chọn 1 thì xóa sản phẩm đó
-                            removeItem(item.idGh);
+                            removeItem(item.idCtgh);
                           }
                         }}
                         aria-label={`Xóa ${item.tenSanPham}`}
@@ -277,9 +317,17 @@ export default function Cart() {
                 {totalPrice.toLocaleString()} ₫
               </span>
             </h4>
-            <div className="d-flex justify-content-between align-items-center mt-4">
+            <div className="d-flex gap-3">
 
               <div>
+                <button
+      className="btn btn-outline-danger btn-lg px-2 fw-bold rounded-pill shadow-sm"
+      disabled={cartItems.length === 0}
+      onClick={clearCart}
+      aria-label="Xóa toàn bộ giỏ hàng"
+    >
+      🗑 Xóa toàn bộ
+    </button>
                 <button
                   className="btn btn-primary btn-lg px-2 fw-bold rounded-pill shadow-sm"
                   disabled={selectedItems.length === 0}
@@ -288,6 +336,8 @@ export default function Cart() {
                 >
                   🛒 Đặt hàng
                 </button>
+                
+
               </div>
             </div>
 

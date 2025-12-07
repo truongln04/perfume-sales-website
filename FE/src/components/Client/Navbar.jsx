@@ -100,7 +100,7 @@ const [cartCount, setCartCount] = useState(0);
 useEffect(() => {
   const token = localStorage.getItem("token");
 
-  // Hàm load số lượng giỏ hàng (gọi lại khi cần refresh)
+  // Hàm load số lượng tổng sản phẩm trong giỏ
   const loadCartCount = async () => {
     if (!token) {
       setCartCount(0);
@@ -108,38 +108,52 @@ useEffect(() => {
     }
 
     try {
+      // Lấy userId
       const meRes = await axios.get("http://localhost:8081/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
       });
       const userId = meRes.data.idTaiKhoan;
 
+      // Lấy giỏ hàng
       const cartRes = await axios.get(`http://localhost:8081/cart/${userId}`, {
         headers: { Authorization: `Bearer ${token}` },
       });
 
-      setCartCount(cartRes.data.length || 0);
+      const cart = cartRes.data;
+
+      // Nếu người dùng chưa có giỏ hàng
+      if (!cart || !cart.chiTietGioHang) {
+        setCartCount(0);
+        return;
+      }
+
+      // Tính tổng số lượng
+      const totalQuantity = cart.chiTietGioHang.reduce(
+        (sum, item) => sum + item.soLuong,
+        0
+      );
+
+      setCartCount(totalQuantity);
     } catch (err) {
       console.warn("Lỗi load giỏ hàng:", err);
       setCartCount(0);
     }
   };
 
-  // Load lần đầu khi vào trang
+  // Load khi vào trang
   loadCartCount();
 
-  // Lắng nghe sự kiện cập nhật giỏ hàng
+  // Lắng nghe sự kiện cập nhật từ ProductDetail hoặc Cart
   const handleCartUpdate = (e) => {
     if (e.detail === "refresh") {
-      loadCartCount(); // ← Tự động reload lại số lượng chính xác
+      loadCartCount(); // Reload lại từ backend
     } else if (typeof e.detail === "number") {
-      setCartCount(e.detail);
+      setCartCount(e.detail); // Trường hợp bạn truyền số trực tiếp
     }
-    // Nếu detail là bất kỳ giá trị nào khác → bỏ qua (an toàn)
   };
 
   window.addEventListener("cart-updated", handleCartUpdate);
 
-  // Cleanup
   return () => {
     window.removeEventListener("cart-updated", handleCartUpdate);
   };

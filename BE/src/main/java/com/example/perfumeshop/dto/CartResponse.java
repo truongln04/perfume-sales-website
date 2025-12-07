@@ -1,15 +1,14 @@
 package com.example.perfumeshop.dto;
 
-import lombok.Data;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import lombok.*;
 
 @Data
 public class CartResponse {
     private Integer idGh;            // mã giỏ hàng
-    private Integer idTaikhoan;       // mã tài khoản
-    private Integer idSanPham;       // mã sản phẩm
-    private String tenSanPham;       // tên sản phẩm
-    private String hinhAnh;       // thương hiệu sản phẩm
-    private Integer soLuong;         // số lượng
-    private Long donGia;             // đơn giá
-             // tổng tiền = soLuong * donGia
+    private Integer idTaiKhoan;       // mã tài khoản
+    private LocalDateTime ngayTao;
+    private List<CartDetailResponse> chiTietGioHang;
 }

@@ -59,6 +59,7 @@ export default function ProductManager({
                 <th>Tên SP</th>
                 <th>Hình ảnh</th>
                 <th>Mô tả</th>
+                <th>Giá nhập</th>
                 <th>Giá bán</th>
                 <th>KM%</th>
                 <th>Giá sau KM</th>
@@ -111,7 +112,7 @@ export default function ProductManager({
                         p.moTa
                       )}
                     </td>
-
+                    <td>{p.giaNhap != null ? new Intl.NumberFormat("vi-VN", { style: "currency", currency: "VND" }).format(p.giaNhap) : "—"}</td>
                     <td>{p.giaBan != null ? p.giaBan.toLocaleString("vi-VN") + " đ" : "—"}</td>
                     <td>{p.kmPhanTram != null ? p.kmPhanTram + "%" : "—"}</td>
                     <td>

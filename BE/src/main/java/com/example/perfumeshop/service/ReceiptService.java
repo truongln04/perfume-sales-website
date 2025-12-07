@@ -68,24 +68,9 @@ public class ReceiptService {
             tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
             chiTietList.add(detail);
 
-            // Cập nhật giá nhập trung bình
-            Warehouse kho = warehouseRepo.findBySanPham(sanPham);
-            int tonKhoThucTe = (kho != null ? kho.getSoLuongNhap() - kho.getSoLuongBan() : 0);
-
-            BigDecimal giaNhapCu = sanPham.getGiaNhap() != null ? sanPham.getGiaNhap() : BigDecimal.ZERO;
-            BigDecimal tongGiaTriCu = giaNhapCu.multiply(BigDecimal.valueOf(tonKhoThucTe));
-            BigDecimal tongGiaTriMoi = d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong()));
-            int tongSoLuong = tonKhoThucTe + d.getSoLuong();
-
-            if (tongSoLuong > 0) {
-                BigDecimal giaNhapTB = tongGiaTriCu.add(tongGiaTriMoi)
-                        .divide(BigDecimal.valueOf(tongSoLuong), 2, RoundingMode.HALF_UP);
-                sanPham.setGiaNhap(giaNhapTB);
-            }
-
             // Cập nhật tồn kho
             updateSoLuongNhap(sanPham, d.getSoLuong());
-            productRepo.save(sanPham);
+            
         }
 
         receipt.setTongTien(tongTien);
@@ -135,23 +120,8 @@ public class ReceiptService {
             tongTien = tongTien.add(d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong())));
             chiTietList.add(detail);
 
-            // Cập nhật giá nhập trung bình
-            Warehouse kho = warehouseRepo.findBySanPham(sanPham);
-            int tonKhoThucTe = (kho != null ? kho.getSoLuongNhap() - kho.getSoLuongBan() : 0);
-
-            BigDecimal giaNhapCu = sanPham.getGiaNhap() != null ? sanPham.getGiaNhap() : BigDecimal.ZERO;
-            BigDecimal tongGiaTriCu = giaNhapCu.multiply(BigDecimal.valueOf(tonKhoThucTe));
-            BigDecimal tongGiaTriMoi = d.getDonGia().multiply(BigDecimal.valueOf(d.getSoLuong()));
-            int tongSoLuong = tonKhoThucTe + d.getSoLuong();
-
-            if (tongSoLuong > 0) {
-                BigDecimal giaNhapTB = tongGiaTriCu.add(tongGiaTriMoi)
-                        .divide(BigDecimal.valueOf(tongSoLuong), 2, RoundingMode.HALF_UP);
-                sanPham.setGiaNhap(giaNhapTB);
-            }
-
             updateSoLuongNhap(sanPham, d.getSoLuong());
-            productRepo.save(sanPham);
+            
         }
 
         receipt.setTongTien(tongTien);
@@ -186,11 +156,7 @@ public void delete(Integer id) {
 
     // Rollback tồn kho
     for (ReceiptDetail detail : receipt.getChiTietPhieuNhap()) {
-        Product sp = detail.getSanPham();
-        Warehouse wh = warehouseRepo.findById(sp.getIdSanPham())
-                .orElseThrow();
-        wh.setSoLuongNhap(wh.getSoLuongNhap() - detail.getSoLuong());
-        warehouseRepo.save(wh);
+        updateSoLuongNhap(detail.getSanPham(), -detail.getSoLuong());
     }
 
     receiptRepo.delete(receipt);
@@ -269,6 +235,7 @@ public void delete(Integer id) {
                 .chiTietPhieuNhap(r.getChiTietPhieuNhap().stream()
                         .map(d -> ReceiptDetailResponse.builder()
                                 .idCTPN(d.getIdCTPN())
+                                .idSanPham(d.getSanPham().getIdSanPham())
                                 .tenSanPham(d.getSanPham().getTenSanPham())
                                 .soLuong(d.getSoLuong())
                                 .donGia(d.getDonGia())

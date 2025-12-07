@@ -1,11 +1,11 @@
 package com.example.perfumeshop.dto;
-import lombok.Data;
-
+import lombok.*;
+import java.util.List;
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 
 public class CartRequest {    
     private Integer idTaiKhoan;    
-    private Integer idSanPham;       
-    private Integer soLuong;
-    private Long donGia;        
+     private List<CartDetailRequest> chiTietGioHang;       
 }

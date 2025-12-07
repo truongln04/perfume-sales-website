@@ -91,18 +91,13 @@ export default function Receipts() {
       tenNcc: selectedNcc?.tenNcc || receipt.tenNhaCungCap || "",
       ngayNhap: receipt.ngayNhap?.slice(0, 10) || "",
       ghiChu: receipt.ghiChu || "",
-      details: receipt.chiTietPhieuNhap.map((d) => {
-        const selectedProduct = products.find(
-          (p) => Number(p.idSanPham) === Number(d.idSanPham)
-        );
-        return {
-          idSanPham: selectedProduct?.idSanPham || d.idSanPham || "",
-          tenSanPham: selectedProduct?.tenSanPham || d.tenSanPham || "",
-          soLuong: d.soLuong || 1,
-          donGia: selectedProduct?.giaNhap || d.donGia || 0,
-        };
-      }),
-    });
+     details: receipt.chiTietPhieuNhap.map((d) => ({
+      idSanPham: d.idSanPham,
+      tenSanPham: d.tenSanPham || products.find((p) => Number(p.idSanPham) === Number(d.idSanPham))?.tenSanPham || "",
+      soLuong: d.soLuong,
+      donGia: d.donGia, // Lấy trực tiếp từ ReceiptDetail
+    })),
+  });
     setMessage({ text: "", type: "" });
     setShowModal(true);
   };
@@ -239,7 +234,8 @@ const onDelete = async (id) => {
             );
             return {
               ...item,
-              tenSanPham: product?.tenSanPham || item.tenSanPham || "Không rõ",
+               tenSanPham: item.tenSanPham || product?.tenSanPham || "Không rõ",
+        donGia: item.donGia,
             };
           }),
         };

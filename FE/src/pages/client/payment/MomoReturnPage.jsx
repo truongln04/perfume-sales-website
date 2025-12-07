@@ -90,7 +90,7 @@ export default function MomoReturnPage() {
 
             // === XÓA CHỈNH XÁC TỪNG SẢN PHẨM TRONG ĐƜN HÀNG (giống Checkout.jsx) ===
             const deletePromises = orderData.selectedItems.map(item =>
-              fetch(`http://localhost:8081/cart/${item.idGh}`, {
+              fetch(`http://localhost:8081/cart/${item.idCtgh}`, {
                 method: "DELETE",
                 headers: {
                   Authorization: `Bearer ${token}`

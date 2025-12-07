@@ -1,16 +1,24 @@
 package com.example.perfumeshop.service;
 
 import com.example.perfumeshop.dto.CartRequest;
+import com.example.perfumeshop.dto.CartDetailRequest;
 import com.example.perfumeshop.dto.CartResponse;
+import com.example.perfumeshop.dto.CartDetailResponse;
 import com.example.perfumeshop.entity.Cart;
+import com.example.perfumeshop.entity.CartDetail;
 import com.example.perfumeshop.entity.Account;
 import com.example.perfumeshop.entity.Product;
 import com.example.perfumeshop.repository.CartRepository;
 import com.example.perfumeshop.repository.AccountRepository;
 import com.example.perfumeshop.repository.ProductRepository;
+
+import jakarta.transaction.Transactional;
+
+import com.example.perfumeshop.repository.CartDetailRepository;
 import org.springframework.stereotype.Service;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
@@ -26,94 +34,99 @@ public class CartService {
     @Autowired
     private ProductRepository productRepository;
 
+    @Autowired
+    private CartDetailRepository cartDetailRepository;
+
     // Lấy giỏ hàng theo user và trả về DTO
-    public List<CartResponse> getCartByUser(Integer idTaiKhoan) {
-        List<Cart> carts = cartRepository.findByTaiKhoan_IdTaiKhoan(idTaiKhoan);
-        return carts.stream().map(this::toResponse).collect(Collectors.toList());
+    public CartResponse getCartByUser(Integer idTaiKhoan) {
+        Cart cart = cartRepository.findByTaiKhoan_IdTaiKhoan(idTaiKhoan);
+        if (cart == null) {
+        // Có thể trả về response rỗng hoặc tạo giỏ hàng mới
+        CartResponse empty = new CartResponse();
+        empty.setIdTaiKhoan(idTaiKhoan);
+        empty.setChiTietGioHang(List.of()); // danh sách rỗng
+        return empty;
+    }
+        return toResponse(cart);
     }
 
     // Thêm sản phẩm vào giỏ hàng từ CartRequest
     public CartResponse addToCart(CartRequest request) {
-        Cart existing = cartRepository.findByTaiKhoan_IdTaiKhoanAndSanPham_IdSanPham(
-                request.getIdTaiKhoan(), request.getIdSanPham());
-
-        Product product = productRepository.findById(request.getIdSanPham()).orElseThrow();
         Account account = accountRepository.findById(request.getIdTaiKhoan()).orElseThrow();
 
-        if (existing != null) {
-            existing.setSoLuong(existing.getSoLuong() + request.getSoLuong()); // cộng dồn
-            // ✅ cập nhật lại giá nếu cần (ví dụ khi khuyến mãi thay đổi)
-            existing.setDonGia(request.getDonGia());
-            Cart updated = cartRepository.save(existing);
-            return toResponse(updated);
+        // tìm giỏ hàng của user, nếu chưa có thì tạo mới
+        Cart cart = cartRepository.findByTaiKhoan_IdTaiKhoan(request.getIdTaiKhoan());
+        if (cart == null) {
+            cart = new Cart();
+            cart.setTaiKhoan(account);
+            cart.setNgayTao(LocalDateTime.now());
+            cart = cartRepository.save(cart);
         }
 
-        Cart cart = new Cart();
-        cart.setTaiKhoan(account);
-        cart.setSanPham(product);
-        cart.setSoLuong(request.getSoLuong());
-        // ✅ lưu giá sau khuyến mãi từ request
-        cart.setDonGia(request.getDonGia());
+        for (CartDetailRequest item : request.getChiTietGioHang()) {
+            Product product = productRepository.findById(item.getIdSanPham()).orElseThrow();
 
-        Cart saved = cartRepository.save(cart);
-        return toResponse(saved);
+            CartDetail existing = cartDetailRepository.findByCart_IdGhAndSanPham_IdSanPham(
+                    cart.getIdGh(), item.getIdSanPham());
+
+            if (existing != null) {
+                existing.setSoLuong(existing.getSoLuong() + item.getSoLuong());
+                existing.setDonGia(item.getDonGia());
+                cartDetailRepository.save(existing);
+            } else {
+                CartDetail detail = new CartDetail();
+                detail.setCart(cart);
+                detail.setSanPham(product);
+                detail.setSoLuong(item.getSoLuong());
+                detail.setDonGia(item.getDonGia());
+                cartDetailRepository.save(detail);
+            }
+        }
+
+        return toResponse(cartRepository.findById(cart.getIdGh()).orElseThrow());
     }
 
-    // Cập nhật số lượng
-    public CartResponse updateQuantity(Integer idGh, Integer soLuong) {
-        Cart cart = cartRepository.findById(idGh).orElseThrow();
-        cart.setSoLuong(soLuong);
-        Cart updated = cartRepository.save(cart);
-        return toResponse(updated);
+    // Cập nhật số lượng sản phẩm trong giỏ
+    public CartResponse updateQuantity(Integer idCtgh, Integer soLuong) {
+        CartDetail detail = cartDetailRepository.findById(idCtgh).orElseThrow();
+        detail.setSoLuong(soLuong);
+        cartDetailRepository.save(detail);
+        return toResponse(detail.getCart());
     }
 
     // Xóa sản phẩm khỏi giỏ
-    public void removeItem(Integer idGh) {
-        cartRepository.deleteById(idGh);
+    public void removeItem(Integer idCtgh) {
+        cartDetailRepository.deleteById(idCtgh);
     }
 
     // Xóa toàn bộ giỏ hàng
+    @Transactional
     public void clearCart(Integer idTaiKhoan) {
-        List<Cart> list = cartRepository.findByTaiKhoan_IdTaiKhoan(idTaiKhoan);
-        cartRepository.deleteAll(list);
+        Cart cart = cartRepository.findByTaiKhoan_IdTaiKhoan(idTaiKhoan);
+        if (cart != null) {
+            cartDetailRepository.deleteByCart(cart);
+        }
     }
 
     // Convert Entity -> DTO Response
     private CartResponse toResponse(Cart cart) {
         CartResponse res = new CartResponse();
         res.setIdGh(cart.getIdGh());
-        res.setIdTaikhoan(cart.getTaiKhoan().getIdTaiKhoan());
-        res.setIdSanPham(cart.getSanPham().getIdSanPham());
-        res.setTenSanPham(cart.getSanPham().getTenSanPham());
-        res.setHinhAnh(cart.getSanPham().getHinhAnh());
-        res.setSoLuong(cart.getSoLuong());
-        res.setDonGia(cart.getDonGia());
+        res.setIdTaiKhoan(cart.getTaiKhoan().getIdTaiKhoan());
+        res.setNgayTao(cart.getNgayTao());
+
+        List<CartDetailResponse> details = cart.getChiTietGioHang().stream().map(detail -> {
+            CartDetailResponse d = new CartDetailResponse();
+            d.setIdCtgh(detail.getIdCtgh());
+            d.setIdSanPham(detail.getSanPham().getIdSanPham());
+            d.setTenSanPham(detail.getSanPham().getTenSanPham());
+            d.setHinhAnh(detail.getSanPham().getHinhAnh());
+            d.setSoLuong(detail.getSoLuong());
+            d.setDonGia(detail.getDonGia());
+            return d;
+        }).collect(Collectors.toList());
+
+        res.setChiTietGioHang(details);
         return res;
     }
-
-    // Cập nhật số lượng theo user + sản phẩm
-    public CartResponse updateByUserAndProduct(CartRequest request) {
-        Cart existing = cartRepository.findByTaiKhoan_IdTaiKhoanAndSanPham_IdSanPham(
-                request.getIdTaiKhoan(), request.getIdSanPham());
-
-        Product product = productRepository.findById(request.getIdSanPham()).orElseThrow();
-        Account account = accountRepository.findById(request.getIdTaiKhoan()).orElseThrow();
-
-        if (existing != null) {
-            existing.setSoLuong(request.getSoLuong()); // hoặc cộng dồn: existing.getSoLuong() + request.getSoLuong()
-            existing.setDonGia(request.getDonGia());
-            Cart updated = cartRepository.save(existing);
-            return toResponse(updated);
-        }
-
-        Cart cart = new Cart();
-        cart.setTaiKhoan(account);
-        cart.setSanPham(product);
-        cart.setSoLuong(request.getSoLuong());
-        cart.setDonGia(request.getDonGia());
-
-        Cart saved = cartRepository.save(cart);
-        return toResponse(saved);
-    }
-
 }

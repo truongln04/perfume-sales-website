@@ -10,6 +10,7 @@ import {
   fetchThuongHieus,
   fetchNhaCungCaps,
 } from "../../services/productService";
+import { fetchReceipts } from "../../services/receiptService";
 
 function emptyProduct() {
   return {
@@ -23,13 +24,14 @@ function emptyProduct() {
     giaBan: "",
     kmPhanTram: "",
     trangThai: false,
-    giaNhap: 0,
+    giaNhap: "",
     soLuongTon: 0,
   };
 }
 
 export default function Products() {
   const [products, setProducts] = useState([]);
+  const [receipts, setReceipts] = useState([]); 
   const [search, setSearch] = useState("");
   const [showModal, setShowModal] = useState(false);
   const [editing, setEditing] = useState(null);
@@ -79,9 +81,20 @@ const showModalMessage = (text, type = "error") => {
     }
   };
 
+  const loadReceipts = async () => {
+    try {
+      const data = await fetchReceipts();
+      console.log("Receipts:", data);
+      setReceipts(data);
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
   useEffect(() => {
     fetchProducts();
     loadMeta();
+    loadReceipts();
   }, []);
 
   const handleSearch = async (value) => {
@@ -99,23 +112,53 @@ const showModalMessage = (text, type = "error") => {
     }
   };
 
+  // ================== TÍNH GIA NHẬP ==================
+  const enrichedProducts = useMemo(() => {
+  return products.map(product => {
+    // Lấy tất cả chi tiết phiếu nhập liên quan đến sản phẩm
+    const details = receipts.flatMap(r =>
+      r.chiTietPhieuNhap.map(d => ({
+        ...d,
+        ngayNhap: r.ngayNhap
+      }))
+    );
+
+    // Lọc chi tiết của sản phẩm hiện tại
+    const productDetails = details.filter(d => Number(d.idSanPham) === Number(product.idSanPham));
+
+    // Lấy chi tiết mới nhất
+    const lastDetail = productDetails.sort((a, b) => new Date(b.ngayNhap) - new Date(a.ngayNhap))[0];
+
+    return {
+      ...product,
+      giaNhap: lastDetail ? Number(lastDetail.donGia) : 0
+    };
+  });
+}, [products, receipts]);
+
+
   const filtered = useMemo(() => {
-    return [...products].sort((a, b) => (a.idSanPham || 0) - (b.idSanPham || 0));
-  }, [products]);
+    return [...enrichedProducts].sort((a, b) => (a.idSanPham || 0) - (b.idSanPham || 0));
+  }, [enrichedProducts]);
 
   const onAdd = () => {
     setEditing(null);
-    setForm(emptyProduct());
+    setForm({
+    ...emptyProduct(),
+    giaNhap: 0
+  });
     setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onEdit = (product) => {
+    const enriched = enrichedProducts.find(p => p.idSanPham === product.idSanPham);
     setEditing(product);
     setForm({
       ...product,
       giaBan: product.giaBan || "",
       kmPhanTram: product.kmPhanTram || "",
+      giaNhap: enriched.giaNhap || 0,
     });
     setModalMessage({ text: "", type: "" });
     setShowModal(true);

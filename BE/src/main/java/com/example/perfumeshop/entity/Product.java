@@ -42,8 +42,7 @@ public class Product {
     @JoinColumn(name = "id_ncc")
     private Supplier nhaCungCap;
 
-    @Column(name = "gia_nhap", precision = 12, scale = 0)
-    private BigDecimal giaNhap;
+   
 
     @Column(name = "gia_ban", precision = 12, scale = 0)
     private BigDecimal giaBan;
@@ -54,8 +53,7 @@ public class Product {
     // @Column(name = "gia_sau_km", precision = 12, scale = 0, insertable = false, updatable = false)
     // private BigDecimal giaSauKm;
     
-    @Column(name = "so_luong_ton")
-    private Integer soLuongTon;
+    
 
     @Column(name = "trang_thai")
     private Boolean trangThai;

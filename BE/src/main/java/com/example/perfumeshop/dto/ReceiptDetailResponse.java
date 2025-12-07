@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 @Builder
 public class ReceiptDetailResponse {
     private Integer idCTPN;
-
+     private Integer idSanPham;
     private String tenSanPham;
 
     private Integer soLuong;

@@ -202,7 +202,7 @@ export default function ReceiptManager({
 
                                   const selected = products.find(p => p.idSanPham === id); // ✔ tìm đúng
                                   if (selected) {
-                                    onDetailChange(i, "donGia", selected.giaBan || 0);      // ✔ lấy giá nhập
+                                    onDetailChange(i, "donGia", selected.giaNhap || 0);      // ✔ lấy giá nhập
                                     onDetailChange(i, "tenSanPham", selected.tenSanPham);    // ✔ lấy tên
                                   }
                                 }}

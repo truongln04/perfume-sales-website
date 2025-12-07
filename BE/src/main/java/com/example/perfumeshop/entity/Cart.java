@@ -1,7 +1,10 @@
 package com.example.perfumeshop.entity;
 
+import java.time.LocalDateTime;
+
 import jakarta.persistence.*;
 import lombok.*;
+import java.util.List;
 
 @Entity
 @Table(name = "gio_hang")
@@ -15,18 +18,21 @@ public class Cart {
     @Column(name = "id_gh")
     private Integer idGh;
 
-    @ManyToOne
-    @JoinColumn(name = "id_tai_khoan", nullable = false)
+     @ManyToOne
+    @JoinColumn(name = "id_tai_khoan", nullable = false, unique = true)
     private Account taiKhoan;
 
-    @ManyToOne
-    @JoinColumn(name = "id_san_pham", nullable = false)
-    private Product sanPham;
+    @Column(name = "ngay_tao", nullable = false, updatable = false)
+    private LocalDateTime ngayTao;
 
-    @Column(name = "so_luong")
-    private Integer soLuong;
+    @OneToMany(mappedBy = "cart", cascade = CascadeType.ALL, orphanRemoval = true)
+    private List<CartDetail> chiTietGioHang = new java.util.ArrayList<>();
 
-    @Column(name = "don_gia")
-    private Long donGia;
+    @PrePersist
+public void prePersist() {
+    if (ngayTao == null) {
+        ngayTao = LocalDateTime.now();
+    }
+}
 }
 
