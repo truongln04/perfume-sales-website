@@ -137,7 +137,6 @@ export default function ProductManager({
             </tbody>
           </table>
         </div>
-
       </div>
       {showModal && (
         <div className="modal d-block" tabIndex="-1" style={{ background: "rgba(0,0,0,.5)" }}>
@@ -160,7 +159,7 @@ export default function ProductManager({
                       <input
                         type="text"
                         className="form-control"
-                        value={form.tenDanhMuc || ""}
+                        value={form.idDanhMuc + " - " + form.tenDanhMuc || ""}
                         disabled
                       />
                     ) : (
@@ -173,7 +172,7 @@ export default function ProductManager({
                         <option value="">-- Chọn danh mục --</option>
                         {danhMucs.map(dm => (
                           <option key={dm.idDanhMuc} value={dm.idDanhMuc}>
-                            {dm.tenDanhMuc}
+                            {dm.idDanhMuc} - {dm.tenDanhMuc}
                           </option>
                         ))}
                       </select>
@@ -187,7 +186,7 @@ export default function ProductManager({
                       <input
                         type="text"
                         className="form-control"
-                        value={form.tenthuonghieu || ""}
+                        value={form.idthuonghieu + " - " + form.tenthuonghieu || ""}
                         disabled
                       />
                     ) : (
@@ -200,7 +199,7 @@ export default function ProductManager({
                         <option value="">-- Chọn thương hiệu --</option>
                         {thuongHieus.map(th => (
                           <option key={th.idthuonghieu} value={th.idthuonghieu}>
-                            {th.tenthuonghieu}
+                            {th.idthuonghieu} - {th.tenthuonghieu}
                           </option>
                         ))}
                       </select>
@@ -214,7 +213,7 @@ export default function ProductManager({
                       <input
                         type="text"
                         className="form-control"
-                        value={form.tenNcc || ""}
+                        value={form.idNcc + " - " + form.tenNcc || ""}
                         disabled
                       />
                     ) : (
@@ -227,7 +226,7 @@ export default function ProductManager({
                         <option value="">-- Chọn nhà cung cấp --</option>
                         {nhaCungCaps.map(ncc => (
                           <option key={ncc.idNcc} value={ncc.idNcc}>
-                            {ncc.tenNcc}
+                            {ncc.idNcc} - {ncc.tenNcc}
                           </option>
                         ))}
                       </select>

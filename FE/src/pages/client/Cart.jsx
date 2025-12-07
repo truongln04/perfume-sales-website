@@ -176,43 +176,43 @@ export default function Cart() {
       alert("Có lỗi xảy ra khi xóa sản phẩm!");
     }
   };
-  
+
 
   const clearCart = async () => {
-  try {
-    const resMe = await fetch("http://localhost:8081/auth/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const user = await resMe.json();
-
-    console.log("User ID:", user.idTaiKhoan);
-    const res = await fetch(
-      `http://localhost:8081/cart/clear/${user.idTaiKhoan}`,
-      {
-        method: "DELETE",
+    try {
+      const resMe = await fetch("http://localhost:8081/auth/me", {
         headers: { Authorization: `Bearer ${token}` },
-      }
-    );
+      });
+      const user = await resMe.json();
 
-    if (res.ok) {
-      setCartItems([]);       // Xóa toàn bộ trên UI
-      setSelectedItems([]);   // Reset lựa chọn
-      setSelectAll(false);
-
-      // Cập nhật Navbar
-      window.dispatchEvent(
-        new CustomEvent("cart-updated", { detail: 0 })
+      console.log("User ID:", user.idTaiKhoan);
+      const res = await fetch(
+        `http://localhost:8081/cart/clear/${user.idTaiKhoan}`,
+        {
+          method: "DELETE",
+          headers: { Authorization: `Bearer ${token}` },
+        }
       );
 
-      alert("Đã xóa toàn bộ giỏ hàng!");
-    } else {
-      alert("Xóa giỏ hàng thất bại!");
+      if (res.ok) {
+        setCartItems([]);       // Xóa toàn bộ trên UI
+        setSelectedItems([]);   // Reset lựa chọn
+        setSelectAll(false);
+
+        // Cập nhật Navbar
+        window.dispatchEvent(
+          new CustomEvent("cart-updated", { detail: 0 })
+        );
+
+        alert("Đã xóa toàn bộ giỏ hàng!");
+      } else {
+        alert("Xóa giỏ hàng thất bại!");
+      }
+    } catch (err) {
+      console.error("Lỗi khi xóa giỏ hàng:", err);
+      alert("Có lỗi xảy ra khi xóa giỏ hàng!");
     }
-  } catch (err) {
-    console.error("Lỗi khi xóa giỏ hàng:", err);
-    alert("Có lỗi xảy ra khi xóa giỏ hàng!");
-  }
-};
+  };
 
 
 
@@ -310,38 +310,40 @@ export default function Cart() {
             </table>
           </div>
 
-          <div className="d-flex justify-content-between align-items-center mt-4">
-            <h4 className="mb-0">
-              Tổng tiền:{" "}
-              <span className="text-danger fw-bold">
-                {totalPrice.toLocaleString()} ₫
-              </span>
-            </h4>
-            <div className="d-flex gap-3">
+<div className="d-flex justify-content-between align-items-center mt-4">
+  <h4 className="mb-0">
+    Tổng tiền:{" "}
+    <span className="text-danger fw-bold">
+      {totalPrice.toLocaleString()} ₫
+    </span>
+  </h4>
 
-              <div>
-                <button
-      className="btn btn-outline-danger btn-lg px-2 fw-bold rounded-pill shadow-sm"
-      disabled={cartItems.length === 0}
-      onClick={clearCart}
-      aria-label="Xóa toàn bộ giỏ hàng"
+  <div className="d-flex align-items-center" style={{ gap: "12px" }}>
+    {/* Nút xoá đã chọn */}
+    <button
+      className="btn btn-outline-danger btn-sm px-3 fw-bold rounded-pill shadow-sm"
+      disabled={selectedItems.length === 0}
+      onClick={removeSelectedItems}
+      aria-label="Xóa các sản phẩm đã chọn"
     >
-      🗑 Xóa toàn bộ
+      🗑 Xóa đã chọn
     </button>
-                <button
-                  className="btn btn-primary btn-lg px-2 fw-bold rounded-pill shadow-sm"
-                  disabled={selectedItems.length === 0}
-                  onClick={handleOrder}
-                  aria-label="Tiến hành đặt hàng ngay"
-                >
-                  🛒 Đặt hàng
-                </button>
-                
 
-              </div>
-            </div>
+    {/* Nút đặt hàng */}
+    <button
+      className="btn btn-primary btn-sm px-3 fw-bold rounded-pill shadow-sm"
+      disabled={selectedItems.length === 0}
+      onClick={handleOrder}
+      aria-label="Tiến hành đặt hàng ngay"
+    >
+      🛒 Đặt hàng
+    </button>
+  </div>
+</div>
 
-          </div>
+
+
+         
         </>
       )}
     </div>

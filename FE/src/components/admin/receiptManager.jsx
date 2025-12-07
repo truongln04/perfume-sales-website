@@ -36,8 +36,8 @@ export default function ReceiptManager({
   }, 0);
 
   const filteredProducts = form.idNcc
-  ? products.filter(p => String(p.idNcc) === String(form.idNcc))
-  : products;
+    ? products.filter(p => String(p.idNcc) === String(form.idNcc))
+    : products;
 
 
   const getProductInfo = id => products.find(p => p.idSanPham === parseInt(id));
@@ -137,7 +137,7 @@ export default function ReceiptManager({
                       <option value="">-- Chọn nhà cung cấp --</option>
                       {suppliers.map(s => (
                         <option key={s.idNcc} value={s.idNcc}>
-                          {s.tenNcc}
+                          {s.idNcc} - {s.tenNcc}
                         </option>
                       ))}
                     </select>
@@ -210,10 +210,10 @@ export default function ReceiptManager({
 
                                 <option value="">-- Chọn sản phẩm --</option>
                                 {filteredProducts.map(p => (
-  <option key={p.idSanPham} value={p.idSanPham}>
-    {p.idSanPham} - {p.tenSanPham}
-  </option>
-))}
+                                  <option key={p.idSanPham} value={p.idSanPham}>
+                                    {p.idSanPham} - {p.tenSanPham}
+                                  </option>
+                                ))}
 
                               </select>
                             )}
