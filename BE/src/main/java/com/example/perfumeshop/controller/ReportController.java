@@ -26,7 +26,7 @@ public class ReportController {
             @RequestParam(required = false) String toDate,
             @RequestParam(required = false) String payment,
             @RequestParam(required = false) String paymentStatus) {
-        return service.getDoanhThu(fromDate, toDate, payment, paymentStatus);
+        return service.getDoanhThuTong(fromDate, toDate, payment, paymentStatus);
     }
 
     @GetMapping("/doanhthu/export")
@@ -35,7 +35,7 @@ public class ReportController {
             @RequestParam(required = false) String toDate,
             @RequestParam(required = false) String payment,
             @RequestParam(required = false) String paymentStatus) throws IOException {
-        List<DoanhThuDTO> data = service.getDoanhThu(fromDate, toDate, payment, paymentStatus);
+        List<DoanhThuDTO> data = service.getDoanhThuChiTiet(fromDate, toDate, payment, paymentStatus);
         return service.exportDoanhThuExcel(data);
     }
 
@@ -83,7 +83,7 @@ public class ReportController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String brand,
             @RequestParam(defaultValue = "10") int top) {
-        return service.getBanChay(fromDate, toDate, category, brand, top);
+        return service.getBanChayTong(fromDate, toDate, category, brand, top);
     }
 
     @GetMapping("/banchay/export")
@@ -93,7 +93,7 @@ public class ReportController {
             @RequestParam(required = false) String category,
             @RequestParam(required = false) String brand,
             @RequestParam(defaultValue = "10") int top) throws IOException {
-        List<BanChayDTO> data = service.getBanChay(fromDate, toDate, category, brand, top);
+        List<BanChayDTO> data = service.getBanChayChiTiet(fromDate, toDate, category, brand);
         return service.exportBanChayExcel(data);
     }
 }

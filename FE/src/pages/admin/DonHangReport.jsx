@@ -31,6 +31,11 @@ export default function DonHangReport({ token }) {
   };
 
   const handleExport = async () => {
+    if (!data.length) {
+    setError("❌ Chưa có dữ liệu thống kê, không thể xuất Excel");
+    setTimeout(() => setError(""), 3000); 
+    return;
+  }
     try {
       const res = await fetch(`http://localhost:8081/reports/donhang/export?${buildParams()}`, { headers: { Authorization: `Bearer ${token}` } });
       const blob = await res.blob();

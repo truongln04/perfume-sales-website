@@ -34,18 +34,26 @@ export default function DoanhThuReport({ token }) {
     finally { setLoading(false); }
   };
 
-  const handleExport = async () => {
-    try {
-      const res = await fetch(`http://localhost:8081/reports/doanhthu/export?${buildParams()}`, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url; a.download = "doanhthu.xlsx"; a.click();
-      window.URL.revokeObjectURL(url);
-    } catch { alert("❌ Không thể xuất Excel"); }
-  };
+ const handleExport = async () => {
+  if (!data.length) {
+    setError("❌ Chưa có dữ liệu thống kê, không thể xuất Excel");
+    setTimeout(() => setError(""), 3000); 
+    return;
+  }
+  try {
+    const res = await fetch(`http://localhost:8081/reports/doanhthu/export?${buildParams()}`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url; a.download = "doanhthu.xlsx"; a.click();
+    window.URL.revokeObjectURL(url);
+  } catch {
+    alert("❌ Không thể xuất Excel");
+  }
+};
+
 
   return (
     <div className="report p-4 bg-white rounded shadow">
@@ -67,7 +75,8 @@ export default function DoanhThuReport({ token }) {
             <option value="ONLINE">ONLINE</option>
           </select>
         </div>
-        <div className="col-md-3">
+
+        {/* <div className="col-md-3">
           <label>Trạng thái thanh toán</label>
           <select name="paymentStatus" onChange={handleChange} className="form-select">
             <option value="">Tất cả</option>
@@ -76,7 +85,8 @@ export default function DoanhThuReport({ token }) {
             <option value="HOAN_TIEN">Hoàn tiền</option>
 
           </select>
-        </div>
+        </div> */}
+
         <div className="col-md-4 d-flex gap-2">
           <button className="btn btn-success w-100" onClick={handleFilter}>📊 Lọc dữ liệu</button>
           <button className="btn btn-outline-primary w-100" onClick={handleExport}>📥 Xuất Excel</button>
