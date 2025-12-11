@@ -10,6 +10,8 @@ export default function ProductDetail() {
   const [cartCount, setCartCount] = useState(0);
   const [related, setRelated] = useState([]);
 
+  // 
+
   // lấy sản phẩm hiện tại + giỏ hàng
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -39,102 +41,102 @@ export default function ProductDetail() {
 
   // khi product thay đổi thì lọc sản phẩm liên quan
   useEffect(() => {
-  if (!product) return;
-  fetch("http://localhost:8081/products/active")
-    .then((res) => res.json())
-    .then((allProducts) => {
-      // Lọc theo cả danh mục và thương hiệu
-      const relatedProducts = allProducts.filter(
-        (p) =>
-          p.idSanPham !== product.idSanPham &&
-          p.idDanhMuc === product.idDanhMuc &&
-          p.tenthuonghieu === product.tenthuonghieu
-      );
+    if (!product) return;
+    fetch("http://localhost:8081/products/active")
+      .then((res) => res.json())
+      .then((allProducts) => {
+        // Lọc theo cả danh mục và thương hiệu
+        const relatedProducts = allProducts.filter(
+          (p) =>
+            p.idSanPham !== product.idSanPham &&
+            p.idDanhMuc === product.idDanhMuc &&
+            p.tenthuonghieu === product.tenthuonghieu
+        );
 
-      setRelated(relatedProducts);
-    });
-}, [product]);
+        setRelated(relatedProducts);
+      });
+  }, [product]);
 
 
-const handleAddToCart = async () => {
-  const token = localStorage.getItem("token");
-  if (!token) {
-    alert("Bạn cần đăng nhập để thêm giỏ hàng");
-    return;
-  }
-  if (!product || product.soLuongTon === 0) {
-    alert("Sản phẩm đã hết hàng, không thể thêm vào giỏ.");
-    return;
-  }
-
-  try {
-    const userRes = await fetch("http://localhost:8081/auth/me", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const user = await userRes.json();
-
-    // Lấy giỏ hàng hiện tại
-    const cartRes = await fetch(`http://localhost:8081/cart/${user.idTaiKhoan}`, {
-      headers: { Authorization: `Bearer ${token}` },
-    });
-    const cart = await cartRes.json();
-
-    // Tìm sản phẩm trong giỏ
-    const existingItem = cart.chiTietGioHang?.find(
-      (item) => item.idSanPham === product.idSanPham
-    );
-
-    const currentQty = existingItem ? existingItem.soLuong : 0;
-    const totalQty = currentQty + quantity;
-
-    if (totalQty > product.soLuongTon) {
-      alert(
-        `Số lượng vượt quá tồn kho (${product.soLuongTon}). ` +
-        `Trong giỏ đã có ${currentQty}, bạn chỉ có thể thêm tối đa ${product.soLuongTon - currentQty}.`
-      );
+  const handleAddToCart = async () => {
+    const token = localStorage.getItem("token");
+    if (!token) {
+      alert("Bạn cần đăng nhập để thêm giỏ hàng");
+      return;
+    }
+    if (!product || product.soLuongTon === 0) {
+      alert("Sản phẩm đã hết hàng, không thể thêm vào giỏ.");
       return;
     }
 
-    const finalPrice =
-      product.kmPhanTram > 0
-        ? Math.round(product.giaBan * (1 - product.kmPhanTram / 100))
-        : product.giaBan;
+    try {
+      const userRes = await fetch("http://localhost:8081/auth/me", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const user = await userRes.json();
 
-    const res = await fetch("http://localhost:8081/cart/add", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({
-        idTaiKhoan: user.idTaiKhoan,
-        chiTietGioHang: [
+      // Lấy giỏ hàng hiện tại
+      const cartRes = await fetch(`http://localhost:8081/cart/${user.idTaiKhoan}`, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      const cart = await cartRes.json();
+
+      // Tìm sản phẩm trong giỏ
+      const existingItem = cart.chiTietGioHang?.find(
+        (item) => item.idSanPham === product.idSanPham
+      );
+
+      const currentQty = existingItem ? existingItem.soLuong : 0;
+      const totalQty = currentQty + quantity;
+
+      if (totalQty > product.soLuongTon) {
+        alert(
+          `Số lượng vượt quá tồn kho (${product.soLuongTon}). ` +
+          `Trong giỏ đã có ${currentQty}, bạn chỉ có thể thêm tối đa ${product.soLuongTon - currentQty}.`
+        );
+        return;
+      }
+
+      const finalPrice =
+        product.kmPhanTram > 0
+          ? Math.round(product.giaBan * (1 - product.kmPhanTram / 100))
+          : product.giaBan;
+
+      const res = await fetch("http://localhost:8081/cart/add", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          idTaiKhoan: user.idTaiKhoan,
+          chiTietGioHang: [
             {
               idSanPham: product.idSanPham,
               soLuong: quantity,
               donGia: finalPrice,
             },
           ],
-      }),
-    });
+        }),
+      });
 
-    if (!res.ok) throw new Error("Thêm giỏ hàng thất bại");
-    await res.json();
+      if (!res.ok) throw new Error("Thêm giỏ hàng thất bại");
+      await res.json();
 
-    alert("Đã thêm vào giỏ hàng thành công!");
-    const isNewProduct = !existingItem;
-const newTotalItems =
-  (cart.chiTietGioHang?.length || 0) + (isNewProduct ? 1 : 0);
+      alert("Đã thêm vào giỏ hàng thành công!");
+      const isNewProduct = !existingItem;
+      const newTotalItems =
+        (cart.chiTietGioHang?.length || 0) + (isNewProduct ? 1 : 0);
 
-// Gửi lên navbar
-window.dispatchEvent(
-  new CustomEvent("cart-updated", { detail: newTotalItems })
-);
-  } catch (err) {
-    console.error("Lỗi khi thêm giỏ hàng:", err);
-    alert("Có lỗi xảy ra khi thêm giỏ hàng");
-  }
-};
+      // Gửi lên navbar
+      window.dispatchEvent(
+        new CustomEvent("cart-updated", { detail: newTotalItems })
+      );
+    } catch (err) {
+      console.error("Lỗi khi thêm giỏ hàng:", err);
+      alert("Có lỗi xảy ra khi thêm giỏ hàng");
+    }
+  };
 
 
   if (!product) {
@@ -215,17 +217,17 @@ window.dispatchEvent(
       {/* Sản phẩm liên quan */}
       <div className="row">
         <h5 className="fw-bold mb-3">Sản phẩm liên quan</h5>
-       <div className="row row-cols-1 row-cols-md-5 g-4">
-  {related.length === 0 ? (
-    <p className="text-muted">Chưa có sản phẩm liên quan.</p>
-  ) : (
-    related.map((item) => (
-      <div className="col mb-4" key={item.idSanPham}>
-        <ProductCard product={item} />
-      </div>
-    ))
-  )}
-</div>
+        <div className="row row-cols-1 row-cols-md-5 g-4">
+          {related.length === 0 ? (
+            <p className="text-muted">Chưa có sản phẩm liên quan.</p>
+          ) : (
+            related.map((item) => (
+              <div className="col mb-4" key={item.idSanPham}>
+                <ProductCard product={item} />
+              </div>
+            ))
+          )}
+        </div>
 
       </div>
     </div>

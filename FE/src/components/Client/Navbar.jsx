@@ -96,9 +96,9 @@ export default function Navbar() {
   // ------------------- Cập nhật giỏ hàng -------------------
 // ------------------- Cập nhật giỏ hàng -------------------
 const [cartCount, setCartCount] = useState(0);
-
+const token = localStorage.getItem("token");
 useEffect(() => {
-  const token = localStorage.getItem("token");
+  
 
   // Hàm load số lượng tổng sản phẩm trong giỏ
   const loadCartCount = async () => {
@@ -128,20 +128,19 @@ useEffect(() => {
       }
 
       // Tính tổng số lượng
-      const totalQuantity = cart.chiTietGioHang.reduce(
-        (sum, item) => sum + item.soLuong,
-        0
-      );
+      const totalProducts = cart.chiTietGioHang.length;
 
-      setCartCount(totalQuantity);
+      setCartCount(totalProducts);
     } catch (err) {
       console.warn("Lỗi load giỏ hàng:", err);
       setCartCount(0);
     }
   };
 
-  // Load khi vào trang
-  loadCartCount();
+  // Load khi token sẵn
+  if (token) {
+    loadCartCount();
+  }
 
   // Lắng nghe sự kiện cập nhật từ ProductDetail hoặc Cart
   const handleCartUpdate = (e) => {
@@ -157,7 +156,7 @@ useEffect(() => {
   return () => {
     window.removeEventListener("cart-updated", handleCartUpdate);
   };
-}, []); // Chỉ chạy 1 lần khi mount
+}, [token]); // Chỉ chạy 1 lần khi mount
 
   // ------------------- Render -------------------
   return (
