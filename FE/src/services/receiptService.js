@@ -15,6 +15,21 @@ export async function fetchReceipts() {
   return res.json();
 }
 
+// Tìm kiếm phiếu nhập
+export async function searchReceipts(keyword) {
+  const res = await fetch(`${API_URL}/search?keyword=${encodeURIComponent(keyword)}`, {
+    headers: getAuthHeader(),
+  });
+
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => null);
+    const message = errorData?.message || "Không thể tìm kiếm phiếu nhập";
+    throw new Error(message);
+  }
+
+  return res.json();
+}
+
 // Thêm mới phiếu nhập
 export async function createReceipt(data) {
   const res = await fetch(API_URL, {

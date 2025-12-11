@@ -24,10 +24,10 @@ export default function ReceiptManager({
   onCloseView,
   message,
 }) {
-  const filtered = receipts.filter(r =>
-    r.idPhieuNhap.toString().includes(search.toLowerCase()) ||
-    r.tenNhaCungCap.toLowerCase().includes(search.toLowerCase())
-  );
+  // const filtered = receipts.filter(r =>
+  //   r.idPhieuNhap.toString().includes(search.toLowerCase()) ||
+  //   r.tenNhaCungCap.toLowerCase().includes(search.toLowerCase())
+  // );
 
   const calculateTotal = form.details.reduce((sum, d) => {
     const sl = parseInt(d.soLuong) || 0;
@@ -81,12 +81,12 @@ export default function ReceiptManager({
             </tr>
           </thead>
           <tbody>
-            {filtered.length === 0 ? (
+            {receipts.length === 0 ? (
               <tr>
                 <td colSpan="6" className="text-center py-4">Không có dữ liệu</td>
               </tr>
             ) : (
-              filtered.map(r => (
+              receipts.map(r => (
                 <tr key={r.idPhieuNhap}>
                   <td>{r.idPhieuNhap}</td>
                   <td>{new Date(r.ngayNhap).toLocaleDateString("vi-VN")}</td>

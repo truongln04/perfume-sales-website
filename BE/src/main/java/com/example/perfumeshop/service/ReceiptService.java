@@ -225,6 +225,23 @@ public void delete(Integer id) {
             warehouseRepo.save(kho);
         }
     }
+    // ==================== SEARCH ====================
+    public List<ReceiptResponse> search(String keyword) {
+    if (keyword == null || keyword.trim().isEmpty()) {
+        throw new ValidationException("Từ khóa tìm kiếm không được để trống");
+    }
+
+    List<Receipt> list = receiptRepo.search(keyword.trim());
+
+    if (list.isEmpty()) {
+        throw new ValidationException("Không tìm thấy phiếu nhập phù hợp với từ khóa: " + keyword);
+    }
+
+    return list.stream()
+            .map(this::toResponse)
+            .collect(Collectors.toList());
+}
+
 
     private ReceiptResponse toResponse(Receipt r) {
         return ReceiptResponse.builder()

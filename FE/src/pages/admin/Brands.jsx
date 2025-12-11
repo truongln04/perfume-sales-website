@@ -17,14 +17,20 @@ export default function Brands() {
   const [form, setForm] = useState(emptyBrand());
 
   // Gộp lỗi + thông báo thành công 
-  const [message, setMessage] = useState({ text: "", type: "" });
+  const [listMessage, setListMessage] = useState({ text: "", type: "" });
+  const [modalMessage, setModalMessage] = useState({ text: "", type: "" });
 
   const API_URL = "http://localhost:8081/brands";
   const token = localStorage.getItem("token");
 
-  const showMessage = (text, type = "success") => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  const showListMessage = (text, type = "success") => {
+    setListMessage({ text, type });
+    setTimeout(() => setListMessage({ text: "", type: "" }), 3000);
+  };
+
+  const showModalMessage = (text, type = "error") => {
+    setModalMessage({ text, type });
+    setTimeout(() => setModalMessage({ text: "", type: "" }), 3000);
   };
 
   const fetchBrands = async () => {
@@ -36,7 +42,7 @@ export default function Brands() {
       const data = await res.json();
       setBrands(data);
     } catch (err) {
-      showMessage("Lỗi tải danh sách thương hiệu", "error");
+      showListMessage("Lỗi tải danh sách thương hiệu", "error");
     }
   };
 
@@ -58,7 +64,7 @@ export default function Brands() {
       const data = await res.json();
       setBrands(data);
     } catch (err) {
-      showMessage("Lỗi tìm kiếm", "error");
+      showListMessage("Lỗi tìm kiếm", "error");
     }
   };
 
@@ -69,14 +75,14 @@ export default function Brands() {
   const onAdd = () => {
     setEditing(null);
     setForm(emptyBrand());
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onEdit = (brand) => {
     setEditing(brand);
     setForm({ ...brand });
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
@@ -92,18 +98,18 @@ export default function Brands() {
         throw new Error(err.message || "Không thể xóa");
       }
       fetchBrands();
-      showMessage("Xóa thương hiệu thành công!");
+      showListMessage("Xóa thương hiệu thành công!");
     } catch (err) {
-      showMessage(err.message || "Lỗi khi xóa thương hiệu", "error");
+      showListMessage(err.message || "Lỗi khi xóa thương hiệu", "error");
     }
   };
 
   
   const onSave = async () => {
     // 1. Validate nhanh ở frontend (UX tốt)
-    if (!form.tenthuonghieu.trim()) return showMessage("Vui lòng nhập tên thương hiệu", "error");
-    if (!form.quocgia.trim()) return showMessage("Vui lòng nhập quốc gia", "error");
-    if (!editing && !form.logo.trim()) return showMessage("Vui lòng nhập logo thương hiệu", "error");
+    if (!form.tenthuonghieu.trim()) return showModalMessage("Vui lòng nhập tên thương hiệu", "error");
+    if (!form.quocgia.trim()) return showModalMessage("Vui lòng nhập quốc gia", "error");
+    if (!editing && !form.logo.trim()) return showModalMessage("Vui lòng nhập logo thương hiệu", "error");
 
     const payload = {
       tenthuonghieu: form.tenthuonghieu.trim(),
@@ -138,19 +144,19 @@ export default function Brands() {
       );
 
       setShowModal(false);
-      showMessage(
+      showListMessage(
         editing ? "Cập nhật thương hiệu thành công!" : "Thêm thương hiệu thành công!"
       );
     } catch (err) {
       // Lỗi chi tiết từ backend
-      showMessage(err.message || "Lỗi khi lưu thương hiệu", "error");
+      showModalMessage(err.message || "Lỗi khi lưu thương hiệu", "error");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (message.text) setMessage({ text: "", type: "" });
+    if (message.text) setModalMessage({ text: "", type: "" });
   };
 
   return (
@@ -168,13 +174,12 @@ export default function Brands() {
           />
         </div>
       </div>
-      {message.type === "error" && message.text && (
-                  <div className="alert alert-danger py-2">{message.text}</div>
-                )}
-
-      {message.type === "success" && message.text && (
+      {listMessage.type === "error" && listMessage.text && (
+        <div className="alert alert-danger py-2">{listMessage.text}</div>
+      )}
+      {listMessage.type === "success" && listMessage.text && (
         <div className="m-3 py-2 px-3 rounded bg-success text-white">
-          {message.text}
+          {listMessage.text}
         </div>
       )}
 
@@ -228,8 +233,8 @@ export default function Brands() {
                 <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
               </div>
               <div className="modal-body">
-                {message.type === "error" && message.text && (
-                  <div className="alert alert-danger py-2">{message.text}</div>
+                 {modalMessage.type === "error" && modalMessage.text && (
+                  <div className="alert alert-danger py-2">{modalMessage.text}</div>
                 )}
                 <div className="mb-3">
                   <label className="form-label">Tên thương hiệu</label>

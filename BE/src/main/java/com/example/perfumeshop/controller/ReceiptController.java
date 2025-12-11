@@ -37,6 +37,14 @@ public class ReceiptController {
         return ResponseEntity.ok(response); // ✅ HTTP 200 OK
     }
 
+    // Tìm kiếm phiếu nhập theo ghi chú hoặc ngày nhập
+@GetMapping("/search")
+public ResponseEntity<List<ReceiptResponse>> search(@RequestParam String keyword) {
+    List<ReceiptResponse> list = receiptService.search(keyword);
+    return ResponseEntity.ok(list); // 200 OK
+}
+
+
     // Cập nhật phiếu nhập
     @PutMapping("/{id}")
     public ResponseEntity<ReceiptResponse> update(@PathVariable Integer id, @RequestBody ReceiptRequest request) {

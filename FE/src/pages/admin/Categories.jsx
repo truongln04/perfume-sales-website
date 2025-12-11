@@ -16,14 +16,21 @@ export default function Categories() {
   const [form, setForm] = useState(emptyCategory());
 
   // Gộp lỗi + thông báo thành công 
-  const [message, setMessage] = useState({ text: "", type: "" });
+ const [listMessage, setListMessage] = useState({ text: "", type: "" });
+  const [modalMessage, setModalMessage] = useState({ text: "", type: "" });
+
 
   const API_URL = "http://localhost:8081/categories";
   const token = localStorage.getItem("token");
 
-  const showMessage = (text, type = "success") => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  const showListMessage = (text, type = "success") => {
+    setListMessage({ text, type });
+    setTimeout(() => setListMessage({ text: "", type: "" }), 3000);
+  };
+
+  const showModalMessage = (text, type = "error") => {
+    setModalMessage({ text, type });
+    setTimeout(() => setModalMessage({ text: "", type: "" }), 3000);
   };
 
   const fetchCategories = async () => {
@@ -35,7 +42,7 @@ export default function Categories() {
       const data = await res.json();
       setCategories(data);
     } catch (err) {
-      showMessage("Lỗi tải danh sách danh mục", "error");
+      showListMessage("Lỗi tải danh sách danh mục", "error");
     }
   };
 
@@ -57,7 +64,7 @@ export default function Categories() {
       const data = await res.json();
       setCategories(data);
     } catch (err) {
-      showMessage("Lỗi tìm kiếm", "error");
+      showListMessage("Lỗi tìm kiếm", "error");
     }
   };
 
@@ -68,14 +75,14 @@ export default function Categories() {
   const onAdd = () => {
     setEditing(null);
     setForm(emptyCategory());
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onEdit = (category) => {
     setEditing(category);
     setForm({ ...category });
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
@@ -93,18 +100,18 @@ export default function Categories() {
       throw new Error(message);
       }
       fetchCategories();
-      showMessage("Xóa danh mục thành công!", "success");
+      showListMessage("Xóa danh mục thành công!", "success");
     } catch (err) {
       console.error("Delete category error:", err);
-    showMessage(err.message || "Lỗi khi xóa danh mục", "error");
+    showListMessage(err.message || "Lỗi khi xóa danh mục", "error");
     }
   };
 
 
   const onSave = async () => {
     // 1. Validate nhanh ở frontend (UX tốt)
-    if (!form.tenDanhMuc.trim()) return showMessage("Vui lòng nhập tên danh mục", "error");
-    if (!form.moTa.trim()) return showMessage("Vui lòng nhập mô tả", "error");
+    if (!form.tenDanhMuc.trim()) return showModalMessage("Vui lòng nhập tên danh mục", "error");
+    if (!form.moTa.trim()) return showModalMessage("Vui lòng nhập mô tả", "error");
 
     const payload = {
       tenDanhMuc: form.tenDanhMuc.trim(),
@@ -138,19 +145,19 @@ export default function Categories() {
       );
 
       setShowModal(false);
-      showMessage(
+      showListMessage(
         editing ? "Cập nhật danh mục thành công!" : "Thêm danh mục thành công!"
       );
     } catch (err) {
       // Lỗi chi tiết từ backend
-      showMessage(err.message || "Lỗi khi lưu danh mục", "error");
+      showModalMessage(err.message || "Lỗi khi lưu danh mục", "error");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (message.text) setMessage({ text: "", type: "" });
+    if (message.text) setModalMessage({ text: "", type: "" });
   };
 
   return (
@@ -171,14 +178,14 @@ export default function Categories() {
         </div>
       </div>
 
-      {message.type === "success" && message.text && (
+      {listMessage.type === "error" && listMessage.text && (
+        <div className="alert alert-danger py-2">{listMessage.text}</div>
+      )}
+      {listMessage.type === "success" && listMessage.text && (
         <div className="m-3 py-2 px-3 rounded bg-success text-white">
-          {message.text}
+          {listMessage.text}
         </div>
       )}
-      {message.type === "error" && message.text && (
-                  <div className="alert alert-danger py-2">{message.text}</div>
-                )}
 
       <div className="card-body p-0">
         <table className="table table-hover table-striped m-0">
@@ -222,8 +229,8 @@ export default function Categories() {
                 <button type="button" className="btn-close" onClick={() => setShowModal(false)}></button>
               </div>
               <div className="modal-body">
-                {message.type === "error" && message.text && (
-                  <div className="alert alert-danger py-2">{message.text}</div>
+               {modalMessage.type === "error" && modalMessage.text && (
+                  <div className="alert alert-danger py-2">{modalMessage.text}</div>
                 )}
                 <div className="mb-3">
                   <label className="form-label">Tên danh mục</label>

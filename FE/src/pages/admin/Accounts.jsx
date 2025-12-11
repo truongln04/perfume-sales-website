@@ -10,7 +10,7 @@ function emptyAccount() {
     anhDaiDien: "",
     googleId: "",
     matKhau: "",
-    vaiTro: "KHACHHANG",
+    vaiTro: "",
   };
 }
 
@@ -22,16 +22,23 @@ export default function Accounts() {
   const [form, setForm] = useState(emptyAccount());
 
   // Gộp lỗi + thông báo thành công
-  const [message, setMessage] = useState({ text: "", type: "" });
+  const [listMessage, setListMessage] = useState({ text: "", type: "" });
+  const [modalMessage, setModalMessage] = useState({ text: "", type: "" });
 
   const navigate = useNavigate();
   const API_URL = "http://localhost:8081/accounts";
   const token = localStorage.getItem("token");
 
-  const showMessage = (text, type = "success") => {
-    setMessage({ text, type });
-    setTimeout(() => setMessage({ text: "", type: "" }), 3000);
+  const showListMessage = (text, type = "success") => {
+    setListMessage({ text, type });
+    setTimeout(() => setListMessage({ text: "", type: "" }), 3000);
   };
+
+  const showModalMessage = (text, type = "error") => {
+    setModalMessage({ text, type });
+    setTimeout(() => setModalMessage({ text: "", type: "" }), 3000);
+  };
+
 
   useEffect(() => {
     fetchAccounts();
@@ -48,7 +55,7 @@ export default function Accounts() {
       });
 
       if (res.status === 401) {
-        showMessage("Phiên đăng nhập đã hết hạn!", "error");
+        showListMessage("Phiên đăng nhập đã hết hạn!", "error");
         navigate("/login");
         return;
       }
@@ -57,7 +64,7 @@ export default function Accounts() {
       const data = await res.json();
       setAccounts(data);
     } catch (err) {
-      showMessage("Lỗi tải danh sách tài khoản", "error");
+      showListMessage("Lỗi tải danh sách tài khoản", "error");
     }
   };
 
@@ -75,14 +82,14 @@ export default function Accounts() {
   const onAdd = () => {
     setEditing(null);
     setForm(emptyAccount());
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
   const onEdit = (acc) => {
     setEditing(acc);
     setForm({ ...acc, matKhau: "" });
-    setMessage({ text: "", type: "" });
+    setModalMessage({ text: "", type: "" });
     setShowModal(true);
   };
 
@@ -101,19 +108,19 @@ export default function Accounts() {
       }
 
       fetchAccounts();
-      showMessage("Xóa tài khoản thành công!");
+      showListMessage("Xóa tài khoản thành công!");
     } catch (err) {
-      showMessage(err.message || "Lỗi khi xóa tài khoản", "error");
+      showListMessage(err.message || "Lỗi khi xóa tài khoản", "error");
     }
   };
 
   // HOÀN HẢO NHƯ BRANDS.JSX – validate nhẹ + bắt lỗi backend
   const onSave = async () => {
     // 1. Validate nhanh ở frontend (UX mượt)
-    if (!form.tenHienThi?.trim()) return showMessage("Vui lòng nhập tên hiển thị", "error");
-    if (!form.email?.trim()) return showMessage("Vui lòng nhập email", "error");
-    if (!editing && !form.sdt?.trim()) return showMessage("Vui lòng nhập số điện thoại", "error");
-    if (!editing && !form.matKhau?.trim()) return showMessage("Vui lòng nhập mật khẩu", "error");
+    if (!form.tenHienThi?.trim()) return showModalMessage("Vui lòng nhập tên hiển thị", "error");
+    if (!form.email?.trim()) return showModalMessage("Vui lòng nhập email", "error");
+    if (!editing && !form.sdt?.trim()) return showModalMessage("Vui lòng nhập số điện thoại", "error");
+    if (!editing && !form.matKhau?.trim()) return showModalMessage("Vui lòng nhập mật khẩu", "error");
 
     const payload = {
       tenHienThi: form.tenHienThi.trim(),
@@ -150,19 +157,19 @@ export default function Accounts() {
       );
 
       setShowModal(false);
-      showMessage(
+      showListMessage(
         editing ? "Cập nhật tài khoản thành công!" : "Thêm tài khoản thành công!"
       );
       window.dispatchEvent(new Event("account-updated"));
     } catch (err) {
-      showMessage(err.message || "Lỗi khi lưu tài khoản", "error");
+      showModalMessage(err.message || "Lỗi khi lưu tài khoản", "error");
     }
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
-    if (message.text) setMessage({ text: "", type: "" });
+    if (message.text) setModalMessage({ text: "", type: "" });
   };
 
   return (
@@ -175,15 +182,6 @@ export default function Accounts() {
           <button className="btn btn-primary" onClick={onAdd}>
             Thêm mới
           </button>
-          {message.type === "error" && message.text && (
-                  <div className="alert alert-danger py-2">{message.text}</div>
-                )}
-
-      {message.type === "success" && message.text && (
-        <div className="m-3 py-2 px-3 rounded bg-success text-white">
-          {message.text}
-        </div>
-      )}
           <input
             className="form-control"
             placeholder="Tìm theo tên hoặc email..."
@@ -193,13 +191,12 @@ export default function Accounts() {
           />
         </div>
       </div>
-      {message.type === "error" && message.text && (
-                  <div className="alert alert-danger py-2">{message.text}</div>
-                )}
-
-      {message.type === "success" && message.text && (
+      {listMessage.type === "error" && listMessage.text && (
+        <div className="alert alert-danger py-2">{listMessage.text}</div>
+      )}
+      {listMessage.type === "success" && listMessage.text && (
         <div className="m-3 py-2 px-3 rounded bg-success text-white">
-          {message.text}
+          {listMessage.text}
         </div>
       )}
 
@@ -278,7 +275,8 @@ export default function Accounts() {
                     <div className="d-flex gap-2">
                       <button
                         className="btn btn-sm btn-outline-primary"
-                        onClick={() => onEdit(acc)}
+                        disabled={acc.vaiTro === "KHACHHANG"}
+                        onClick={() => acc.vaiTro !== "KHACHHANG" && onEdit(acc)}
                       >
                         Sửa
                       </button>
@@ -316,8 +314,8 @@ export default function Accounts() {
 
               {/* Modal body */}
               <div className="modal-body">
-                {message.type === "error" && message.text && (
-                  <div className="alert alert-danger py-2">{message.text}</div>
+                {modalMessage.type === "error" && modalMessage.text && (
+                  <div className="alert alert-danger py-2">{modalMessage.text}</div>
                 )}
                 <div className="row g-3">
 
@@ -346,32 +344,21 @@ export default function Accounts() {
                   <div className="col-md-6">
                     <label className="form-label">Vai trò</label>
                     {editing ? (
-                      // Nếu vai trò hiện tại là ADMIN, KHACHHANG ⇒ KHÔNG được chỉnh sửa
-                      form.vaiTro === "ADMIN" || form.vaiTro === "KHACHHANG" ? (
-                        <input
-                          type="text"
-                          className="form-control"
-                          value={
-                            form.vaiTro === "ADMIN" ? "Admin"
-                              : form.vaiTro === "NHANVIEN" ? "Nhân viên"
-                                : "Khách hàng"
-                          }
-                          readOnly
-                        />
-                      ) : (
-                        // Nếu role là nhân viên ⇒ ĐƯỢC PHÉP CHỈNH SỬA
-                        <select
-                          name="vaiTro"
-                          className="form-select"
-                          value={form.vaiTro}
-                          onChange={handleChange}
-                        >
-                          <option value="ADMIN">Admin</option>
-                          <option value="NHANVIEN">Nhân viên</option>
-                        </select>
-                      )
+                      // Khi sửa: Admin hoặc Nhân viên đều KHÔNG được phép chỉnh vai trò
+                      <input
+                        type="text"
+                        className="form-control"
+                        value={
+                          form.vaiTro === "ADMIN"
+                            ? "Admin"
+                            : form.vaiTro === "NHANVIEN"
+                              ? "Nhân viên"
+                              : "Khách hàng"
+                        }
+                        readOnly
+                      />
                     ) : (
-                      // Trạng thái thêm mới: luôn cho chọn vai trò
+                      // Khi thêm mới: chỉ cho chọn Admin hoặc Nhân viên
                       <select
                         name="vaiTro"
                         className="form-select"

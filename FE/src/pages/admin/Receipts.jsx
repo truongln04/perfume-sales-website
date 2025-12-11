@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import ReceiptManager from "../../components/admin/receiptManager";
 import {
   fetchReceipts,
+  searchReceipts,
   createReceipt,
   updateReceipt,
   deleteReceipt,
@@ -57,15 +58,32 @@ export default function Receipts() {
     loadData();
   }, []);
 
-  const filtered = useMemo(() => {
-    const q = search.trim().toLowerCase();
-    if (!q) return receipts;
-    return receipts.filter(
-      (r) =>
-        r.idPhieuNhap?.toString().includes(q) ||
-        r.tenNhaCungCap?.toLowerCase().includes(q)
-    );
-  }, [receipts, search]);
+  const onSearch = async (value) => {
+  setSearch(value);
+
+  const keyword = value.trim();
+  if (!keyword) {
+    loadData(); // return all receipts
+    return;
+  }
+
+  try {
+    const result = await searchReceipts(keyword);
+    setReceipts(result); // ghi đè danh sách
+  } catch (err) {
+    showMessage(err.message, "error");
+  }
+};
+
+  // const filtered = useMemo(() => {
+  //   const q = search.trim().toLowerCase();
+  //   if (!q) return receipts;
+  //   return receipts.filter(
+  //     (r) =>
+  //       r.idPhieuNhap?.toString().includes(q) ||
+  //       r.tenNhaCungCap?.toLowerCase().includes(q)
+  //   );
+  // }, [receipts, search]);
 
   const calculateTotal = (details) =>
     details.reduce((sum, d) => sum + (Number(d.soLuong) || 0) * (Number(d.donGia) || 0), 0);
@@ -203,11 +221,11 @@ const onDelete = async (id) => {
   // ================== RENDER ==================
   return (
     <ReceiptManager
-      receipts={filtered}
+      receipts={receipts}
       products={products}
       suppliers={suppliers}
       search={search}
-      onSearch={setSearch}
+      onSearch={onSearch}
       onAdd={onAdd}
       onEdit={onEdit}
       onDelete={onDelete}

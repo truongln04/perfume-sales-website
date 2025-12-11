@@ -42,6 +42,7 @@ export default function Login({ onLogin }) {
       // Thành công
       localStorage.setItem("user", JSON.stringify(data));
       localStorage.setItem("token", data.token);
+      console.log("credential:", data.token);
 
       if (onLogin) onLogin(data);
 
@@ -85,7 +86,7 @@ export default function Login({ onLogin }) {
       // Thành công
       localStorage.setItem("user", JSON.stringify(data));
       localStorage.setItem("token", data.token);
-
+      console.log("credential:", data.token);
       if (onLogin) onLogin(data);
 
       alert("Đăng nhập với Google thành công!");
