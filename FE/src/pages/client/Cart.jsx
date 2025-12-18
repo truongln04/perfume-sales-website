@@ -310,40 +310,37 @@ export default function Cart() {
             </table>
           </div>
 
-<div className="d-flex justify-content-between align-items-center mt-4">
-  <h4 className="mb-0">
-    Tổng tiền:{" "}
-    <span className="text-danger fw-bold">
-      {totalPrice.toLocaleString()} ₫
-    </span>
-  </h4>
+          <div className="d-flex justify-content-between align-items-center mt-4">
+            <h4 className="mb-0">
+              Tổng tiền:{" "}
+              <span className="text-danger fw-bold">
+                {totalPrice.toLocaleString()} ₫
+              </span>
+            </h4>
 
-  <div className="d-flex align-items-center" style={{ gap: "12px" }}>
-    {/* Nút xoá đã chọn */}
-    <button
-      className="btn btn-outline-danger btn-sm px-3 fw-bold rounded-pill shadow-sm"
-      disabled={selectedItems.length === 0}
-      onClick={removeSelectedItems}
-      aria-label="Xóa các sản phẩm đã chọn"
-    >
-      🗑 Xóa đã chọn
-    </button>
+            <div className="d-flex align-items-center" style={{ gap: "12px" }}>
+              {/* Nút xoá đã chọn */}
+              <button
+                className="btn btn-outline-danger btn-sm px-3 fw-bold rounded-pill shadow-sm"
+                disabled={selectedItems.length === 0}
+                onClick={removeSelectedItems}
+                aria-label="Xóa các sản phẩm đã chọn"
+              >
+                🗑 Xóa đã chọn
+              </button>
 
-    {/* Nút đặt hàng */}
-    <button
-      className="btn btn-primary btn-sm px-3 fw-bold rounded-pill shadow-sm"
-      disabled={selectedItems.length === 0}
-      onClick={handleOrder}
-      aria-label="Tiến hành đặt hàng ngay"
-    >
-      🛒 Đặt hàng
-    </button>
-  </div>
-</div>
+              {/* Nút đặt hàng */}
+              <button
+                className="btn btn-primary btn-sm px-3 fw-bold rounded-pill shadow-sm"
+                disabled={selectedItems.length === 0}
+                onClick={handleOrder}
+                aria-label="Tiến hành đặt hàng ngay"
+              >
+                🛒 Đặt hàng
+              </button>
+            </div>
+          </div>
 
-
-
-         
         </>
       )}
     </div>

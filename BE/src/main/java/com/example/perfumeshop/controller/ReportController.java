@@ -45,7 +45,7 @@ public class ReportController {
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
             @RequestParam(required = false) String orderStatus) {
-        return service.getDonHang(fromDate, toDate, orderStatus);
+        return service.getDonHangTong(fromDate, toDate, orderStatus);
     }
 
     @GetMapping("/donhang/export")
@@ -53,27 +53,28 @@ public class ReportController {
             @RequestParam(required = false) String fromDate,
             @RequestParam(required = false) String toDate,
             @RequestParam(required = false) String orderStatus) throws IOException {
-        List<DonHangDTO> data = service.getDonHang(fromDate, toDate, orderStatus);
+        List<DonHangDTO> data = service.getDonHangChiTiet(fromDate, toDate, orderStatus);
         return service.exportDonHangExcel(data);
     }
 
     // 3) Tồn kho
-    @GetMapping("/tonkho")
-    public List<TonKhoDTO> tonKho(
-            @RequestParam(required = false) String productCode,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String brand) {
-        return service.getTonKho(productCode, category, brand);
-    }
+@GetMapping("/tonkho")
+public List<TonKhoDTO> tonKho(
+        @RequestParam(required = false) String productCode,
+        @RequestParam(name = "categoryId", required = false) String categoryId,
+        @RequestParam(name = "brandId", required = false) String brandId) {
+    return service.getTonKho(productCode, categoryId, brandId);
+}
 
-    @GetMapping("/tonkho/export")
-    public ResponseEntity<ByteArrayResource> exportTonKho(
-            @RequestParam(required = false) String productCode,
-            @RequestParam(required = false) String category,
-            @RequestParam(required = false) String brand) throws IOException {
-        List<TonKhoDTO> data = service.getTonKho(productCode, category, brand);
-        return service.exportTonKhoExcel(data);
-    }
+@GetMapping("/tonkho/export")
+public ResponseEntity<ByteArrayResource> exportTonKho(
+        @RequestParam(required = false) String productCode,
+        @RequestParam(name = "categoryId", required = false) String categoryId,
+        @RequestParam(name = "brandId", required = false) String brandId) throws IOException {
+    List<TonKhoDTO> data = service.getTonKho(productCode, categoryId, brandId);
+    return service.exportTonKhoExcel(data);
+}
+
 
     // 4) Bán chạy
     @GetMapping("/banchay")

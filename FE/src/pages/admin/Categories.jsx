@@ -164,7 +164,7 @@ export default function Categories() {
     <div className="card">
       <div className="card-header bg-white">
         <div className="d-flex justify-content-between align-items-center">
-          <h5 className="m-0">Danh mục sản phẩm</h5>
+          <h5 className="m-0 text-primary fw-bold">Quản lý danh mục</h5>
           <div className="d-flex gap-2">
             <button className="btn btn-primary" onClick={onAdd}>Thêm mới</button>
             <input

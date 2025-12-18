@@ -20,20 +20,20 @@ export default function Suppliers() {
 
   // Gộp lỗi + thông báo thành công – giống hệt Brands.jsx
   const [listMessage, setListMessage] = useState({ text: "", type: "" });
-const [modalMessage, setModalMessage] = useState({ text: "", type: "" });
+  const [modalMessage, setModalMessage] = useState({ text: "", type: "" });
 
   const API_URL = "http://localhost:8081/suppliers";
   const token = localStorage.getItem("token");
 
   const showListMessage = (text, type = "success") => {
-  setListMessage({ text, type });
-  setTimeout(() => setListMessage({ text: "", type: "" }), 3000);
-};
+    setListMessage({ text, type });
+    setTimeout(() => setListMessage({ text: "", type: "" }), 3000);
+  };
 
-const showModalMessage = (text, type = "error") => {
-  setModalMessage({ text, type });
-  setTimeout(() => setModalMessage({ text: "", type: "" }), 3000);
-};
+  const showModalMessage = (text, type = "error") => {
+    setModalMessage({ text, type });
+    setTimeout(() => setModalMessage({ text: "", type: "" }), 3000);
+  };
 
   const fetchSuppliers = async () => {
     try {
@@ -168,7 +168,7 @@ const showModalMessage = (text, type = "error") => {
   return (
     <div className="card">
       <div className="card-header d-flex justify-content-between align-items-center">
-        <h5 className="m-0">Quản lý Nhà cung cấp</h5>
+        <h5 className="m-0 text-primary fw-bold">Quản lý nhà cung cấp</h5>
         <div className="d-flex gap-2">
           <button className="btn btn-primary" onClick={onAdd}>
             Thêm mới
@@ -184,17 +184,14 @@ const showModalMessage = (text, type = "error") => {
       </div>
 
       {/* ✅ Chỉ hiển thị thông báo thành công */}
-       {listMessage.type === "error" && listMessage.text && (
-  <div className="alert alert-danger py-2">{listMessage.text}</div>
-)}
-{listMessage.type === "success" && listMessage.text && (
-  <div className="m-3 py-2 px-3 rounded bg-success text-white">
-    {listMessage.text}
-  </div>
-)}
-
-
-
+      {listMessage.type === "error" && listMessage.text && (
+        <div className="alert alert-danger py-2">{listMessage.text}</div>
+      )}
+      {listMessage.type === "success" && listMessage.text && (
+        <div className="m-3 py-2 px-3 rounded bg-success text-white">
+          {listMessage.text}
+        </div>
+      )}
       <div className="card-body p-0">
         <table className="table table-striped m-0">
           <thead className="table-light">
@@ -267,8 +264,8 @@ const showModalMessage = (text, type = "error") => {
 
               <div className="modal-body">
                 {modalMessage.type === "error" && modalMessage.text && (
-  <div className="alert alert-danger py-2">{modalMessage.text}</div>
-)}
+                  <div className="alert alert-danger py-2">{modalMessage.text}</div>
+                )}
 
                 <div className="row g-3">
                   <div className="col-md-6">

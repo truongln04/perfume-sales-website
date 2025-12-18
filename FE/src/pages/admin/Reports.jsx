@@ -25,7 +25,7 @@ export default function Reports() {
 
   return (
     <div className="p-1" style={{ minHeight: "100vh", background: "#f8f9fa" }}>
-      <h3 className=" fw- mb-3">Thống kê & Báo cáo</h3>
+      <h4 className="m-0 text-primary fw-bold">Thống kê & Báo cáo</h4>
 
       <div className="row g-3 align-items-end mb-4">
         <div className="col-md-4">

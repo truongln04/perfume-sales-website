@@ -46,7 +46,7 @@ export default function ReceiptManager({
     <div className="card">
       {/* Header */}
       <div className="card-header d-flex justify-content-between align-items-center">
-        <h5 className="m-0">Quản lý Phiếu nhập</h5>
+        <h5 className="m-0 text-primary fw-bold">Quản lý phiếu nhập</h5>
         <div className="d-flex gap-2">
           <button className="btn btn-primary" onClick={onAdd}>Thêm mới</button>
           <input

@@ -162,7 +162,7 @@ export default function Brands() {
   return (
     <div className="card">
       <div className="card-header d-flex justify-content-between align-items-center">
-        <h5 className="m-0">Quản lý Thương hiệu</h5>
+       <h5 className="m-0 text-primary fw-bold">Quản lý thương hiệu</h5>
         <div className="d-flex gap-2">
           <button className="btn btn-primary" onClick={onAdd}>Thêm mới</button>
           <input

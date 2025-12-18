@@ -15,7 +15,7 @@ export default function TonKhoReport({ token }) {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [brands, setBrands] = useState([]);
-  const [error, setError] = useState(""); // 👉 thêm state error
+  const [error, setError] = useState("");
 
   useEffect(() => {
     fetch("http://localhost:8081/products", {
@@ -43,11 +43,14 @@ export default function TonKhoReport({ token }) {
   const handleChange = (e) =>
     setFilters(prev => ({ ...prev, [e.target.name]: e.target.value }));
 
-  const buildParams = () =>
-    Object.entries(filters).reduce(
-      (p, [k, v]) => (v ? p.append(k, v) : p, p),
-      new URLSearchParams()
-    ).toString();
+  // 👉 chỉ append khi có giá trị
+  const buildParams = () => {
+    const params = new URLSearchParams();
+    if (filters.productCode) params.append("productCode", filters.productCode);
+    if (filters.categoryId) params.append("categoryId", filters.categoryId);
+    if (filters.brandId) params.append("brandId", filters.brandId);
+    return params.toString();
+  };
 
   const handleFilter = async () => {
     setLoading(true);
@@ -65,11 +68,11 @@ export default function TonKhoReport({ token }) {
   };
 
   const handleExport = async () => {
-   if (!data.length) {
-  setError("❌ Chưa có dữ liệu thống kê, không thể xuất Excel");
-  setTimeout(() => setError(""), 3000); // tự xoá sau 3 giây
-  return;
-}
+    if (!data.length) {
+      setError("❌ Chưa có dữ liệu thống kê, không thể xuất Excel");
+      setTimeout(() => setError(""), 3000);
+      return;
+    }
 
     try {
       const res = await fetch(
@@ -88,7 +91,7 @@ export default function TonKhoReport({ token }) {
     }
   };
 
-  // 👉 Lọc sản phẩm theo cả danh mục và thương hiệu
+  // 👉 lọc sản phẩm theo danh mục và thương hiệu
   const filteredProducts = products.filter(p => {
     const matchCategory = filters.categoryId
       ? p.idDanhMuc === Number(filters.categoryId)
@@ -111,7 +114,7 @@ export default function TonKhoReport({ token }) {
             onChange={handleChange}
             className="form-select"
           >
-            <option value="">Tất cả sản phẩm</option>
+            <option value="">Tất cả sản phẩm theo bộ lọc</option>
             {filteredProducts.map(p => (
               <option key={p.idSanPham} value={p.idSanPham}>
                 {p.idSanPham} - {p.tenSanPham}
@@ -155,32 +158,23 @@ export default function TonKhoReport({ token }) {
         </div>
 
         <div className="col-md-3 d-flex gap-2">
-          <button
-            className="btn btn-success w-100"
-            onClick={handleFilter}
-          >
+          <button className="btn btn-success w-100" onClick={handleFilter}>
             📊 Lọc dữ liệu
           </button>
-          <button
-            className="btn btn-outline-primary w-100"
-            onClick={handleExport}
-          >
+          <button className="btn btn-outline-primary w-100" onClick={handleExport}>
             📥 Xuất Excel
           </button>
         </div>
       </div>
-{/* 👉 hiển thị message lỗi */}
+
       {error && <div className="alert alert-danger mt-2">{error}</div>}
-      
+
       {loading ? (
         <div>⏳ Đang tải dữ liệu...</div>
       ) : !data.length ? (
         <div>Không có dữ liệu</div>
       ) : (
-        <ResponsiveContainer
-          width="100%"
-          height={Math.max(500, data.length * 45)}
-        >
+        <ResponsiveContainer width="100%" height={Math.max(500, data.length * 45)}>
           <BarChart
             data={data}
             layout="vertical"
@@ -191,24 +185,9 @@ export default function TonKhoReport({ token }) {
             <YAxis type="category" dataKey="tenSanPham" width={150} />
             <Tooltip />
             <Legend verticalAlign="top" />
-            <Bar
-              dataKey="soLuongNhap"
-              fill="#198754"
-              name="Nhập"
-              barSize={15}
-            />
-            <Bar
-              dataKey="soLuongBan"
-              fill="#dc3545"
-              name="Bán"
-              barSize={15}
-            />
-            <Bar
-              dataKey="tonKho"
-              fill="#0d6efd"
-              name="Tồn kho"
-              barSize={15}
-            />
+            <Bar dataKey="soLuongNhap" fill="#198754" name="Nhập" barSize={15} />
+            <Bar dataKey="soLuongBan" fill="#dc3545" name="Bán" barSize={15} />
+            <Bar dataKey="tonKho" fill="#0d6efd" name="Tồn kho" barSize={15} />
           </BarChart>
         </ResponsiveContainer>
       )}

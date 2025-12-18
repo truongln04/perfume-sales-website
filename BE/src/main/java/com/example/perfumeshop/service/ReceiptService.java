@@ -17,14 +17,14 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
-import java.math.RoundingMode;
+// import java.math.RoundingMode;
 
 @Service
 @RequiredArgsConstructor
 public class ReceiptService {
 
     private final ReceiptRepository receiptRepo;
-    private final SupplierRepository supplierRepo;
+    // private final SupplierRepository supplierRepo;
     private final ProductRepository productRepo;
     private final WarehouseRepository warehouseRepo;
     @PersistenceContext
@@ -233,9 +233,9 @@ public void delete(Integer id) {
 
     List<Receipt> list = receiptRepo.search(keyword.trim());
 
-    if (list.isEmpty()) {
-        throw new ValidationException("Không tìm thấy phiếu nhập phù hợp với từ khóa: " + keyword);
-    }
+    // if (list.isEmpty()) {
+    //     throw new ValidationException("Không tìm thấy phiếu nhập phù hợp với từ khóa: " + keyword);
+    // }
 
     return list.stream()
             .map(this::toResponse)

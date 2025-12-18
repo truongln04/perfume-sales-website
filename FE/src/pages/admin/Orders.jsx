@@ -127,7 +127,7 @@ export default function Orders() {
   return (
     <div className="card">
       <div className="card-header d-flex justify-content-between align-items-center">
-        <h5 className="m-0">Quản lý Đơn hàng</h5>
+        <h5 className="m-0 text-primary fw-bold">Quản lý đơn hàng</h5>
         <input
           type="text"
           className="form-control "

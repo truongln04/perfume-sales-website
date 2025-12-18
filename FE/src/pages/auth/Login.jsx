@@ -49,8 +49,9 @@ export default function Login({ onLogin }) {
       const role = data.vaiTro?.toUpperCase();
       if (role === "ADMIN" || role === "NHANVIEN") {
         alert("Đăng nhập quản trị thành công!");
-      } else {
-        alert("Đăng nhập thành công!");
+      } 
+      else {
+        alert("Đăng nhập không thành công!");
       }
       navigate("/");
     } catch (err) {
